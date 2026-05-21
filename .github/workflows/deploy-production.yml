@@ -44,7 +44,7 @@ jobs:
           username: ${{ secrets.PROD_EC2_USER }}
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
           script: |
-            cd ~/proyecto
+            cd ~/SmartAdoptApp
             git pull origin main
             docker compose pull
             docker compose up -d --remove-orphans
