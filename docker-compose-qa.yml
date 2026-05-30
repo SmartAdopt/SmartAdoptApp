@@ -1,0 +1,55 @@
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/backend-qa:qa
+    container_name: smart-adopt-backend-qa
+    ports:
+      - "8000:9090"
+    environment:
+      - ENV=qa
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=smartadopt_qa
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/smartadopt_qa
+    depends_on:
+      - postgres
+      - mongo
+    restart: unless-stopped
+
+  frontend:
+    image: ${DOCKER_USERNAME}/frontend-qa:qa
+    container_name: smart-adopt-frontend-qa
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: smart-adopt-postgres-qa
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=smartadopt_qa
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_qa_data:/var/lib/postgresql/data
+    restart: unless-stopped
+  mongo:
+    image: mongo:7
+    container_name: smart-adopt-mongo-qa
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=smartadopt_qa
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongo_qa_data:/data/db
+    restart: unless-stopped
+volumes:
+  postgres_qa_data:
+  mongo_qa_data:
