@@ -28,14 +28,18 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend:qa
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa-${{ github.sha }}
 
       - name: Build & push frontend image (QA)
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend:qa
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ github.sha }}
 
       - name: Deploy to QA EC2 via SSH
         uses: appleboy/ssh-action@v1
@@ -44,8 +48,8 @@ jobs:
           username: ${{ secrets.QA_EC2_USER }}
           key: ${{ secrets.QA_EC2_SSH_KEY }}
           script: |
-            cd ~/proyecto
+            cd ~/SmartAdoptApp
             git pull origin qa
-            docker compose -f docker-compose.qa.yml pull
-            docker compose -f docker-compose.qa.yml up -d --remove-orphans
+            docker compose -f docker-compose-qa.yml pull
+            docker compose -f docker-compose-qa.yml up -d --remove-orphans
             docker image prune -f

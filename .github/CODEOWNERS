@@ -19,6 +19,3 @@
 /.github/workflows/    @SmartAdopt/smartadopt-devops
 /docker-compose.yml    @SmartAdopt/smartadopt-devops
 Dockerfile             @SmartAdopt/smartadopt-devops
-
-# If you have automated test scripts that the QA team or Scrum Master reviews
-/tests/qa/             @SmartAdopt/smartadopt-management
