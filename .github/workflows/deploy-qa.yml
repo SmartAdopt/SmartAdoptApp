@@ -28,14 +28,18 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend:qa
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa-${{ github.sha }}
 
       - name: Build & push frontend image (QA)
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend:qa
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ github.sha }}
 
       - name: Deploy to QA EC2 via SSH
         uses: appleboy/ssh-action@v1
@@ -45,7 +49,18 @@ jobs:
           key: ${{ secrets.QA_EC2_SSH_KEY }}
           script: |
             cd ~/SmartAdoptApp
-            git pull origin qa
-            docker compose pull
-            docker compose up -d --remove-orphans
+            git fetch origin
+            git checkout qa
+            git reset --hard origin/qa
+            
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            POSTGRES_USER=${{ secrets.QA_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.QA_POSTGRES_PASSWORD }}
+            MONGO_USER=${{ secrets.QA_MONGO_USER }}
+            MONGO_PASSWORD=${{ secrets.QA_MONGO_PASSWORD }}
+            EOF
+            
+            docker compose -f docker-compose-qa.yml pull
+            docker compose -f docker-compose-qa.yml up -d --remove-orphans
             docker image prune -f

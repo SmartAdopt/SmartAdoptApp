@@ -28,14 +28,18 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.ref_name }}-${{ github.sha }}
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.ref_name }}-${{ github.sha }}
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1
@@ -45,7 +49,18 @@ jobs:
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
           script: |
             cd ~/SmartAdoptApp
-            git pull origin main
-            docker compose pull
-            docker compose up -d --remove-orphans
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+            
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            POSTGRES_USER=${{ secrets.PROD_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
+            MONGO_USER=${{ secrets.PROD_MONGO_USER }}
+            MONGO_PASSWORD=${{ secrets.PROD_MONGO_PASSWORD }}
+            EOF
+            
+            docker compose -f docker-compose-production.yml pull
+            docker compose -f docker-compose-production.yml up -d --remove-orphans
             docker image prune -f
