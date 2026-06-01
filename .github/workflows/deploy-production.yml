@@ -49,7 +49,18 @@ jobs:
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
           script: |
             cd ~/SmartAdoptApp
-            git pull origin main
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+            
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            POSTGRES_USER=${{ secrets.PROD_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
+            MONGO_USER=${{ secrets.PROD_MONGO_USER }}
+            MONGO_PASSWORD=${{ secrets.PROD_MONGO_PASSWORD }}
+            EOF
+            
             docker compose -f docker-compose-production.yml pull
             docker compose -f docker-compose-production.yml up -d --remove-orphans
             docker image prune -f
