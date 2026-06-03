@@ -1,7 +1,7 @@
 // src/types/auth.types.ts
 
 // Allow two roles
-export type Role = 'adopter' | 'admin';
+export type Role = "adopter" | "admin";
 
 export interface User {
   id: number;
@@ -9,7 +9,7 @@ export interface User {
   last_name?: string;
   email: string;
   role: Role;
-  firebase_uid?: string; 
+  firebase_uid?: string;
 }
 
 export interface LoginResponse {

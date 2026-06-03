@@ -1,6 +1,6 @@
-import { Button } from '@mui/material';
-import type { ButtonProps } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Button } from "@mui/material";
+import type { ButtonProps } from "@mui/material";
+import type { ReactNode } from "react";
 
 interface SocialButtonProps extends ButtonProps {
   icon: ReactNode;
@@ -14,14 +14,14 @@ export const SocialButton = ({ icon, label, ...props }: SocialButtonProps) => {
       fullWidth
       startIcon={icon}
       sx={{
-        color: 'text.primary',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
+        color: "text.primary",
+        borderColor: "divider",
+        bgcolor: "background.paper",
         py: 1.5,
         fontWeight: 500,
-        '&:hover': {
-          bgcolor: 'grey.50',
-          borderColor: 'divider',
+        "&:hover": {
+          bgcolor: "grey.50",
+          borderColor: "divider",
         },
       }}
       {...props}
