@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 // src/context/AuthContext.tsx
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { type User, type LoginResponse } from '../types/auth.types';
@@ -10,7 +12,7 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);

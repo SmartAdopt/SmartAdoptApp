@@ -3,6 +3,7 @@ import { apiClient } from './apiClient';
 import type { LoginResponse, RegisterRequest } from '../types/auth.types';
 
 export const authService = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   login: async (email: string, password?: string): Promise<LoginResponse> => {
     // Temporary mock logic using json-server. 
     // Later it will be: await apiClient.post<LoginResponse>('/auth/login', { email, password })

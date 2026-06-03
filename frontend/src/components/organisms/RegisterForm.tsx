@@ -48,7 +48,7 @@ export const RegisterForm = () => {
       alert('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.');
       navigate('/login');
       
-    } catch (err) {
+    } catch {
       setError('Hubo un error al registrar el usuario. Intenta de nuevo.');
     } finally {
       setIsLoading(false);

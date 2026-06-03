@@ -4,21 +4,21 @@ import { Box, Typography, TextField, Button, Alert, CircularProgress } from '@mu
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { AuthToggle } from '../molecules/AuthToggle';
 import { SocialLoginGroup } from '../molecules/SocialLoginGroup';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/auth.service';
 
 export const LoginForm = () => {
-  // 1. Manejo de estado
+  // 1. Drive the form inputs with local state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Hooks de navegación y contexto
+  // 2. We use the login function from our AuthContext to save the session after successful login
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // 3. Función que se ejecuta al enviar el formulario
+  // 3. Function that runs when the form is submitted
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); // Evita que la página se recargue
     setError('');
@@ -28,16 +28,16 @@ export const LoginForm = () => {
       // Llama a nuestro servicio simulado (que apunta a json-server)
       const response = await authService.login(email, password);
       
-      // Guarda la sesión en el contexto global
+      // Save the session in the global context
       login(response);
 
-      // Redirección basada en roles (RBAC) [cite: 49]
+      // Redirect based on user role (RBAC) [cite: 49]
       if (response.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/adopter/profile'); // El adopter va al catálogo (HomePage)
+        navigate('/adopter/profile'); // The adopter goes to the catalog (HomePage)
       }
-    } catch (err) {
+    } catch {
       setError('Credenciales inválidas. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
