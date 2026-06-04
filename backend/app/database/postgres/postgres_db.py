@@ -11,7 +11,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base for models (tables)
 Base = declarative_base()
 
-# Dependency to inject the session into your endpoints 
+
+# Dependency to inject the session into your endpoints
 def get_db():
     db = SessionLocal()
     try:

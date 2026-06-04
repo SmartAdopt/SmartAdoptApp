@@ -1,13 +1,14 @@
-#Authentication schemas
+# Authentication schemas
 
-#Pydantic imports
+# Pydantic imports
 from pydantic import BaseModel, EmailStr, Field
-#Datetime imports
+
+# Datetime imports
 from datetime import datetime
 
 
 class RegisterRequest(BaseModel):
-    #Schema for registration request
+    # Schema for registration request
     first_name: str = Field(..., description="User's first name")
     last_name: str = Field(..., description="User's last name")
     email: EmailStr = Field(..., description="User's email")
@@ -17,26 +18,26 @@ class RegisterRequest(BaseModel):
 
 
 class RegisterResponseAdmin(BaseModel):
-    #Schema for Admin registration response
+    # Schema for Admin registration response
     message: str = Field(..., description="Confirmation message")
     user_id: int = Field(..., description="Registered user ID")
 
 
 class RegisterResponseAdopter(BaseModel):
-    #Schema for Adopter registration response
+    # Schema for Adopter registration response
     message: str = Field(..., description="Confirmation message")
     user_id: int = Field(..., description="Registered user ID")
     created_at: datetime = Field(..., description="Registration date")
 
 
 class LoginRequest(BaseModel):
-    #Schema for login request
+    # Schema for login request
     email: EmailStr = Field(..., description="User's email")
     password: str = Field(..., description="User's password")
 
 
 class UserResponseAdmin(BaseModel):
-    #Schema for Admin user response
+    # Schema for Admin user response
     id: int = Field(..., description="User ID")
     first_name: str = Field(..., description="User's first name")
     last_name: str = Field(..., description="User's last name")
@@ -45,7 +46,7 @@ class UserResponseAdmin(BaseModel):
 
 
 class UserResponseAdopter(BaseModel):
-    #Schema for Adopter user response
+    # Schema for Adopter user response
     id: int = Field(..., description="User ID")
     first_name: str = Field(..., description="User's first name")
     last_name: str = Field(..., description="User's last name")
@@ -55,7 +56,7 @@ class UserResponseAdopter(BaseModel):
 
 
 class UserResponse(BaseModel):
-    #Schema for generic user response (for service)
+    # Schema for generic user response (for service)
     id: int = Field(..., description="User ID")
     first_name: str = Field(..., description="User's first name")
     last_name: str = Field(..., description="User's last name")
@@ -65,7 +66,7 @@ class UserResponse(BaseModel):
 
 
 class LoginResponseAdmin(BaseModel):
-    #Schema for Admin login response
+    # Schema for Admin login response
     message: str = Field(..., description="Confirmation message")
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field(..., description="Token type (bearer)")
@@ -73,7 +74,7 @@ class LoginResponseAdmin(BaseModel):
 
 
 class LoginResponseAdopter(BaseModel):
-    #Schema for Adopter login response
+    # Schema for Adopter login response
     message: str = Field(..., description="Confirmation message")
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field(..., description="Token type (bearer)")
@@ -81,6 +82,6 @@ class LoginResponseAdopter(BaseModel):
 
 
 class UserListResponse(BaseModel):
-    #Schema for user list
+    # Schema for user list
     users: list = Field(..., description="User list")
     total: int = Field(..., description="Total users")
