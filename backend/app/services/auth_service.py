@@ -11,6 +11,7 @@ from app.models import User, Admin, Adopter
 
 # Schema imports
 from app.schemas.auth_schemas import RegisterRequest, LoginRequest, UserResponse
+from typing import Optional, cast
 
 
 def register_user(db: Session, user_data: RegisterRequest):
@@ -76,11 +77,12 @@ def login_user(db: Session, login_data: LoginRequest):
 
     # Create user response with necessary data
     user_response = UserResponse(
-        id=user.user_id,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
-        role=user.type,
+        id=cast(int, user.user_id),
+        first_name=cast(str, user.first_name),
+        last_name=cast(str, user.last_name),
+        email=cast(str, user.email),
+        role=cast(str, user.type),
+        created_at=getattr(user, "created_at", None),
     )
 
     # Add created_at if adopter
@@ -91,7 +93,7 @@ def login_user(db: Session, login_data: LoginRequest):
     return user_response
 
 
-def get_all_users(db: Session, role: str = None):
+def get_all_users(db: Session, role: Optional[str] = None):
     # Get all users, optionally filtered by role
 
     # Create base query for users
@@ -107,11 +109,12 @@ def get_all_users(db: Session, role: str = None):
     # Convert users to schema responses
     user_responses = [
         UserResponse(
-            id=user.user_id,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            email=user.email,
-            role=user.type,
+            id=cast(int, user.user_id),
+            first_name=cast(str, user.first_name),
+            last_name=cast(str, user.last_name),
+            email=cast(str, user.email),
+            role=cast(str, user.type),
+            created_at=getattr(user, "created_at", None),
         )
         for user in users
     ]

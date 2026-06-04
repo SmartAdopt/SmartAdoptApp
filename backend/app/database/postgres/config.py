@@ -7,11 +7,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
 
 class Settings(BaseSettings):
     # Required variables from .env file
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_HOST: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_HOST: str = ""
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = ""
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
