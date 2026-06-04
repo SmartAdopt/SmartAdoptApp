@@ -63,7 +63,9 @@ class UserResponse(BaseModel):
     last_name: str = Field(..., description="User's last name")
     email: EmailStr = Field(..., description="User's email")
     role: str = Field(..., description="User role")
-    created_at: Optional[datetime] = Field(None, description="Registration date (optional)")
+    created_at: Optional[datetime] = Field(
+        None, description="Registration date (optional)"
+    )
 
 
 class LoginResponseAdmin(BaseModel):
