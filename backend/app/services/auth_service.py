@@ -93,7 +93,7 @@ def login_user(db: Session, login_data: LoginRequest):
         "last_name": cast(str, user.last_name),
         "email": cast(str, user.email),
         "role": cast(str, user.type),
-        "created_at": getattr(user, "created_at", None)
+        "created_at": getattr(user, "created_at", None),
     }
 
     # Return user response with token

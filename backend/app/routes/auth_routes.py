@@ -2,8 +2,10 @@
 # FastAPI imports
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
+
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
+
 # Database imports
 from app.database.postgres.postgres_db import get_db
 
@@ -16,8 +18,6 @@ from app.schemas.auth_schemas import (
     LoginResponse,
     UserListResponse,
 )
-
-
 
 # Service imports
 from app.services.auth_service import (
@@ -114,14 +114,18 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/list", response_model=UserListResponse, status_code=status.HTTP_200_OK)
-def get_users(user_id: Optional[int] = None, db: Session = Depends(get_db), token_payload: dict = Depends(verify_token)):
+def get_users(
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    token_payload: dict = Depends(verify_token),
+):
     # Endpoint to get all users, optionally filtered by ID (protected by JWT)
     try:
         # Call service to get users
         users = get_all_users(db, user_id)
         # Return user list
         return UserListResponse(users=users, total=len(users))
-   
+
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
