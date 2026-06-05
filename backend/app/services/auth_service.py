@@ -11,7 +11,7 @@ from app.models import User, Admin, Adopter
 
 # Schema imports
 from app.schemas.auth_schemas import RegisterRequest, LoginRequest
-from typing import Optional, cast
+from typing import cast
 
 
 def register_user(db: Session, user_data: RegisterRequest):

@@ -2,7 +2,6 @@
 
 # FastAPI imports
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Optional
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
