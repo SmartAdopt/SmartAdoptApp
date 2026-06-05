@@ -86,7 +86,7 @@ This project includes a local compose file: `docker-compose-local.yml`.
 - Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
 - From a terminal, run everything **from the repository root**
 
-### Environment Variables
+### Environment
 
 Create a `.env` file at the project root with the following variables:
 
