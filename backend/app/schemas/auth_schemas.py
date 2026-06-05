@@ -42,8 +42,9 @@ class LoginResponse(BaseModel):
     role: str = Field(..., description="User role")
     created_at: Optional[datetime] = Field(None, description="Registration date")
 
-
+"""
 class UserListResponse(BaseModel):
     # Schema for user list
     users: list = Field(..., description="User list")
     total: int = Field(..., description="Total users")
+"""
