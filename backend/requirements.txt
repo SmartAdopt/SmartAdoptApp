@@ -1,7 +1,16 @@
-fastapi[standard]
+#Develop
 ruff
 black
 mypy
 bandit
 pytest
 pytest-cov
+
+#Backend
+fastapi[standard]
+sqlalchemy
+psycopg2-binary
+bcrypt
+pydantic-settings
+uvicorn
+email-validator

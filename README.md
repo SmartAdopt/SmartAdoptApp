@@ -7,6 +7,7 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 ## Table of Contents
 
 - [Architecture / Stack](#architecture--stack)
+- [Project Structure](#project-structure)
 - [Local development (Docker Compose)](#local-development-docker-compose)
   - [Prerequisites (Local)](#prerequisites-local)
   - [Environment file (.env) (Local)](#environment-file-env-local)
@@ -31,12 +32,49 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 
 ## Architecture / Stack
 
-- **Frontend:** React + Vite (built and served as static assets)
+- **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
-- **Backend:** FastAPI
+- **Backend:** FastAPI + Python 3.12
 - **Databases:** PostgreSQL + MongoDB
+- **ORM:** SQLAlchemy
+- **Authentication:** Bcrypt (password hashing)
+- **Validation:** Pydantic
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
+
+## Project Structure
+
+```
+SmartAdoptApp/
+├── backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── database/       # Database configurations (PostgreSQL, MongoDB)
+│   │   ├── models/         # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/         # API endpoints (auth, etc.)
+│   │   ├── schemas/        # Pydantic schemas for validation
+│   │   ├── services/       # Business logic layer
+│   │   └── utils/          # Utility functions
+│   ├── tests/              # Backend tests
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container configuration
+├── frontend/               # React frontend application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components (HomePage, AdminDashboardPage)
+│   │   ├── services/       # API service layer
+│   │   ├── types/          # TypeScript type definitions
+│   │   └── utils/          # Utility functions
+│   ├── public/             # Static assets
+│   ├── tests/              # Frontend tests
+│   ├── package.json        # Node.js dependencies
+│   ├── vite.config.ts      # Vite configuration
+│   └── Dockerfile          # Frontend container configuration
+├── .github/                # GitHub Actions workflows
+├── docker-compose-local.yml    # Local development compose
+├── docker-compose-qa.yml       # QA environment compose
+├── docker-compose-production.yml # Production environment compose
+└── .env                    # Environment variables (not committed)
+```
 
 ## Local development (Docker Compose)
 
@@ -47,13 +85,17 @@ This project includes a local compose file: `docker-compose-local.yml`.
 - Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
 - From a terminal, run everything **from the repository root**
 
-### Environment file (.env) (Local)
+### Environment 
 
-Create a `.env` file at the repository root (do **not** commit it):
+Create a `.env` file at the project root with the following variables:
 
 ```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_dev
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_HOST_PORT=5432
 ```
 
 > Notes
@@ -85,6 +127,22 @@ docker compose -f docker-compose-local.yml up -d --remove-orphans
 ```bash
 docker compose -f docker-compose-local.yml down
 ```
+
+5) Start only backend services (without frontend):
+
+```bash
+docker compose -f docker-compose-local.yml up backend postgres mongo
+```
+
+This starts only the backend, PostgreSQL, and MongoDB containers, which is useful for backend development without running the frontend.
+
+### Authentication
+
+The application uses role-based authentication:
+- **Admin:** Full access to dashboard and management features
+- **Adopter:** Access to adoption features and pet browsing
+
+**Note:** JWT token implementation is planned for future development. Currently, `access_token` is empty in the login response.
 
 ### Ports (Local)
 
@@ -176,8 +234,12 @@ All environments expect a `.env` file at the **repository root**. The `.env` fil
 ### Local (.env)
 
 ```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_dev
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_HOST_PORT=5432
 ```
 
 ### QA (.env)
@@ -187,10 +249,16 @@ POSTGRES_PASSWORD=postgres
 DOCKER_USERNAME=tuusuario
 
 # ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_qa
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=change_me_qa
 
 # ─── MongoDB ──────────────────────────────────────────
+MONGO_HOST=mongodb
+MONGO_PORT=27017
+MONGO_DB=smartadopt_qa
 MONGO_USER=admin
 MONGO_PASSWORD=change_me_qa
 ```
@@ -202,10 +270,16 @@ MONGO_PASSWORD=change_me_qa
 DOCKER_USERNAME=tuusuario
 
 # ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_prod
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=change_me_prod
 
 # ─── MongoDB ──────────────────────────────────────────
+MONGO_HOST=mongodb
+MONGO_PORT=27017
+MONGO_DB=smartadopt_prod
 MONGO_USER=admin
 MONGO_PASSWORD=change_me_prod
 ```
