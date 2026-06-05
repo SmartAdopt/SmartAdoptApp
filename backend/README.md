@@ -2,23 +2,22 @@
 
 SmartAdopt application backend, built with FastAPI, SQLAlchemy, and PostgreSQL.
 
-## 📑 Table of Contents
-- [Description](#-description)
-- [Project Structure](#-project-structure)
-- [Recent Changes](#-recent-changes)
-- [Technologies](#-technologies)
-- [Installation](#-installation)
-- [Endpoints](#-endpoints)
-- [Data Models](#-data-models)
-- [Tests](#-tests)
-- [Development Notes](#-development-notes)
-- [Security](#-security)
+## Table of Contents
+- [Description](#description)
+- [Project Structure](#project-structure)
+- [Recent Changes](#recent-changes)
+- [Technologies](#technologies)
+- [Run Locally](#run-locally)
+- [Endpoints](#endpoints)
+- [Data Models](#data-models)
+- [Development Notes](#development-notes)
+- [Security](#security)
 
-## 📋 Description
+## Description
 
 SmartAdopt is a platform for pet adoption management. This backend provides a RESTful API for user authentication, admin management, and adopter management.
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 backend/
@@ -53,7 +52,7 @@ backend/
 └── requirements.txt           # Python dependencies
 ```
 
-## ✨ Recent Changes
+## Recent Changes
 
 ### Import Fix (Jun 4, 2026)
 
@@ -76,7 +75,7 @@ ImportError: cannot import name 'User' from 'app.models'
 
 **Impact:** The backend now starts correctly and can import SQLAlchemy models without errors.
 
-## 🚀 Technologies
+## Technologies
 
 - **FastAPI** - Modern, fast web framework for building APIs
 - **SQLAlchemy** - ORM for database interaction
@@ -84,44 +83,19 @@ ImportError: cannot import name 'User' from 'app.models'
 - **Pydantic** - Data validation using Python types
 - **Uvicorn** - ASGI server to run FastAPI
 
-## 📦 Installation
-
-### Prerequisites
-- Docker and Docker Compose
-- Python 3.12+ (for local development)
-
-### Environment Variables
-
-Create a `.env` file at the project root with the following variables:
-
-```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=smartadopt_dev
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST_PORT=5432
-```
-
-### Run with Docker
-
-```bash
-# Build and start containers
-docker-compose -f docker-compose-local.yml up --build
-
-# Stop containers
-docker-compose -f docker-compose-local.yml down
-
-# Stop and remove volumes
-docker-compose -f docker-compose-local.yml down -v
-
-# Start only backend services (without frontend)
-docker compose -f docker-compose-local.yml up backend postgres mongo
-```
 
 ### Run Locally
 
+#### Prerequisites
+- Python 3.12+
+- A PostgreSQL database running (can be started locally using the root orchestration: `docker compose -f docker-compose-local.yml up -d postgres`)
+- A `.env` file configured at the root repository directory (the backend configuration loads it automatically from `../../.env`).
+
+#### Start the Server
 ```bash
+# Go to the backend folder
+cd backend
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -129,26 +103,44 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 🔌 Endpoints
+## Endpoints
 
 ### Authentication
 
 #### Register User
+
+**Request**
 ```http
 POST /auth/register
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "password123",
   "first_name": "John",
   "last_name": "Doe",
+  "email": "user@example.com",
   "phone_number": "+1234567890",
-  "role": "adopter"
+  "password": "password123",
+  "requested_role": "adopter"
 }
 ```
 
+**Response (201 Created)**
+```json
+{
+  "message": "User registered successfully",
+  "user_id": 1,
+  "created_at": "2026-06-05T12:00:00Z"
+}
+```
+
+**Error Responses**
+- `409 Conflict`: Email already registered
+- `400 Bad Request`: Validation error
+- `500 Internal Server Error`: Server error
+
 #### Login
+
+**Request**
 ```http
 POST /auth/login
 Content-Type: application/json
@@ -159,12 +151,25 @@ Content-Type: application/json
 }
 ```
 
-#### List Users
-```http
-GET /auth/list?role=adopter
+**Response (200 OK)**
+```json
+{
+  "access_token": "",
+  "message": "Login successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "user@example.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T12:00:00Z"
+}
 ```
 
-## 🗄️ Data Models
+**Error Responses**
+- `401 Unauthorized`: Invalid email or password
+- `500 Internal Server Error`: Server error
+
+## Data Models
 
 ### User (Base)
 - `user_id`: Integer (Primary Key)
@@ -185,19 +190,43 @@ GET /auth/list?role=adopter
 - `created_at`: DateTime
 
 
-## 📝 Development Notes
+## Development Notes
 
 - Models use SQLAlchemy polymorphism to distinguish between Admin and Adopter
 - PostgreSQL connection is configured in `app/database/postgres/config.py`
 - Endpoints use dependency injection to obtain the database session
 - All error responses follow a consistent format with `error_code`, `message`, and `details`
 
-## 🔐 Security
+## Security
 
-- Passwords are stored as hashes (not in plain text)
-- Input validation using Pydantic schemas
-- CORS configured to allow requests from the frontend
+The application implements industry-standard security practices to protect user data (Admins and Adopters):
 
-## 📄 License
+- **Input Validation:** Done automatically using Pydantic schemas.
+- **CORS Configuration:** Strictly configured to allow requests only from trusted frontend origins.
+- **Password Protection:** Passwords are never stored in plain text.
+
+### Password Hashing Flow (Bcrypt)
+
+We use **Bcrypt** to handle credentials securely through an adaptive, one-way hashing function.
+
+#### 1. User Registration (`/auth/register`)
+* **Data Submission:** The user sends their data (email, password, name, etc.).
+* **Email Verification:** The system checks the database to ensure the email is not already registered.
+* **Password Hashing:** A random salt is generated, and the password is secure-hashed using `bcrypt.hashpw()`.
+* **Secure Storage:** Only the resulting hash is stored in the database. The original plain-text password is permanently discarded from memory.
+
+#### 2. User Login (`/auth/login`)
+* **Credentials Submission:** The user enters their email and password.
+* **User Lookup:** The system retrieves the user profile by email.
+* **Password Verification (`bcrypt.checkpw`):** The system mathematically compares the incoming plain-text password with the stored database hash.
+  * **If it matches:** Access is authorized (proceeding to generate the JWT access token).
+  * **If it fails:** Returns a generic `401 Unauthorized` ("Invalid email or password") error for security.
+
+### Why Bcrypt?
+* **Random Salt:** Each user gets a unique salt, making rainbow table attacks completely useless.
+* **One-Way Algorithm:** It is mathematically impossible to "decrypt" the hash back into the original password.
+* **Adaptive Work Factor (Slow):** It is intentionally designed to be computationally slow, protecting the database against brute-force attacks.
+
+## License
 
 This project is part of SmartAdopt.

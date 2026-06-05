@@ -7,6 +7,7 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 ## Table of Contents
 
 - [Architecture / Stack](#architecture--stack)
+- [Project Structure](#project-structure)
 - [Local development (Docker Compose)](#local-development-docker-compose)
   - [Prerequisites (Local)](#prerequisites-local)
   - [Environment file (.env) (Local)](#environment-file-env-local)
@@ -84,13 +85,17 @@ This project includes a local compose file: `docker-compose-local.yml`.
 - Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
 - From a terminal, run everything **from the repository root**
 
-### Environment file (.env) (Local)
+### Environment Variables
 
-Create a `.env` file at the repository root (do **not** commit it):
+Create a `.env` file at the project root with the following variables:
 
 ```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_dev
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_HOST_PORT=5432
 ```
 
 > Notes
@@ -130,65 +135,6 @@ docker compose -f docker-compose-local.yml up backend postgres mongo
 ```
 
 This starts only the backend, PostgreSQL, and MongoDB containers, which is useful for backend development without running the frontend.
-
-## API Endpoints
-
-### Authentication Endpoints
-
-#### Register User
-- **POST** `/auth/register`
-- **Body:**
-```json
-{
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john@example.com",
-  "phone_number": "+593987654321",
-  "password": "securepassword",
-  "requested_role": "adopter"
-}
-```
-- **Response:**
-```json
-{
-  "message": "User registered successfully",
-  "user_id": 1,
-  "created_at": "2026-06-05T00:00:00Z"
-}
-```
-
-#### Login User
-- **POST** `/auth/login`
-- **Body:**
-```json
-{
-  "email": "john@example.com",
-  "password": "securepassword"
-}
-```
-- **Response:**
-```json
-{
-  "access_token": "",
-  "message": "Login successful",
-  "id": 1,
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john@example.com",
-  "role": "adopter",
-  "created_at": "2026-06-05T00:00:00Z"
-}
-```
-
-#### Get All Users
-- **GET** `/auth/list?role=adopter`
-- **Response:**
-```json
-{
-  "users": [...],
-  "total": 10
-}
-```
 
 ### Authentication
 
@@ -288,8 +234,12 @@ All environments expect a `.env` file at the **repository root**. The `.env` fil
 ### Local (.env)
 
 ```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_dev
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_HOST_PORT=5432
 ```
 
 ### QA (.env)
@@ -299,10 +249,16 @@ POSTGRES_PASSWORD=postgres
 DOCKER_USERNAME=tuusuario
 
 # ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_qa
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=change_me_qa
 
 # ─── MongoDB ──────────────────────────────────────────
+MONGO_HOST=mongodb
+MONGO_PORT=27017
+MONGO_DB=smartadopt_qa
 MONGO_USER=admin
 MONGO_PASSWORD=change_me_qa
 ```
@@ -314,10 +270,16 @@ MONGO_PASSWORD=change_me_qa
 DOCKER_USERNAME=tuusuario
 
 # ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smartadopt_prod
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=change_me_prod
 
 # ─── MongoDB ──────────────────────────────────────────
+MONGO_HOST=mongodb
+MONGO_PORT=27017
+MONGO_DB=smartadopt_prod
 MONGO_USER=admin
 MONGO_PASSWORD=change_me_prod
 ```

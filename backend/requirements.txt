@@ -9,8 +9,8 @@ pytest-cov
 #Backend
 fastapi[standard]
 sqlalchemy
-bcrypt
 psycopg2-binary
+bcrypt
 pydantic-settings
 uvicorn
 email-validator
