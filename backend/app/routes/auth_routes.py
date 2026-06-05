@@ -16,7 +16,7 @@ from app.schemas.auth_schemas import (
     RegisterResponse,
     LoginRequest,
     LoginResponse,
-    UserListResponse
+    UserListResponse,
 )
 
 # Service imports
@@ -43,21 +43,19 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
             return RegisterResponse(
                 message="User registered successfully",
                 user_id=new_user.user_id,
-                created_at=getattr(new_user, "created_at", None)
+                created_at=getattr(new_user, "created_at", None),
             )
         else:  # adopter
             return RegisterResponse(
                 message="User registered successfully",
                 user_id=new_user.user_id,
-                created_at=getattr(new_user, "created_at", None)
+                created_at=getattr(new_user, "created_at", None),
             )
     except ValueError as e:
         if "Email already registered" in str(e):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "message": "Email already registered" 
-                },
+                detail={"message": "Email already registered"},
             )
         else:
             raise HTTPException(
@@ -95,7 +93,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             last_name=user_response["last_name"],
             email=user_response["email"],
             role=user_response["role"],
-            created_at=user_response["created_at"]
+            created_at=user_response["created_at"],
         )
     except ValueError:
         raise HTTPException(
