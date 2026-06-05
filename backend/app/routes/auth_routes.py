@@ -16,14 +16,12 @@ from app.schemas.auth_schemas import (
     RegisterResponse,
     LoginRequest,
     LoginResponse,
-    UserListResponse,
 )
 
 # Service imports
 from app.services.auth_service import (
     register_user,
     login_user,
-    get_all_users,
 )
 
 # Create router with prefix and tags

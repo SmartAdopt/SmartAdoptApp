@@ -89,6 +89,7 @@ def login_user(db: Session, login_data: LoginRequest):
     return user_response
 
 
+"""
 def get_all_users(db: Session, role: Optional[str] = None):
     # Get all users, optionally filtered by role
 
@@ -117,3 +118,4 @@ def get_all_users(db: Session, role: Optional[str] = None):
 
     # Return list of user responses
     return user_responses
+"""
