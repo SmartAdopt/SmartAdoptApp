@@ -114,6 +114,9 @@ docker-compose -f docker-compose-local.yml down
 
 # Stop and remove volumes
 docker-compose -f docker-compose-local.yml down -v
+
+# Start only backend services (without frontend)
+docker compose -f docker-compose-local.yml up backend postgres mongo
 ```
 
 ### Run Locally

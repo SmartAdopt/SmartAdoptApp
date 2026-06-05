@@ -1,233 +1,277 @@
-# 🚀 SMARTADOPT - Backend
+# SmartAdoptApp
 
-Welcome to the official backend repository of **SmartAdopt**, an intelligent platform designed to optimize the pet adoption process through artificial intelligence and a highly scalable modular architecture.
+## Introduction
 
----
+SmartAdopt is a responsive web application designed to revolutionize the operational efficiency of animal rescue foundations in Quito, Ecuador. The project addresses the administrative overload and inefficient manual processes that hinder pet adoptions, which often leave shelters operating at maximum capacity.
 
-# 📑 Table of Contents
+## Table of Contents
 
-* [Technologies Used](#️-technologies-used)
-* [Project Architecture](#️-project-architecture)
+- [Architecture / Stack](#architecture--stack)
+- [Local development (Docker Compose)](#local-development-docker-compose)
+  - [Prerequisites (Local)](#prerequisites-local)
+  - [Environment file (.env) (Local)](#environment-file-env-local)
+  - [Start / re-run / stop (Local)](#start--re-run--stop-local)
+  - [Ports (Local)](#ports-local)
+  - [Why Nginx locally?](#why-nginx-locally)
+  - [Optional: frontend hot reload (Vite)](#optional-frontend-hot-reload-vite)
+- [CI/CD (GitHub Actions)](#cicd-github-actions)
+  - [QA pipeline](#qa-pipeline)
+  - [Production pipeline](#production-pipeline)
+- [Environment variables by environment (.env)](#environment-variables-by-environment-env)
+  - [Local (.env)](#local-env)
+  - [QA (.env)](#qa-env)
+  - [Production (.env)](#production-env)
+- [GitHub Secrets (required)](#github-secrets-required)
+- [EC2 setup (QA/Production)](#ec2-setup-qaproduction)
+  - [Prerequisites (EC2)](#prerequisites-ec2)
+  - [Repository location on the instance](#repository-location-on-the-instance)
+  - [Security Group recommendations](#security-group-recommendations)
+  - [SSH key setup (for GitHub Actions)](#ssh-key-setup-for-github-actions)
+- [Troubleshooting](#troubleshooting)
 
-  * [Directory Structure](#-directory-structure)
-  * [Responsibility Table](#-responsibility-table)
-* [Docker Infrastructure](#-docker-infrastructure)
-* [Development Rules (SA-28)](#-development-rules-sa-28)
+## Architecture / Stack
 
-  * [Golden Rule](#-golden-rule)
-* [Security](#-security)
-* [Artificial Intelligence Integration](#-artificial-intelligence-integration)
+- **Frontend:** React + Vite (built and served as static assets)
+- **Web server (frontend container):** Nginx
+- **Backend:** FastAPI
+- **Databases:** PostgreSQL + MongoDB
+- **Orchestration:** Docker Compose
+- **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
-  * [BLIP](#-blip)
-  * [Llama 3](#-llama-3)
-* [Testing](#-testing)
-* [Documentation](#-documentation)
-* [Development Team](#-development-team)
+## Local development (Docker Compose)
 
----
+This project includes a local compose file: `docker-compose-local.yml`.
 
-# 🛠️ Technologies Used
+### Prerequisites (Local)
 
-* **Framework:** FastAPI (Python)
+- Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
+- From a terminal, run everything **from the repository root**
 
-* **Persistence:**
+### Environment file (.env) (Local)
 
-  * PostgreSQL (SQLAlchemy)
-  * MongoDB (Beanie ODM)
+Create a `.env` file at the repository root (do **not** commit it):
 
-* **Database Versioning:**
-
-  * Liquibase (PostgreSQL)
-  * Mongock (MongoDB)
-
-* **Artificial Intelligence:**
-
-  * BLIP (Computer Vision)
-  * Llama 3 (NLP)
-
-* **Infrastructure:** Docker and Docker Compose
-
-* **Security:** Firebase Authentication + JWT
-
----
-
-# 🏗️ Project Architecture
-
-This project adheres to **Clean Architecture** principles to ensure modularity and decoupling, facilitating the seamless integration of AI models and external services.
-
----
-
-## 📂 Directory Structure
-
-This structure is the mandatory standard. Any new file must be placed following this hierarchy:
-
-```text
-SMARTADOPT-BACKEND/
-├── app/                        # Source Code Root
-│   ├── database/               # Client configuration (PostgreSQL, MongoDB, Firebase Admin)
-│   ├── models/                 # Entity definitions (SQLAlchemy / Beanie)
-│   ├── routes/                 # Presentation layer (API Endpoints, WebSockets)
-│   ├── schemas/                # Data Transfer Objects (Pydantic validation)
-│   ├── services/               # Business logic & AI (BLIP, Llama 3 models)
-│   ├── utils/                  # Support tools (Security, Firebase Auth)
-│   │   └── security.py         # Token management and identity validation
-│   └── main.py                 # FastAPI orchestrator, middlewares, app lifecycle
-│
-├── docker/                     # Infrastructure as Code
-│   ├── docker-compose.yml      # Container orchestration
-│   ├── db-init/                # Base initialization scripts
-│   └── db-versions/            # Database versioning (Liquibase / Mongock)
-│       ├── postgres/           # PostgreSQL versioning scripts
-│       └── mongodb/            # MongoDB versioning scripts
-│
-├── tests/                      # Unit testing and SAST suite
-├── .dockerignore               # Build exclusions
-├── .env                        # Environment variables
-├── .gitignore                  # Git exclusions
-├── Dockerfile                  # Container manifest
-└── requirements.txt            # Python dependencies
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
 ```
 
----
+> Notes
+> - Local MongoDB does **not** require credentials in `docker-compose-local.yml`.
+> - `.env` is already ignored by git in this repo.
 
-## 📋 Responsibility Table
+### Start / re-run / stop (Local)
 
-| Folder / File           | Description                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `app/routes/`           | Handles incoming HTTP requests, validation triggering, and API responses.      |
-| `app/services/`         | Core business logic, AI algorithms, adoption flows, and external integrations. |
-| `app/models/`           | SQLAlchemy and Beanie entities representing database structures.               |
-| `app/schemas/`          | Pydantic DTOs for request and response validation.                             |
-| `app/database/`         | Database connection pools and persistence clients.                             |
-| `app/utils/security.py` | Firebase Auth validation and JWT session handling.                             |
-| `docker/db-init/`       | Base database initialization scripts.                                          |
-| `docker/db-versions/`   | Liquibase and Mongock database versioning scripts.                             |
-| `Dockerfile`            | Production-ready backend container configuration.                              |
-
----
-
-# 🐳 Docker Infrastructure
-
-Docker Compose orchestration is currently under integration.
-
-The goal is to run the entire environment using:
+1) Go to the project root:
 
 ```bash
-docker-compose up -d --build
+cd <project-root>
 ```
 
----
+2) Start the local environment:
 
-# 📐 Development Rules 
-
-Since this backend uses a layered architecture, data communication must always flow unidirectionally.
-
----
-
-## 🔄 Permitted Flow
-
-1. **Frontend**
-
-   * Sends an HTTP request containing a JSON payload.
-
-2. **Schemas (Validation)**
-
-   * Validates incoming data using Pydantic models.
-
-3. **Routes**
-
-   * Receives validated data and delegates processing to services.
-
-4. **Services**
-
-   * Executes business logic, AI processing, and workflows.
-
-5. **Models**
-
-   * Represents persistence entities and database mappings.
-
-6. **Database**
-
-   * Executes physical persistence operations.
-
-```text
-[Frontend] ──> [Schemas] ──> [Routes] ──> [Services] ──> [Models] ──> [Database]
+```bash
+docker compose -f docker-compose-local.yml up -d
 ```
 
----
+3) If you need to run it again (recommended when services changed or you removed containers):
 
-## ✅ Golden Rule
-
-The `routes` layer is strictly forbidden from performing direct database operations.
-
-All persistence logic must pass through the `services` layer.
-
----
-
-# 🔐 Security
-
-All identity validation and authentication are centralized in:
-
-```text
-app/utils/security.py
+```bash
+docker compose -f docker-compose-local.yml up -d --remove-orphans
 ```
 
-Security stack:
+4) Stop everything:
 
-* Firebase Authentication
-* JWT Token Validation
-* Middleware-based authorization
-
----
-
-# 🧠 Artificial Intelligence Integration
-
-AI integration is designed within `app/services/`.
-
----
-
-## 📸 BLIP
-
-Transforms images and additional data into enriched and emotionally expressive pet profiles.
-
----
-
-## 📝 Llama 3
-
-Acts as the expert evaluator.
-
-It analyzes generated profiles, compares them against adopter requirements, and provides recommendations and adoption guidance.
-
----
-
-# 🧪 Testing
-
-System tests are centralized in:
-
-```text
-/tests
+```bash
+docker compose -f docker-compose-local.yml down
 ```
 
-Including:
+### Ports (Local)
 
-* Unit Testing
-* SAST (Static Application Security Testing)
+Based on `docker-compose-local.yml`:
 
----
+- **Frontend:** http://localhost (container port 80 → host port **80**)
+- **Backend API:** http://localhost:8000 (container port 9090 → host port **8000**)
+- **PostgreSQL:** `localhost:5432`
+- **MongoDB:** `localhost:27017`
 
-# 📝 Documentation
+### Why Nginx locally?
 
-This repository implements the official architectural design of the SmartAdopt project.
+The current `frontend/Dockerfile` builds the React app and serves it using **Nginx** (multi-stage build). This mirrors the production-like setup where the frontend runs as static assets behind a web server.
 
-For additional technical and functional information, consult:
+If you prefer a more developer-friendly setup, you can create a dedicated development Dockerfile (for example `Dockerfile.dev`) and run Vite in dev mode.
 
-* Project Confluence
-* UML Diagrams
-* API Documentation (Swagger/OpenAPI)
+### Optional: frontend hot reload (Vite)
 
----
+This is **optional** and **not included** in the repository by default (there is no `frontend/Dockerfile.dev` today). It is useful if a frontend developer wants hot reload.
 
-# 👥 Development Team
+Example `docker-compose-local.yml` frontend service (snippet):
 
-Developed by the **SmartAdopt Team**
-Central University of Ecuador
+```yml
+# docker-compose-local.yml (example snippet for local dev)
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev    # uses a dev Dockerfile you create
+    container_name: smart-adopt-frontend-dev
+    ports:
+      - "3000:5173"                 # Vite default port
+    volumes:
+      - ./frontend:/frontend        # hot reload
+      - /frontend/node_modules      # avoid overwriting node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+```
+
+## CI/CD (GitHub Actions)
+
+Deployments are automated via GitHub Actions workflows located in `.github/workflows/`.
+
+### QA pipeline
+
+Workflow: `.github/workflows/deploy-qa.yml`
+
+- **Trigger:** `push` to the `qa` branch
+- **Build & push images to Docker Hub:**
+  - `${DOCKER_USERNAME}/backend-qa:qa`
+  - `${DOCKER_USERNAME}/frontend-qa:qa`
+- **Deploy to QA EC2 via SSH:** runs (on the instance):
+
+```bash
+cd ~/SmartAdoptApp
+git pull origin qa
+docker compose -f docker-compose-qa.yml pull
+docker compose -f docker-compose-qa.yml up -d --remove-orphans
+docker image prune -f
+```
+
+### Production pipeline
+
+Workflow: `.github/workflows/deploy-production.yml`
+
+- **Trigger:** `push` to the `main` branch
+- **Build & push images to Docker Hub:**
+  - `${DOCKER_USERNAME}/backend:latest`
+  - `${DOCKER_USERNAME}/frontend:latest`
+- **Deploy to Production EC2 via SSH:** runs (on the instance):
+
+```bash
+cd ~/SmartAdoptApp
+git pull origin main
+docker compose -f docker-compose-production.yml pull
+docker compose -f docker-compose-production.yml up -d --remove-orphans
+docker image prune -f
+```
+
+## Environment variables by environment (.env)
+
+All environments expect a `.env` file at the **repository root**. The `.env` file is read by Docker Compose and must exist on:
+- your machine (local)
+- each EC2 instance (QA / Production)
+
+> This README only shows **templates**. Never publish real credentials.
+
+### Local (.env)
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+```
+
+### QA (.env)
+
+```env
+# ─── Docker Hub ───────────────────────────────────────
+DOCKER_USERNAME=tuusuario
+
+# ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=change_me_qa
+
+# ─── MongoDB ──────────────────────────────────────────
+MONGO_USER=admin
+MONGO_PASSWORD=change_me_qa
+```
+
+### Production (.env)
+
+```env
+# ─── Docker Hub ───────────────────────────────────────
+DOCKER_USERNAME=tuusuario
+
+# ─── PostgreSQL ───────────────────────────────────────
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=change_me_prod
+
+# ─── MongoDB ──────────────────────────────────────────
+MONGO_USER=admin
+MONGO_PASSWORD=change_me_prod
+```
+
+## GitHub Secrets (required)
+
+These secrets must be configured in the GitHub repository settings (Actions secrets). **8 secrets total**:
+
+| Secret name | Used by | Purpose |
+|---|---|---|
+| `DOCKER_USERNAME` | QA + Production | Docker Hub username for build/push |
+| `DOCKER_PASSWORD` | QA + Production | Docker Hub password/token for build/push |
+| `QA_EC2_HOST` | QA | QA EC2 public IP / hostname |
+| `QA_EC2_USER` | QA | SSH user for QA instance |
+| `QA_EC2_SSH_KEY` | QA | Private SSH key for QA instance |
+| `PROD_EC2_HOST` | Production | Production EC2 public IP / hostname |
+| `PROD_EC2_USER` | Production | SSH user for production instance |
+| `PROD_EC2_SSH_KEY` | Production | Private SSH key for production instance |
+
+## EC2 setup (QA/Production)
+
+The workflows deploy via SSH and expect the EC2 instances to be ready to run Docker Compose.
+
+### Prerequisites (EC2)
+
+On each instance (QA and Production), you should have:
+- Docker installed
+- Docker Compose V2 available (`docker compose`)
+- Git installed
+
+### Repository location on the instance
+
+Both workflows run:
+
+```bash
+cd ~/SmartAdoptApp
+```
+
+So the repository must be cloned at that path for the SSH user, for example:
+
+```bash
+cd ~
+git clone <your-repo-url> SmartAdoptApp
+```
+
+Also make sure the instance has the correct branch available (`qa` or `main`) and that a `.env` file exists at the repo root with the corresponding template shown above.
+
+### Security Group recommendations
+
+The compose files expose ports for databases and services. For a safer setup:
+- Publicly expose **80** (frontend)
+- Expose **8000** (backend API) only if you need direct API access from outside (otherwise keep it private)
+- Keep **5432** (PostgreSQL) and **27017** (MongoDB) restricted to the instance/VPC (not public)
+
+### SSH key setup (for GitHub Actions)
+
+The workflows use an SSH private key stored in GitHub Secrets (`QA_EC2_SSH_KEY` / `PROD_EC2_SSH_KEY`). The matching **public** key must be added to the target user’s `~/.ssh/authorized_keys` on each EC2 instance.
+
+## Troubleshooting
+
+- **Containers don’t start:**
+  - Check logs: `docker compose -f docker-compose-local.yml logs -f`
+  - Check running containers: `docker ps`
+- **Changes not reflected locally:**
+  - The local frontend runs behind Nginx (static build). Rebuild if needed:
+    - `docker compose -f docker-compose-local.yml up -d --build --remove-orphans`
+- **CI deploy fails on EC2:**
+  - Confirm the repo exists at `~/SmartAdoptApp` and has the correct branch.
+  - Confirm `.env` exists on the instance and contains required variables for that environment.

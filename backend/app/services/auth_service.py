@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.models import User, Admin, Adopter
 
 # Schema imports
-from app.schemas.auth_schemas import RegisterRequest, LoginRequest, UserResponse
+from app.schemas.auth_schemas import RegisterRequest, LoginRequest
 from typing import Optional, cast
 
 
@@ -76,18 +76,14 @@ def login_user(db: Session, login_data: LoginRequest):
         raise ValueError("Invalid email or password")
 
     # Create user response with necessary data
-    user_response = UserResponse(
-        id=cast(int, user.user_id),
-        first_name=cast(str, user.first_name),
-        last_name=cast(str, user.last_name),
-        email=cast(str, user.email),
-        role=cast(str, user.type),
-        created_at=getattr(user, "created_at", None),
-    )
-
-    # Add created_at if adopter
-    if hasattr(user, "created_at") and user.created_at:
-        user_response.created_at = user.created_at
+    user_response = {
+        "id": cast(int, user.user_id),
+        "first_name": cast(str, user.first_name),
+        "last_name": cast(str, user.last_name),
+        "email": cast(str, user.email),
+        "role": cast(str, user.type),
+        "created_at": getattr(user, "created_at", None),
+    }
 
     # Return user response
     return user_response
@@ -106,16 +102,16 @@ def get_all_users(db: Session, role: Optional[str] = None):
     # Execute query and get all users
     users = query.all()
 
-    # Convert users to schema responses
+    # Convert users to dictionary responses
     user_responses = [
-        UserResponse(
-            id=cast(int, user.user_id),
-            first_name=cast(str, user.first_name),
-            last_name=cast(str, user.last_name),
-            email=cast(str, user.email),
-            role=cast(str, user.type),
-            created_at=getattr(user, "created_at", None),
-        )
+        {
+            "id": cast(int, user.user_id),
+            "first_name": cast(str, user.first_name),
+            "last_name": cast(str, user.last_name),
+            "email": cast(str, user.email),
+            "role": cast(str, user.type),
+            "created_at": getattr(user, "created_at", None),
+        }
         for user in users
     ]
 

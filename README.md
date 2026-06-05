@@ -31,12 +31,49 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 
 ## Architecture / Stack
 
-- **Frontend:** React + Vite (built and served as static assets)
+- **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
-- **Backend:** FastAPI
+- **Backend:** FastAPI + Python 3.12
 - **Databases:** PostgreSQL + MongoDB
+- **ORM:** SQLAlchemy
+- **Authentication:** Bcrypt (password hashing)
+- **Validation:** Pydantic
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
+
+## Project Structure
+
+```
+SmartAdoptApp/
+├── backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── database/       # Database configurations (PostgreSQL, MongoDB)
+│   │   ├── models/         # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/         # API endpoints (auth, etc.)
+│   │   ├── schemas/        # Pydantic schemas for validation
+│   │   ├── services/       # Business logic layer
+│   │   └── utils/          # Utility functions
+│   ├── tests/              # Backend tests
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container configuration
+├── frontend/               # React frontend application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components (HomePage, AdminDashboardPage)
+│   │   ├── services/       # API service layer
+│   │   ├── types/          # TypeScript type definitions
+│   │   └── utils/          # Utility functions
+│   ├── public/             # Static assets
+│   ├── tests/              # Frontend tests
+│   ├── package.json        # Node.js dependencies
+│   ├── vite.config.ts      # Vite configuration
+│   └── Dockerfile          # Frontend container configuration
+├── .github/                # GitHub Actions workflows
+├── docker-compose-local.yml    # Local development compose
+├── docker-compose-qa.yml       # QA environment compose
+├── docker-compose-production.yml # Production environment compose
+└── .env                    # Environment variables (not committed)
+```
 
 ## Local development (Docker Compose)
 
@@ -85,6 +122,81 @@ docker compose -f docker-compose-local.yml up -d --remove-orphans
 ```bash
 docker compose -f docker-compose-local.yml down
 ```
+
+5) Start only backend services (without frontend):
+
+```bash
+docker compose -f docker-compose-local.yml up backend postgres mongo
+```
+
+This starts only the backend, PostgreSQL, and MongoDB containers, which is useful for backend development without running the frontend.
+
+## API Endpoints
+
+### Authentication Endpoints
+
+#### Register User
+- **POST** `/auth/register`
+- **Body:**
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "phone_number": "+593987654321",
+  "password": "securepassword",
+  "requested_role": "adopter"
+}
+```
+- **Response:**
+```json
+{
+  "message": "User registered successfully",
+  "user_id": 1,
+  "created_at": "2026-06-05T00:00:00Z"
+}
+```
+
+#### Login User
+- **POST** `/auth/login`
+- **Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+- **Response:**
+```json
+{
+  "access_token": "",
+  "message": "Login successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T00:00:00Z"
+}
+```
+
+#### Get All Users
+- **GET** `/auth/list?role=adopter`
+- **Response:**
+```json
+{
+  "users": [...],
+  "total": 10
+}
+```
+
+### Authentication
+
+The application uses role-based authentication:
+- **Admin:** Full access to dashboard and management features
+- **Adopter:** Access to adoption features and pet browsing
+
+**Note:** JWT token implementation is planned for future development. Currently, `access_token` is empty in the login response.
 
 ### Ports (Local)
 
