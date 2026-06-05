@@ -80,7 +80,7 @@ def login_user(db: Session, login_data: LoginRequest):
 
     # Generate JWT token only for admin or adopter roles
     if user.type.lower() in ["admin", "adopter"]:
-        token = create_access_token(user.email, user.type)
+        token = create_access_token(cast(str, user.email), cast(str, user.type))
     else:
         token = ""
 
