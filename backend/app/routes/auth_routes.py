@@ -107,6 +107,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             },
         )
 
+
 """
 @router.get("/list", response_model=UserListResponse, status_code=status.HTTP_200_OK)
 def get_users(role: Optional[str] = None, db: Session = Depends(get_db)):
