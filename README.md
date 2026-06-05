@@ -54,6 +54,7 @@ SmartAdoptApp/
 │   │   ├── schemas/        # Pydantic schemas for validation
 │   │   ├── services/       # Business logic layer
 │   │   └── utils/          # Utility functions
+│   ├── docs/               # Documentation
 │   ├── tests/              # Backend tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -85,7 +86,7 @@ This project includes a local compose file: `docker-compose-local.yml`.
 - Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
 - From a terminal, run everything **from the repository root**
 
-### Environment 
+### Environment Variables
 
 Create a `.env` file at the project root with the following variables:
 

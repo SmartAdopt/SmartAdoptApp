@@ -1,19 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
-
-# Get the path to the project root directory
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Required variables from .env file
-    POSTGRES_USER: str = ""
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_HOST: str = ""
-    POSTGRES_PORT: int = 0
-    POSTGRES_DB: str = ""
-
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
+    # Required variables from environment
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
 
     @property
     def DATABASE_URL(self) -> str:
