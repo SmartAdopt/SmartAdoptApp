@@ -5,6 +5,10 @@ on:
     branches:
       - qa
 
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Build & Deploy to QA (EC2)
@@ -31,15 +35,19 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
             ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa-${{ github.sha }}
-
+      - name: Set short SHA
+        id: vars
+        run: echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Build & push frontend image (QA)
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
-            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ github.sha }}
+              ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+              ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ steps.vars.outputs.sha7 }}
 
       - name: Deploy to QA EC2 via SSH
         uses: appleboy/ssh-action@v1
@@ -47,20 +55,27 @@ jobs:
           host: ${{ secrets.QA_EC2_HOST }}
           username: ${{ secrets.QA_EC2_USER }}
           key: ${{ secrets.QA_EC2_SSH_KEY }}
+          command_timeout: 5m
           script: |
             cd ~/SmartAdoptApp
             git fetch origin
             git checkout qa
             git reset --hard origin/qa
             
-            cat > .env << EOF
+            cat > .env << 'EOF'
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             POSTGRES_USER=${{ secrets.QA_POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.QA_POSTGRES_PASSWORD }}
+            POSTGRES_HOST=${{secrets.QA_POSTGRES_HOST}}
+            POSTGRES_PORT=${{secrets.QA_POSTGRES_PORT}}
+            POSTGRES_DB=${{secrets.QA_POSTGRES_DB}}
             MONGO_USER=${{ secrets.QA_MONGO_USER }}
             MONGO_PASSWORD=${{ secrets.QA_MONGO_PASSWORD }}
+            SECRET_KEY=${{secrets.QA_SECRET_KEY}}
+            ALGORITHM=${{secrets.QA_ALGORITHM}}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.QA_ACCESS_TOKEN_EXPIRE_MINUTES}}
             EOF
             
             docker compose -f docker-compose-qa.yml pull
-            docker compose -f docker-compose-qa.yml up -d --remove-orphans
+            docker compose -f docker-compose-qa.yml up -d --remove-orphans   --force-recreate
             docker image prune -f

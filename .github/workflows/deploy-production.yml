@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - main
-
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 jobs:
   deploy:
     name: Build & Deploy to Production (EC2)
@@ -22,45 +24,86 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
+      - name: Set short SHA
+        id: vars
+        run: echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.ref_name }}-${{ github.sha }}
+              ${{ secrets.DOCKER_USERNAME }}/backend:latest
+              ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.sha7 }}
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.ref_name }}-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.sha7 }}
 
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to Production EC2 via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.PROD_EC2_HOST }}
           username: ${{ secrets.PROD_EC2_USER }}
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          command_timeout: 10m
           script: |
+            set -euo pipefail
+            
             cd ~/SmartAdoptApp
+            
+            PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-prod 2>/dev/null || echo "none")
+            PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-prod 2>/dev/null || echo "none")
+            
             git fetch origin
             git checkout main
             git reset --hard origin/main
             
-            cat > .env << EOF
+            cat > .env << 'ENVEOF'
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             POSTGRES_USER=${{ secrets.PROD_POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
+            POSTGRES_HOST=${{ secrets.PROD_POSTGRES_HOST }}
+            POSTGRES_PORT=${{ secrets.PROD_POSTGRES_PORT }}
+            POSTGRES_DB=${{ secrets.PROD_POSTGRES_DB }}
             MONGO_USER=${{ secrets.PROD_MONGO_USER }}
             MONGO_PASSWORD=${{ secrets.PROD_MONGO_PASSWORD }}
-            EOF
+            MONGO_DB=smartadopt_prod
+            SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
+            ALGORITHM=${{ secrets.PROD_ALGORITHM }}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.PROD_ACCESS_TOKEN_EXPIRE_MINUTES }}
+            ENVEOF
             
             docker compose -f docker-compose-production.yml pull
-            docker compose -f docker-compose-production.yml up -d --remove-orphans
+            
+            if ! docker compose -f docker-compose-production.yml up -d --remove-orphans --force-recreate; then
+              echo "Deploy failed — attempting rollback..."
+              if [ "$PREV_BACKEND" != "none" ]; then
+                docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend:latest
+                docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+                docker compose -f docker-compose-production.yml up -d --force-recreate
+              fi
+              exit 1
+            fi
+            
+            echo "Waiting for backend healthcheck..."
+            for i in $(seq 1 18); do
+              if docker exec smart-adopt-backend-prod wget -qO- http://localhost:9090/health > /dev/null 2>&1; then
+                echo "Backend is healthy ✓"
+                break
+              fi
+              [ "$i" -eq 18 ] && { echo "Healthcheck failed — rolling back..."; exit 1; }
+              sleep 5
+            done
+            
             docker image prune -f
+            echo "Production deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
