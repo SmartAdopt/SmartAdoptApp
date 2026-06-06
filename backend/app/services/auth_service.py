@@ -11,7 +11,10 @@ from app.models import User, Admin, Adopter
 
 # Schema imports
 from app.schemas.auth_schemas import RegisterRequest, LoginRequest
-from typing import cast
+from typing import cast, Optional
+
+# JWT utilities
+from app.utils.jwt.jwt_utils import create_access_token
 
 
 def register_user(db: Session, user_data: RegisterRequest):
@@ -75,8 +78,16 @@ def login_user(db: Session, login_data: LoginRequest):
         # Throw error if password is incorrect
         raise ValueError("Invalid email or password")
 
-    # Create user response with necessary data
+    # Generate JWT token only for admin or adopter roles
+    if user.type.lower() in ["admin", "adopter"]:
+        token = create_access_token(cast(str, user.email), cast(str, user.type))
+    else:
+        token = ""
+
+    # Create user response with necessary data and token
     user_response = {
+        "token": token,
+        "token_type": "bearer" if token else "",
         "id": cast(int, user.user_id),
         "first_name": cast(str, user.first_name),
         "last_name": cast(str, user.last_name),
@@ -85,20 +96,19 @@ def login_user(db: Session, login_data: LoginRequest):
         "created_at": getattr(user, "created_at", None),
     }
 
-    # Return user response
+    # Return user response with token
     return user_response
 
 
-"""
-def get_all_users(db: Session, role: Optional[str] = None):
-    # Get all users, optionally filtered by role
+def get_all_users(db: Session, user_id: Optional[int] = None):
+    # Get all users, optionally filtered by ID
 
     # Create base query for users
     query = db.query(User)
 
-    # Filter by role if provided
-    if role:
-        query = query.filter(User.type == role.lower())
+    # Filter by ID if provided
+    if user_id:
+        query = query.filter(User.user_id == user_id)
 
     # Execute query and get all users
     users = query.all()
@@ -118,4 +128,3 @@ def get_all_users(db: Session, role: Optional[str] = None):
 
     # Return list of user responses
     return user_responses
-"""

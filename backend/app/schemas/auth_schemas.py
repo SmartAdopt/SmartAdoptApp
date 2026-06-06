@@ -34,6 +34,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     # Schema for login response
     access_token: Optional[str] = Field(None, description="JWT access token")
+    token_type: Optional[str] = Field(None, description="Token type")
     message: str = Field(..., description="Login message")
     id: int = Field(..., description="User ID")
     first_name: str = Field(..., description="User's first name")
@@ -43,9 +44,7 @@ class LoginResponse(BaseModel):
     created_at: Optional[datetime] = Field(None, description="Registration date")
 
 
-"""
 class UserListResponse(BaseModel):
     # Schema for user list
     users: list = Field(..., description="User list")
     total: int = Field(..., description="Total users")
-"""
