@@ -1,4 +1,5 @@
 // src/components/organisms/Footer.tsx
+
 import {
   Box,
   Container,
