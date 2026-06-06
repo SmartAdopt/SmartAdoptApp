@@ -1,6 +1,6 @@
 // src/routes/ProtectedRoute.tsx
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { type Role } from "../types/auth.types";
 
 interface ProtectedRouteProps {
@@ -23,14 +23,17 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   // Si la ruta exige roles específicos, verificamos
   if (allowedRoles) {
     // Fallback: Si el context "user" aún es null por el delay de React, lo leemos del storage
-    const currentUser = user || JSON.parse(localStorage.getItem("user") || "null");
+    const currentUser =
+      user || JSON.parse(localStorage.getItem("user") || "null");
 
     if (!currentUser) {
       return <Navigate to="/login" replace />;
     }
 
     const userRole = currentUser.role.toLowerCase();
-    const normalizedAllowedRoles = allowedRoles.map((role) => role.toLowerCase());
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      role.toLowerCase(),
+    );
 
     if (!normalizedAllowedRoles.includes(userRole)) {
       // Si un adopter intenta entrar al dashboard de admin, lo enviamos al inicio

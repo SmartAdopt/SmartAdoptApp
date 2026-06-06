@@ -10,7 +10,7 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   },
 });
 
@@ -27,7 +27,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response Interceptor: Handle global API errors (e.g., 401 Unauthorized)
@@ -35,12 +35,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error("🚨 INTERCEPTOR DETECTÓ UN 401 EN LA RUTA:", error.config?.url);
-      console.warn("🚨 Token enviado en esta petición:", error.config?.headers?.Authorization);
-      
+      console.error(
+        "🚨 INTERCEPTOR DETECTÓ UN 401 EN LA RUTA:",
+        error.config?.url,
+      );
+      console.warn(
+        "🚨 Token enviado en esta petición:",
+        error.config?.headers?.Authorization,
+      );
+
       // localStorage.removeItem("access_token");
       // localStorage.removeItem("user");
     }
     return Promise.reject(error);
-  }
+  },
 );

@@ -17,7 +17,10 @@ import type { LoginApiRequest } from "../../types/auth.types"; // Import the str
 
 export const LoginForm = () => {
   // 1. Drive the form inputs with local state using the API interface
-  const [credentials, setCredentials] = useState<LoginApiRequest>({ email: "", password: "" });
+  const [credentials, setCredentials] = useState<LoginApiRequest>({
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -34,13 +37,13 @@ export const LoginForm = () => {
 
   // 3. Function that runs when the form is submitted
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
       const session = await authService.login(credentials);
-      
+
       // 🕵️‍♂️ LÍNEA DE DIAGNÓSTICO: Revisa la consola (F12) para ver qué llegó exactamente
       console.log("Sesión recibida del Backend:", session);
 
@@ -54,7 +57,7 @@ export const LoginForm = () => {
         navigate("/admin/dashboard");
       } else {
         // Cualquier otro rol (como 'adopter') va al perfil
-        navigate("/adopter/profile"); 
+        navigate("/adopter/profile");
       }
     } catch (err) {
       if (err instanceof Error) {

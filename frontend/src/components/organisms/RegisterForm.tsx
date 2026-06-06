@@ -27,7 +27,7 @@ export const RegisterForm = () => {
     password: "",
     requested_role: "adopter", // Default role for public registration
   });
-  
+
   // UI-only state
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");

@@ -1,5 +1,5 @@
 // src/utils/auth.adapters.ts
-import type { AuthSession } from "../types/auth.types";
+import type { AuthSession, Role } from "../types/auth.types";
 
 type LoginResponsePayload = {
   data?: unknown;
@@ -33,10 +33,20 @@ const asNumber = (value: unknown, fallback = 0) => {
   return typeof value === "number" ? value : fallback;
 };
 
-export const adaptLoginResponse = (response: LoginResponsePayload): AuthSession => {
+const asRole = (value: unknown): Role | undefined => {
+  if (value === "adopter" || value === "admin") {
+    return value;
+  }
+
+  return undefined;
+};
+
+export const adaptLoginResponse = (
+  response: LoginResponsePayload,
+): AuthSession => {
   // 1. Extract the main payload
   const payload = isRecord(response.data) ? response.data : response;
-  
+
   // 🚨 Log the raw backend JSON to inspect its actual structure
   console.log("📦 RAW BACKEND PAYLOAD:", payload);
 
@@ -49,15 +59,25 @@ export const adaptLoginResponse = (response: LoginResponsePayload): AuthSession 
       asString(payload.access_token) ||
       asString(payload.accessToken) ||
       asString(payload.token),
-    
+
     user: {
       id: asNumber(userData.id) || asNumber(userData.user_id),
-      firstName: asString(userData.first_name) || asString(userData.firstName) || "Usuario",
+      firstName:
+        asString(userData.first_name) ||
+        asString(userData.firstName) ||
+        "Usuario",
       lastName: asString(userData.last_name) || asString(userData.lastName),
       email: asString(userData.email),
       // Map the role (role, type, or requested_role)
-      role: asString(userData.role) || asString(userData.type) || asString(userData.requested_role) || "adopter",
-      createdAt: asString(userData.created_at) || asString(userData.createdAt) || new Date().toISOString(),
+      role:
+        asRole(userData.role) ||
+        asRole(userData.type) ||
+        asRole(userData.requested_role) ||
+        "adopter",
+      createdAt:
+        asString(userData.created_at) ||
+        asString(userData.createdAt) ||
+        new Date().toISOString(),
     },
   };
 };
