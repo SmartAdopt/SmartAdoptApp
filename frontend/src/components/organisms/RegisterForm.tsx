@@ -13,29 +13,39 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { AuthToggle } from "../molecules/AuthToggle";
 import { SocialLoginGroup } from "../molecules/SocialLoginGroup";
 import { authService } from "../../services/auth.service";
-import type { Role } from "../../types/auth.types";
+import type { RegisterApiRequest } from "../../types/auth.types";
 
 export const RegisterForm = () => {
   const navigate = useNavigate();
 
-  // States for form fields
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // 1. Group API payload fields into a single state object
+  const [formData, setFormData] = useState<RegisterApiRequest>({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone_number: "",
+    password: "",
+    requested_role: "adopter", // Default role for public registration
+  });
 
-  // States for control
+  // UI-only state
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Generic handler for all text inputs
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError(""); // Clear error when user types
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Business Rule: Validate passwords from the Frontend
-    if (password !== confirmPassword) {
+    // Business Rule: Validate passwords on the Frontend before calling the API
+    if (formData.password !== confirmPassword) {
       setError("Las contraseñas no coinciden. Por favor, verifica.");
       return;
     }
@@ -43,20 +53,20 @@ export const RegisterForm = () => {
     setIsLoading(true);
 
     try {
-      await authService.register({
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        phone_number: phoneNumber,
-        password: password,
-        requested_role: "adopter" as Role, // For default registration, we set the role to 'adopter'. This can be changed later by
-      });
+      // Send the exact payload structure required by the backend adapter
+      await authService.register(formData);
 
-      // If everything goes well, we redirect to login so they can log in
+      // On success, notify the user and redirect to login
+      // Note: In a future iteration, consider using a MUI Snackbar instead of native alert
       alert("¡Cuenta creada con éxito! Ahora puedes iniciar sesión.");
       navigate("/login");
-    } catch {
-      setError("Hubo un error al registrar el usuario. Intenta de nuevo.");
+    } catch (err) {
+      // Extract the exact error message thrown by FastAPI (e.g., "Email already registered")
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Hubo un error al registrar el usuario. Intenta de nuevo.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,52 +94,57 @@ export const RegisterForm = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               label="Nombre *"
+              name="first_name" // Binds to formData.first_name
               fullWidth
               required
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={formData.first_name}
+              onChange={handleChange}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               label="Apellido *"
+              name="last_name" // Binds to formData.last_name
               fullWidth
               required
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={formData.last_name}
+              onChange={handleChange}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
           <Grid item xs={12}>
             <TextField
               label="Correo Electrónico *"
+              name="email" // Binds to formData.email
               type="email"
               fullWidth
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
           <Grid item xs={12}>
             <TextField
               label="Número de Teléfono *"
+              name="phone_number" // Binds to formData.phone_number
               fullWidth
               required
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              value={formData.phone_number}
+              onChange={handleChange}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               label="Contraseña *"
+              name="password" // Binds to formData.password
               type="password"
               fullWidth
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
@@ -140,7 +155,10 @@ export const RegisterForm = () => {
               fullWidth
               required
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (error) setError("");
+              }}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>

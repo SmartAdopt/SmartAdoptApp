@@ -13,39 +13,58 @@ import { AuthToggle } from "../molecules/AuthToggle";
 import { SocialLoginGroup } from "../molecules/SocialLoginGroup";
 import { useAuth } from "../../hooks/useAuth";
 import { authService } from "../../services/auth.service";
+import type { LoginApiRequest } from "../../types/auth.types"; // Import the strict contract type
 
 export const LoginForm = () => {
-  // 1. Drive the form inputs with local state
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  // 1. Drive the form inputs with local state using the API interface
+  const [credentials, setCredentials] = useState<LoginApiRequest>({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 2. We use the login function from our AuthContext to save the session after successful login
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Handle generic input changes for scalability
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+    if (error) setError(""); // Clear error when user types
+  };
+
   // 3. Function that runs when the form is submitted
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evita que la página se recargue
+    e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      // Llama a nuestro servicio simulado (que apunta a json-server)
-      const response = await authService.login(email, password);
+      const session = await authService.login(credentials);
+
+      // 🕵️‍♂️ DIAGNOSTIC LINE: Check the console (F12) to see exactly what arrived
+      console.log("Sesión recibida del Backend:", session);
 
       // Save the session in the global context
-      login(response);
+      login(session);
 
-      // Redirect based on user role (RBAC) [cite: 49]
-      if (response.user.role === "admin") {
+      // Extract the role, convert it to lowercase, and use Optional Chaining (?.)
+      const userRole = session.user?.role?.toLowerCase();
+
+      if (userRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        navigate("/adopter/profile"); // The adopter goes to the catalog (HomePage)
+        // Any other role (like 'adopter') goes to the profile page
+        navigate("/adopter/profile");
       }
-    } catch {
-      setError("Credenciales inválidas. Intenta de nuevo.");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Invalid credentials. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,33 +81,35 @@ export const LoginForm = () => {
         Inicia sesión para acceder a tu cuenta
       </Typography>
 
-      {/* FORMULARIO: Conectado a la función handleSubmit */}
+      {/* FORM: Connected to the handleSubmit function */}
       <Box
         component="form"
         onSubmit={handleSubmit}
         sx={{ display: "flex", flexDirection: "column", gap: 3 }}
       >
-        {/* Mostramos errores si existen */}
+        {/* Display backend validation errors if they exist */}
         {error && <Alert severity="error">{error}</Alert>}
 
         <TextField
           label="Correo Electrónico"
+          name="email" // Required to bind with handleChange
           variant="outlined"
           fullWidth
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={credentials.email}
+          onChange={handleChange}
           placeholder="tu@ejemplo.com"
           InputProps={{ sx: { bgcolor: "grey.50" } }}
         />
         <TextField
           label="Contraseña"
+          name="password" // Required to bind with handleChange
           type="password"
           variant="outlined"
           fullWidth
           required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={credentials.password}
+          onChange={handleChange}
           placeholder="••••••••"
           InputProps={{ sx: { bgcolor: "grey.50" } }}
         />
