@@ -10,19 +10,19 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, user } = useAuth();
 
-  // FIX: Previene la condición de carrera (Race Condition) del Router.
-  // Si el estado de React aún no se actualiza, verificamos la fuente absoluta.
+  // FIX: Prevent the Router race condition.
+  // If React state has not updated yet, verify the source of truth.
   const localToken = localStorage.getItem("access_token");
   const isReallyAuthenticated = isAuthenticated || !!localToken;
 
-  // Si no hay sesión ni en el estado ni en el storage, expulsamos al login
+  // If there is no session in state or storage, redirect to login
   if (!isReallyAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Si la ruta exige roles específicos, verificamos
+  // If the route requires specific roles, validate them
   if (allowedRoles) {
-    // Fallback: Si el context "user" aún es null por el delay de React, lo leemos del storage
+    // Fallback: If the context "user" is still null due to React delay, read it from storage
     const currentUser =
       user || JSON.parse(localStorage.getItem("user") || "null");
 
@@ -36,11 +36,11 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     );
 
     if (!normalizedAllowedRoles.includes(userRole)) {
-      // Si un adopter intenta entrar al dashboard de admin, lo enviamos al inicio
+      // If an adopter tries to access the admin dashboard, send them to the home page
       return <Navigate to="/" replace />;
     }
   }
 
-  // Si todo está correcto, renderizamos la vista protegida
+  // If everything is correct, render the protected view
   return <Outlet />;
 };

@@ -44,19 +44,19 @@ export const LoginForm = () => {
     try {
       const session = await authService.login(credentials);
 
-      // 🕵️‍♂️ LÍNEA DE DIAGNÓSTICO: Revisa la consola (F12) para ver qué llegó exactamente
+      // 🕵️‍♂️ DIAGNOSTIC LINE: Check the console (F12) to see exactly what arrived
       console.log("Sesión recibida del Backend:", session);
 
-      // Guardamos la sesión en el contexto global
+      // Save the session in the global context
       login(session);
 
-      // Extraemos el rol, lo pasamos a minúsculas y usamos Optional Chaining (?.)
+      // Extract the role, convert it to lowercase, and use Optional Chaining (?.)
       const userRole = session.user?.role?.toLowerCase();
 
       if (userRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // Cualquier otro rol (como 'adopter') va al perfil
+        // Any other role (like 'adopter') goes to the profile page
         navigate("/adopter/profile");
       }
     } catch (err) {

@@ -13,33 +13,33 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* ==============================
-              RUTAS PÚBLICAS
-              Cualquiera puede verlas sin login
-          ============================== */}
+            {/* ==============================
+              PUBLIC ROUTES
+              Anyone can view them without logging in
+            ============================== */}
           <Route path="/" element={<HomePage />} />{" "}
-          {/* ¡Esta es tu Landing Page! */}
+          {/* This is your Landing Page! */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          {/* ==============================
-              RUTAS PRIVADAS (Adopter)
-              Requieren estar logueado
-          ============================== */}
+            {/* ==============================
+              PRIVATE ROUTES (Adopter)
+              Require being logged in
+            ============================== */}
           <Route element={<ProtectedRoute />}>
-            {/* Aquí irán las vistas internas cuando el adoptante inicie sesión */}
+            {/* Internal views will go here when the adopter logs in */}
             <Route
               path="/adopter/profile"
               element={<div>Perfil del Adoptante</div>}
             />
           </Route>
-          {/* ==============================
-              RUTAS PRIVADAS (Admin)
-              Requieren estar logueado y ser Admin
-          ============================== */}
+            {/* ==============================
+              PRIVATE ROUTES (Admin)
+              Require being logged in and having the Admin role
+            ============================== */}
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           </Route>
-          {/* Fallback route: Si escriben una URL que no existe, van al inicio */}
+          {/* Fallback route: If they enter a URL that does not exist, send them home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

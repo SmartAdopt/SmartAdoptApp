@@ -18,7 +18,7 @@ const HomePage = () => {
     >
       <Navbar />
 
-      {/* Contenido principal que empuja el footer hacia abajo si hay poco contenido */}
+      {/* Main content that pushes the footer down when there is little content */}
       <Box sx={{ flexGrow: 1 }}>
         <HeroSection />
         <HowItWorksSection />
