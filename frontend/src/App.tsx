@@ -13,7 +13,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-            {/* ==============================
+          {/* ==============================
               PUBLIC ROUTES
               Anyone can view them without logging in
             ============================== */}
@@ -21,7 +21,7 @@ function App() {
           {/* This is your Landing Page! */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-            {/* ==============================
+          {/* ==============================
               PRIVATE ROUTES (Adopter)
               Require being logged in
             ============================== */}
@@ -32,7 +32,7 @@ function App() {
               element={<div>Perfil del Adoptante</div>}
             />
           </Route>
-            {/* ==============================
+          {/* ==============================
               PRIVATE ROUTES (Admin)
               Require being logged in and having the Admin role
             ============================== */}
