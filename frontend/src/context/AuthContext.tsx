@@ -1,41 +1,9 @@
 // src/context/AuthContext.tsx
 
-import {
-  createContext,
-  useContext,
-  useState,
-  type ReactNode,
-} from "react";
+import { useState, type ReactNode } from "react";
 
-import type {
-  AuthUser,
-  AuthSession,
-} from "../types/auth.types";
-
-interface AuthContextType {
-  user: AuthUser | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  login: (session: AuthSession) => void;
-  logout: () => void;
-}
-
-export const AuthContext =
-  createContext<AuthContextType | undefined>(undefined);
-
-/**
- * Custom hook to consume the authentication context.
- * Ensures it is always used within an AuthProvider.
- */
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-
-  return context;
-};
+import { AuthContext } from "./authContext";
+import type { AuthSession, AuthUser } from "../types/auth.types";
 
 export const AuthProvider = ({
   children,
