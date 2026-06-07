@@ -20,3 +20,8 @@ app.include_router(auth_router)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "ok"}
