@@ -8,9 +8,6 @@ from app.main import app
 from app.database.postgres.postgres_db import Base, get_db
 
 # Import models to ensure they are registered with Base before creating tables
-from app.models.user import User
-from app.models.adopter import Adopter
-from app.models.admin import Admin
 
 # Setup SQLite in-memory database for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
