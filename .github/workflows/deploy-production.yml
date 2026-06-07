@@ -56,7 +56,7 @@ jobs:
           host: ${{ secrets.PROD_EC2_HOST }}
           username: ${{ secrets.PROD_EC2_USER }}
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
-          source: "docker-compose-production.yml,nginx/nginx-prod.conf,nginx/prod-common.conf"
+          source: "docker-compose-production.yml,nginx/nginx-prod.conf,nginx/prod-common.conf,backend/app/database/postgres/init_postgres.sql"
           target: "~/SmartAdoptApp"
           strip_components: 0
 
