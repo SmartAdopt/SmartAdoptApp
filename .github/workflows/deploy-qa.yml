@@ -61,7 +61,7 @@ jobs:
           host: ${{ secrets.QA_EC2_HOST }}
           username: ${{ secrets.QA_EC2_USER }}
           key: ${{ secrets.QA_EC2_SSH_KEY }}
-          source: "docker-compose-qa.yml,nginx/nginx-qa.conf"
+          source: "docker-compose-qa.yml,nginx/nginx-qa.conf,backend/app/database/postgres/init_postgres.sql"
           target: "~/SmartAdoptApp"
           strip_components: 0
 
