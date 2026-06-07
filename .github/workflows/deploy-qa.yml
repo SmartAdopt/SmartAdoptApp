@@ -49,6 +49,8 @@ jobs:
           push: true
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
+          build-args: |
+            VITE_API_URL=/api
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ steps.vars.outputs.sha7 }}
