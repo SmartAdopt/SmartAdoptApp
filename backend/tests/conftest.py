@@ -56,6 +56,7 @@ def client(db_session):
     in our tests without starting a real server.
     It also overrides the `get_db` dependency so that the endpoints use our test database.
     """
+
     def override_get_db():
         try:
             yield db_session
@@ -64,10 +65,10 @@ def client(db_session):
 
     # Override the dependency globally in the app
     app.dependency_overrides[get_db] = override_get_db
-    
+
     # Create the test client
     with TestClient(app) as test_client:
         yield test_client
-    
+
     # Clear overrides after the test
     app.dependency_overrides.clear()
