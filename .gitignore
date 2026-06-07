@@ -1,51 +1,21 @@
-# --- Python ---
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.venv/
 .env
 
-# --- IDEs y Editores ---
+# IDEs y Editores
 .vscode/
 .idea/
-.spyderproject
-.spyproject
-.ropeproject
 
-# --- Base de Datos y Logs ---
-*.sqlite3
-*.db
-*.log
-
-# --- Sistema Operativo ---
+# Sistema Operativo
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
 
-# --- Docker ---
-.docker/
-docker-compose.override.yml
-
-# --- Entornos y Paquetes ---
-build/
-dist/
-*.egg-info/
-.eggs/
+# Entornos y Paquetes
 .pytest_cache/
-.tox/
-.nox/
-.hypothesis/
 .ruff_cache/
 .mypy_cache/
 
-# --- Otros ---
+# Otros
 tempCodeRunnerFile.py
-.pypirc

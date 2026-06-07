@@ -6,11 +6,11 @@
 # ==============================================================================
 # RULES BY COMPONENT (Project Architecture)
 # ==============================================================================
-# The Backend team owns everything in the backend folder
-/backend/              @SmartAdopt/smartadopt-backend
+# The Backend team owns everything in the backend folder and the frontend team can act as a code reviewer
+/backend/              @SmartAdopt/smartadopt-backend @SmartAdopt/smartadopt-frontend
 
-# The Frontend team owns everything in the frontend folder.
-/frontend/             @SmartAdopt/smartadopt-frontend
+# The Frontend team owns everything in the frontend folder and the backend team can act as a code reviewer
+/frontend/             @SmartAdopt/smartadopt-frontend @SmartAdopt/smartadopt-backend
 
 # ==============================================================================
 # DEVSECOPS RULES AND QUALITY ASSESSMENT (QA)

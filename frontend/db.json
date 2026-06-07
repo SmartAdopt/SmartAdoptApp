@@ -1,0 +1,29 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@smartadopt.com",
+      "password": "admin123",
+      "role": "admin",
+      "first_name": "Javier",
+      "last_name": "Saransig"
+    },
+    {
+      "id": 2,
+      "email": "tu@ejemplo.com",
+      "password": "user123",
+      "role": "adopter",
+      "first_name": "Juan",
+      "last_name": "Pérez"
+    },
+    {
+      "first_name": "fabian",
+      "last_name": "fabian",
+      "email": "fabian@gmail.com",
+      "phone_number": "0998662599",
+      "password": "fabian",
+      "requested_role": "adopter",
+      "id": 3
+    }
+  ]
+}
