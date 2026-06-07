@@ -48,6 +48,15 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.sha7 }}
+      - name: Transfer deployment files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          source: "docker-compose-production.yml,nginx/nginx-prod.conf,nginx/prod-common.conf"
+          target: "~/SmartAdoptApp"
+          strip_components: 0
 
       - name: Deploy to Production EC2 via SSH
         uses: appleboy/ssh-action@v1
@@ -63,10 +72,6 @@ jobs:
             
             PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-prod 2>/dev/null || echo "none")
             PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-prod 2>/dev/null || echo "none")
-            
-            git fetch origin
-            git checkout main
-            git reset --hard origin/main
             
             cat > .env << 'ENVEOF'
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
