@@ -10,7 +10,7 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - [Project Structure](#project-structure)
 - [Local development (Docker Compose)](#local-development-docker-compose)
   - [Prerequisites (Local)](#prerequisites-local)
-  - [Environment file (.env) (Local)](#environment-file-env-local)
+  - [Environment file (.env) (Local)](#environment-Local)
   - [Start / re-run / stop (Local)](#start--re-run--stop-local)
   - [Ports (Local)](#ports-local)
   - [Why Nginx locally?](#why-nginx-locally)
@@ -70,7 +70,11 @@ SmartAdoptApp/
 │   ├── package.json        # Node.js dependencies
 │   ├── vite.config.ts      # Vite configuration
 │   └── Dockerfile          # Frontend container configuration
-├── .github/                # GitHub Actions workflows
+├── .github/workflows/          # Pipelines de CI/CD (deploy-qa.yml, deploy-production.yml)
+├── nginx/                      # Reverse Proxy Configurations (QA y production)
+│   ├── nginx-qa.conf
+│   ├── nginx-prod.conf
+│   └── prod-common.conf        # Shared safety and compression rules
 ├── docker-compose-local.yml    # Local development compose
 ├── docker-compose-qa.yml       # QA environment compose
 ├── docker-compose-production.yml # Production environment compose
@@ -86,7 +90,7 @@ This project includes a local compose file: `docker-compose-local.yml`.
 - Docker + Docker Compose (Compose V2, i.e. `docker compose ...`)
 - From a terminal, run everything **from the repository root**
 
-### Environment
+## Environment Local
 
 Create a `.env` file at the project root with the following variables:
 
@@ -97,6 +101,9 @@ POSTGRES_DB=smartadopt_dev
 POSTGRES_USER=your_postgres_user
 POSTGRES_PASSWORD=your_secure_password
 POSTGRES_HOST_PORT=5432
+SECRET_KEY=abcdefegdsjhdsfdffd
+ALGORITHM=ALGORITHM_NAME 
+ACCESS_TOKEN_EXPIRE_MINUTES=10
 ```
 
 > Notes
@@ -160,6 +167,17 @@ The current `frontend/Dockerfile` builds the React app and serves it using **Ngi
 
 If you prefer a more developer-friendly setup, you can create a dedicated development Dockerfile (for example `Dockerfile.dev`) and run Vite in dev mode.
 
+### Deployment Architecture (Nginx Proxy)
+In QA and Production environments, the application does not expose service ports directly to the outside world. A Nginx container is used as the primary gateway (Reverse Proxy) on port 80.
+
+Intelligent Routing: Requests to /api/ are routed to the backend container (internal port 9090). All other static web traffic is routed to the frontend container (internal port 80).
+
+Rate Limiting: Request limiting zones (limit_req zone=api_prod burst=20 nodelay) are implemented to protect the API against denial-of-service (DDoS) attacks or flooding.
+
+Security Headers: Strict header injection (X-Frame-Options, X-XSS-Protection, Referrer-Policy) mitigates common vulnerabilities.
+
+Network Isolation: The databases (postgres and mongo) and the backend operate exclusively on an internal Docker network (smartadopt-qa / smartadopt-prod), without exposing ports to the host.
+
 ### Optional: frontend hot reload (Vite)
 
 This is **optional** and **not included** in the repository by default (there is no `frontend/Dockerfile.dev` today). It is useful if a frontend developer wants hot reload.
@@ -200,10 +218,15 @@ Workflow: `.github/workflows/deploy-qa.yml`
 
 ```bash
 cd ~/SmartAdoptApp
-git pull origin qa
-docker compose -f docker-compose-qa.yml pull
-docker compose -f docker-compose-qa.yml up -d --remove-orphans
+set -euo pipefail
+cd ~/SmartAdoptApp
+PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-qa 2>/dev/null || echo "none")
+PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-qa 2>/dev/null || echo "none")
+cat > .env << 'EOF'
+...  
+done  
 docker image prune -f
+echo "QA deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"       
 ```
 
 ### Production pipeline
@@ -217,11 +240,15 @@ Workflow: `.github/workflows/deploy-production.yml`
 - **Deploy to Production EC2 via SSH:** runs (on the instance):
 
 ```bash
+set -euo pipefail
 cd ~/SmartAdoptApp
-git pull origin main
-docker compose -f docker-compose-production.yml pull
-docker compose -f docker-compose-production.yml up -d --remove-orphans
+PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-prod 2>/dev/null || echo "none")
+PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-prod 2>/dev/null || echo "none")
+cat > .env << 'ENVEOF'
+... 
+done
 docker image prune -f
+echo "Production deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
 ```
 
 ## Environment variables by environment (.env)
@@ -241,6 +268,10 @@ POSTGRES_DB=smartadopt_dev
 POSTGRES_USER=your_postgres_user
 POSTGRES_PASSWORD=your_secure_password
 POSTGRES_HOST_PORT=5432
+SECRET_KEY=abcdefghijklmnopqrstuvwxyz
+ALGORITHM=ALGORITHM_NAME
+ACCESS_TOKEN_EXPIRE_MINUTES=5
+
 ```
 
 ### QA (.env)
@@ -253,20 +284,22 @@ DOCKER_USERNAME=tuusuario
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_DB=smartadopt_qa
-POSTGRES_USER=admin
+POSTGRES_USER=qa_db_user
 POSTGRES_PASSWORD=change_me_qa
 
 # ─── MongoDB ──────────────────────────────────────────
 MONGO_HOST=mongodb
 MONGO_PORT=27017
 MONGO_DB=smartadopt_qa
-MONGO_USER=admin
+MONGO_USER=qa_mongo_user
 MONGO_PASSWORD=change_me_qa
+
+# ─── Security & JWT (FastAPI) ─────────────────────────
+SECRET_KEY=tu_secreto_jwt_qa
+ALGORITHM=HS256
 ```
-
-### Production (.env)
-
-```env
+### PRODUCTION (.env)
+```
 # ─── Docker Hub ───────────────────────────────────────
 DOCKER_USERNAME=tuusuario
 
@@ -274,15 +307,20 @@ DOCKER_USERNAME=tuusuario
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_DB=smartadopt_prod
-POSTGRES_USER=admin
+POSTGRES_USER=prod_db_user
 POSTGRES_PASSWORD=change_me_prod
 
 # ─── MongoDB ──────────────────────────────────────────
 MONGO_HOST=mongodb
 MONGO_PORT=27017
 MONGO_DB=smartadopt_prod
-MONGO_USER=admin
+MONGO_USER=prod_mongo_user
 MONGO_PASSWORD=change_me_prod
+
+# ─── Security & JWT (FastAPI) ─────────────────────────
+SECRET_KEY=tu_secreto_jwt_prod_seguro
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
 ## GitHub Secrets (required)
@@ -302,14 +340,14 @@ These secrets must be configured in the GitHub repository settings (Actions secr
 
 ## EC2 setup (QA/Production)
 
-The workflows deploy via SSH and expect the EC2 instances to be ready to run Docker Compose.
+The CI/CD workflows deploy via SSH and expect the EC2 instances to be fully provisioned to run Docker Compose environments.
 
 ### Prerequisites (EC2)
 
-On each instance (QA and Production), you should have:
-- Docker installed
-- Docker Compose V2 available (`docker compose`)
-- Git installed
+On each target instance (QA and Production), ensure the following are installed:- Docker installed
+- Docker Engine
+- Docker Compose V2 (docker compose)
+- Git
 
 ### Repository location on the instance
 
@@ -319,34 +357,48 @@ Both workflows run:
 cd ~/SmartAdoptApp
 ```
 
-So the repository must be cloned at that path for the SSH user, for example:
-
+The repository must be cloned at that exact path for the SSH user prior to the first automated deployment:
 ```bash
 cd ~
 git clone <your-repo-url> SmartAdoptApp
 ```
 
-Also make sure the instance has the correct branch available (`qa` or `main`) and that a `.env` file exists at the repo root with the corresponding template shown above.
+Note on environment variables: Unlike local setups, you do not need to manually create the .env file on the servers. 
+The GitHub Actions workflows dynamically generate and inject the .env file using your configured repository secrets during the deployment process.
 
 ### Security Group recommendations
 
-The compose files expose ports for databases and services. For a safer setup:
-- Publicly expose **80** (frontend)
-- Expose **8000** (backend API) only if you need direct API access from outside (otherwise keep it private)
-- Keep **5432** (PostgreSQL) and **27017** (MongoDB) restricted to the instance/VPC (not public)
+With the implementation of the Nginx Reverse Proxy, the external attack surface is significantly reduced. Configure your AWS Security Groups with the following inbound rules:
+- Open to Public (0.0.0.0/0): * Port 80 (HTTP): Required for all incoming web and API traffic, which is managed and routed internally by Nginx.
+Restricted Access:
+
+- Port 22 (SSH): Limit access strictly to your administrators' IPs and GitHub Actions runners.
+
+Strictly Closed to Public (Internal VPC Only):
+
+- Port 9090: Backend API (accessed internally by Nginx).
+
+- Port 5432: PostgreSQL Database.
+
+- Port 27017: MongoDB Database.
+
+These services communicate exclusively through the isolated Docker networks (smartadopt-qa / smartadopt-prod).
 
 ### SSH key setup (for GitHub Actions)
 
-The workflows use an SSH private key stored in GitHub Secrets (`QA_EC2_SSH_KEY` / `PROD_EC2_SSH_KEY`). The matching **public** key must be added to the target user’s `~/.ssh/authorized_keys` on each EC2 instance.
-
+The workflows authenticate using an SSH private key stored in GitHub Secrets (QA_EC2_SSH_KEY / PROD_EC2_SSH_KEY). 
+The corresponding public key must be appended to the target user’s ~/.ssh/authorized_keys file on each EC2 instance to grant access.
 ## Troubleshooting
 
 - **Containers don’t start:**
-  - Check logs: `docker compose -f docker-compose-local.yml logs -f`
+  - Check logs: `docker compose -f docker-compose-production.yml logs -f`
   - Check running containers: `docker ps`
-- **Changes not reflected locally:**
-  - The local frontend runs behind Nginx (static build). Rebuild if needed:
-    - `docker compose -f docker-compose-local.yml up -d --build --remove-orphans`
+- **For isolated service debugging (e.g., Backend health check failures):**
+- `docker logs smart-adopt-backend-prod -f`
+
 - **CI deploy fails on EC2:**
-  - Confirm the repo exists at `~/SmartAdoptApp` and has the correct branch.
-  - Confirm `.env` exists on the instance and contains required variables for that environment.
+  - Verify that all required GitHub Secrets are correctly populated; a missing secret will result in an incomplete .env file generation.
+- Disk space issues:
+- Automated deployments can accumulate dangling images. 
+- The CI/CD pipelines run docker image prune -f automatically, but if the EBS volume fills up, perform a deep clean:
+- `docker system prune -af --volumes`
