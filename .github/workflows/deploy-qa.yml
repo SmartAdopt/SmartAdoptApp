@@ -49,6 +49,8 @@ jobs:
           push: true
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
+          build-args: |
+            VITE_API_URL=/api
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ steps.vars.outputs.sha7 }}
@@ -59,7 +61,7 @@ jobs:
           host: ${{ secrets.QA_EC2_HOST }}
           username: ${{ secrets.QA_EC2_USER }}
           key: ${{ secrets.QA_EC2_SSH_KEY }}
-          source: "docker-compose-qa.yml,nginx/nginx-qa.conf"
+          source: "docker-compose-qa.yml,nginx/nginx-qa.conf,backend/app/database/postgres/init_postgres.sql"
           target: "~/SmartAdoptApp"
           strip_components: 0
 
@@ -104,7 +106,7 @@ jobs:
             
             echo "Waiting for backend healthcheck..."
             for i in $(seq 1 12); do
-              if docker exec smart-adopt-backend-qa wget -qO- http://localhost:9090/health > /dev/null 2>&1; then
+              if docker exec smart-adopt-backend-qa python -c "import urllib.request; urllib.request.urlopen('http://localhost:9090/health')" > /dev/null 2>&1; then
                 echo "Backend is healthy ✓"
                 break
               fi

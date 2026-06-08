@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Base URL is handled via environment variables (e.g., .env.development)
 // Fallback matches the SA-37 contract for local Docker environments
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 // Create a centralized Axios instance
 export const apiClient = axios.create({
