@@ -1,0 +1,17 @@
+#Develop
+ruff
+black
+mypy
+bandit
+pytest
+pytest-cov
+
+#Backend
+fastapi[standard]
+sqlalchemy
+bcrypt
+psycopg2-binary
+pydantic-settings
+uvicorn
+email-validator
+python-jose

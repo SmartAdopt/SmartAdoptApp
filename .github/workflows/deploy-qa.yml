@@ -1,0 +1,126 @@
+name: Deploy QA
+
+on:
+  push:
+    branches:
+      - qa
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy to QA (EC2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set short SHA
+        id: vars
+        run: echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push backend image (QA)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-qa:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-qa:buildcache,mode=max
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa-${{ steps.vars.outputs.sha7 }}
+
+      - name: Build & push frontend image (QA)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
+          build-args: |
+            VITE_API_URL=/api
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+            ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ steps.vars.outputs.sha7 }}
+
+      - name: Transfer deployment files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.QA_EC2_HOST }}
+          username: ${{ secrets.QA_EC2_USER }}
+          key: ${{ secrets.QA_EC2_SSH_KEY }}
+          source: "docker-compose-qa.yml,nginx/nginx-qa.conf,backend/app/database/postgres/init_postgres.sql"
+          target: "~/SmartAdoptApp"
+          strip_components: 0
+
+      - name: Deploy to QA EC2 via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.QA_EC2_HOST }}
+          username: ${{ secrets.QA_EC2_USER }}
+          key: ${{ secrets.QA_EC2_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            cd ~/SmartAdoptApp
+            PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-qa 2>/dev/null || echo "none")
+            PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-qa 2>/dev/null || echo "none")
+            
+            cat > .env << 'EOF'
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            POSTGRES_USER=${{ secrets.QA_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.QA_POSTGRES_PASSWORD }}
+            POSTGRES_HOST=${{secrets.QA_POSTGRES_HOST}}
+            POSTGRES_PORT=${{secrets.QA_POSTGRES_PORT}}
+            POSTGRES_DB=${{secrets.QA_POSTGRES_DB}}
+            MONGO_USER=${{ secrets.QA_MONGO_USER }}
+            MONGO_PASSWORD=${{ secrets.QA_MONGO_PASSWORD }}
+            SECRET_KEY=${{secrets.QA_SECRET_KEY}}
+            ALGORITHM=${{secrets.QA_ALGORITHM}}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.QA_ACCESS_TOKEN_EXPIRE_MINUTES}}
+            EOF
+            
+            docker compose -f docker-compose-qa.yml pull
+            
+            if ! docker compose -f docker-compose-qa.yml up -d --remove-orphans --force-recreate; then
+              echo "Deploy failed — attempting rollback..."
+              if [ "$PREV_BACKEND" != "none" ]; then
+                docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+                docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+                docker compose -f docker-compose-qa.yml up -d --force-recreate
+              fi
+              exit 1
+            fi
+            
+            echo "Waiting for backend healthcheck..."
+            for i in $(seq 1 12); do
+              if docker exec smart-adopt-backend-qa python -c "import urllib.request; urllib.request.urlopen('http://localhost:9090/health')" > /dev/null 2>&1; then
+                echo "Backend is healthy ✓"
+                break
+              fi
+              [ "$i" -eq 12 ] && {
+                echo "Healthcheck failed — rolling back..."
+                if [ "$PREV_BACKEND" != "none" ]; then
+                  docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+                  docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+                  docker compose -f docker-compose-qa.yml up -d --force-recreate
+                fi
+                exit 1
+              }
+              sleep 5
+            done
+            
+            docker image prune -f
+            echo "QA deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"

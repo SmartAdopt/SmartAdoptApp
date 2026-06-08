@@ -1,0 +1,21 @@
+# GLOBAL RULES (Default Policies)
+# ==============================================================================
+# By default, any change not mapped below requires DevOps review.
+*                      @SmartAdopt/smartadopt-devops
+
+# ==============================================================================
+# RULES BY COMPONENT (Project Architecture)
+# ==============================================================================
+# The Backend team owns everything in the backend folder and the frontend team can act as a code reviewer
+/backend/              @SmartAdopt/smartadopt-backend @SmartAdopt/smartadopt-frontend
+
+# The Frontend team owns everything in the frontend folder and the backend team can act as a code reviewer
+/frontend/             @SmartAdopt/smartadopt-frontend @SmartAdopt/smartadopt-backend
+
+# ==============================================================================
+# DEVSECOPS RULES AND QUALITY ASSESSMENT (QA)
+# ==============================================================================
+# CI/CD, Docker, and Security configuration requires DevOps/Sec approval
+/.github/workflows/    @SmartAdopt/smartadopt-devops
+/docker-compose.yml    @SmartAdopt/smartadopt-devops
+Dockerfile             @SmartAdopt/smartadopt-devops
