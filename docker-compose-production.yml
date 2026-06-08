@@ -6,7 +6,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx-prod.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      #- ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -94,6 +94,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 60s
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - ./backend/app/database/postgres/init_postgres.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -130,16 +131,16 @@ services:
           "CMD-SHELL",
           "mongosh --username ${MONGO_USER} --password ${MONGO_PASSWORD} --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")' --quiet"
         ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
     restart: always
     deploy:
       resources:
         limits:
           cpus: "0.5"
-          memory: 256M
+          memory: 1024M
     logging:
       driver: "json-file"
       options:

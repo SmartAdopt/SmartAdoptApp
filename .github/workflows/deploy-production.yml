@@ -56,7 +56,7 @@ jobs:
           host: ${{ secrets.PROD_EC2_HOST }}
           username: ${{ secrets.PROD_EC2_USER }}
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
-          source: "docker-compose-production.yml,nginx/nginx-prod.conf,nginx/prod-common.conf,backend/app/database/postgres/init_postgres.sql"
+          source: "docker-compose-production.yml,nginx/nginx-prod.conf,backend/app/database/postgres/init_postgres.sql"
           target: "~/SmartAdoptApp"
           strip_components: 0
 
@@ -72,8 +72,10 @@ jobs:
             
             cd ~/SmartAdoptApp
             
-            PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-prod 2>/dev/null || echo "none")
-            PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-prod 2>/dev/null || echo "none")
+            PREV_BACKEND=$(docker inspect --format='{{.Image}}' smart-adopt-backend-prod 2>/dev/null || true)
+            PREV_BACKEND=${PREV_BACKEND:-none}
+            PREV_FRONTEND=$(docker inspect --format='{{.Image}}' smart-adopt-frontend-prod 2>/dev/null || true)
+            PREV_FRONTEND=${PREV_FRONTEND:-none}
             
             cat > .env << 'ENVEOF'
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
@@ -94,7 +96,7 @@ jobs:
             
             if ! docker compose -f docker-compose-production.yml up -d --remove-orphans --force-recreate; then
               echo "Deploy failed — attempting rollback..."
-              if [ "$PREV_BACKEND" != "none" ]; then
+              if [ -n "$PREV_BACKEND" ] && [ "$PREV_BACKEND" != "none" ]; then
                 docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend:latest
                 docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend:latest
                 docker compose -f docker-compose-production.yml up -d --force-recreate
