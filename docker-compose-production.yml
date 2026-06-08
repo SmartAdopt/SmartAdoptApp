@@ -6,7 +6,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx-prod.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      #- ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -139,7 +139,7 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: 256M
+          memory: 1024M
     logging:
       driver: "json-file"
       options:
