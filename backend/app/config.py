@@ -38,4 +38,3 @@ class Settings(BaseSettings):
 
 # Instance for global use in the application
 settings = Settings()  # type: ignore
-
