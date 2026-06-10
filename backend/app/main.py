@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from app.config import app_settings
+from app.config import settings
 from app.routes.auth_routes import router as auth_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.adopter_routes import router as adopter_router
@@ -9,7 +9,7 @@ from app.routes.adopter_routes import router as adopter_router
 app = FastAPI()
 
 # Session middleware for OAuth
-app.add_middleware(SessionMiddleware, secret_key=app_settings.SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 # CORS middleware to allow requests from the frontend
 app.add_middleware(

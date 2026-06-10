@@ -60,10 +60,8 @@ JWT authentication is implemented in the following structure:
 
 backend/app/
 
+├── config.py              # Centralized application configuration using pydantic_settings
 ├── utils/jwt/
-
-│   ├── jwt_config.py    # JWT configuration using pydantic_settings
-
 │   └── jwt_utils.py     # Token creation and verification
 
 ├── routes/
@@ -108,41 +106,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES=expiration_minutes
 
 
 
-### jwt_config.py
+### Configuration
 
-
-
-Configuration file that manages JWT settings using pydantic_settings:
-
-
+JWT configuration is managed through the centralized `app/config.py` file using pydantic_settings. The following variables are required:
 
 ```python
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from pathlib import Path
-
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-
-
-
-class JWTSettings(BaseSettings):
-
+class Settings(BaseSettings):
     SECRET_KEY: str
-
     ALGORITHM: str
-
     ACCESS_TOKEN_EXPIRE_MINUTES: int
-
-
-
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
-
-
-
-jwt_settings = JWTSettings()
+```
 
 ```
 

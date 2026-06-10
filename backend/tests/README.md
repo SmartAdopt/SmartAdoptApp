@@ -42,7 +42,28 @@ Below is a detailed explanation, segment by segment, of the constructed test fil
 
 In the Pytest ecosystem, the `conftest.py` file acts as the main configurator. Its function is to provision the necessary resources (such as temporary databases and simulated web clients) before the tests begin. These shared resources are called **fixtures**.
 
-### a) Imports and SQLite Database Configuration
+### a) Environment Variables Setup
+```python
+import os
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / ".env")
+
+# Set environment variables for CI/CD if not already set
+# This ensures tests work in CI/CD without .env file
+if not os.getenv("SECRET_KEY"):
+    os.environ["SECRET_KEY"] = "test_secret_key_for_ci_cd"
+if not os.getenv("ENV"):
+    os.environ["ENV"] = "development"
+# ... (other variables)
+```
+**Purpose:**
+The test suite automatically sets environment variables using `os.environ` if they are not already set. This ensures that:
+- **Local development:** Uses variables from `.env` file if it exists
+- **CI/CD environments:** Uses test values automatically, no `.env` file required
+- **Centralized configuration:** All configuration is managed through `app/config.py`
+
+### b) Imports and SQLite Database Configuration
 ```python
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

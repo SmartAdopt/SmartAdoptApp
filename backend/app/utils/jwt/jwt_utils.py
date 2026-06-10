@@ -6,12 +6,12 @@ from typing import Dict, Any
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from app.utils.jwt.jwt_config import jwt_settings
+from app.config import settings
 
 # JWT Configuration
-SECRET_KEY = jwt_settings.SECRET_KEY
-ALGORITHM = jwt_settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # HTTP Bearer scheme for token extraction
 security = HTTPBearer(auto_error=False)

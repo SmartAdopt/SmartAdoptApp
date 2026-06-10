@@ -52,7 +52,6 @@ SmartAdoptApp/
 │   │   ├── main.py          # FastAPI application entry point
 │   │   ├── database/        # Database configurations (PostgreSQL, MongoDB)
 │   │   │   └── postgres/    # PostgreSQL configuration
-│   │   │       ├── config.py      # PostgreSQL connection configuration
 │   │   │       └── postgres_db.py # SQLAlchemy configuration (Base, Session)
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
 │   │   ├── routes/          # API endpoints (auth, admin, adopter)
@@ -60,11 +59,9 @@ SmartAdoptApp/
 │   │   ├── services/        # Business logic layer
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
-│   │       │   ├── jwt_config.py  # JWT configuration using pydantic_settings
 │   │       │   └── jwt_utils.py   # JWT token creation and verification
 │   │       └── oauth/       # OAuth 2.0 utilities
-│   │           ├── oauth_config.py    # OAuth configuration using pydantic_settings
-│   │           └── google_oauth.py     # Google OAuth integration
+│   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
 │   │   ├── README_JWT.md    # Complete JWT documentation
 │   │   └── README_OAUTH.md  # Complete OAuth documentation

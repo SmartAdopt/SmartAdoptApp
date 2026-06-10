@@ -30,7 +30,6 @@ backend/
 │   │   ├── __init__.py
 │   │   └── postgres/
 │   │       ├── __init__.py    # Created to enable imports
-│   │       ├── config.py      # PostgreSQL connection configuration
 │   │       ├── postgres_db.py # SQLAlchemy configuration (Base, Session)
 │   │       └── init_postgres.sql # Table initialization script
 │   ├── models/                # SQLAlchemy models
@@ -53,12 +52,10 @@ backend/
 │       ├── __init__.py
 │       ├── jwt/               # JWT authentication utilities
 │       │   ├── __init__.py
-│       │   ├── jwt_config.py  # JWT configuration using pydantic_settings
 │       │   └── jwt_utils.py   # JWT token creation and verification
 │       └── oauth/             # OAuth 2.0 utilities
 │           ├── __init__.py
-│           ├── oauth_config.py    # OAuth configuration using pydantic_settings
-│           └── google_oauth.py     # Google OAuth integration
+│           └── google_oauth.py # Google OAuth integration
 ├── docs/                      # Documentation
 │   └── README_JWT.md          # Complete JWT documentation
 ├── tests/                     # Unit tests

@@ -30,10 +30,10 @@ The application supports Google OAuth 2.0 for quick authentication. Users can lo
 
 ```
 backend/app/
+├── config.py              # Centralized application configuration using pydantic_settings
 ├── utils/
 │   └── oauth/
 │       ├── __init__.py
-│       ├── oauth_config.py    # OAuth configuration using pydantic_settings
 │       └── google_oauth.py    # Google OAuth client configuration
 ├── routes/
 │   └── auth_routes.py         # OAuth endpoints (/auth/login/google, /auth/google/callback)
@@ -43,7 +43,13 @@ backend/app/
 
 ### OAuth Configuration
 
-The OAuth configuration follows the same pattern as JWT configuration, using pydantic_settings to load environment variables from the `.env` file.
+OAuth configuration is managed through the centralized `app/config.py` file using pydantic_settings. The following variables are required:
+
+```python
+class Settings(BaseSettings):
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+```
 
 ## Configuration
 
