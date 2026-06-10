@@ -1,9 +1,16 @@
 import pytest
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+from dotenv import load_dotenv
 
-# Import the FastAPI app and the database components
+# Load environment variables from .env file FIRST
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+# Import the FastAPI app and the database components AFTER loading .env
+# ruff: noqa: E402
 from app.main import app
 from app.database.postgres.postgres_db import Base, get_db
 
@@ -24,11 +31,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
-    """
-    This fixture creates all the database tables before running any tests
-    and drops them after all tests have finished.
-    The scope is "session" meaning it runs once for the entire test suite.
-    """
+    # This fixture creates all the database tables before running any tests
+    # and drops them after all tests have finished
+    # The scope is "session" meaning it runs once for the entire test suite
     # Create all tables
     Base.metadata.create_all(bind=engine)
     yield
@@ -38,10 +43,8 @@ def setup_database():
 
 @pytest.fixture(scope="function")
 def db_session():
-    """
-    This fixture provides a fresh database session for each test function.
-    It yields the session and then closes it after the test finishes.
-    """
+    # This fixture provides a fresh database session for each test function
+    # It yields the session and then closes it after the test finishes
     db = TestingSessionLocal()
     try:
         yield db
@@ -51,11 +54,9 @@ def db_session():
 
 @pytest.fixture(scope="function")
 def client(db_session):
-    """
-    This fixture creates a TestClient for FastAPI, allowing us to make HTTP requests
-    in our tests without starting a real server.
-    It also overrides the `get_db` dependency so that the endpoints use our test database.
-    """
+    # This fixture creates a TestClient for FastAPI, allowing us to make HTTP requests
+    # in our tests without starting a real server
+    # It also overrides the `get_db` dependency so that the endpoints use our test database
 
     def override_get_db():
         try:

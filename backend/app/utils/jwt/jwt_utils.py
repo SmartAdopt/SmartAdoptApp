@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from app.utils.jwt.jwt_config import jwt_settings
@@ -14,7 +14,7 @@ ALGORITHM = jwt_settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # HTTP Bearer scheme for token extraction
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def create_access_token(email: str, role: str) -> str:
@@ -23,7 +23,13 @@ def create_access_token(email: str, role: str) -> str:
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     # Create token payload with user data and expiration
-    to_encode = {"sub": email, "role": role, "exp": expire, "iat": datetime.utcnow()}
+    to_encode = {
+        "sub": email,
+        "role": role,
+        "exp": expire,
+        "iat": datetime.utcnow(),
+        "type": "access",
+    }
 
     # Encode and sign the token
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -32,7 +38,7 @@ def create_access_token(email: str, role: str) -> str:
 
 
 def verify_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Security(security),
 ) -> Dict[str, Any]:
     # FastAPI dependency to verify JWT token from Authorization header
     credentials_exception = HTTPException(
@@ -40,6 +46,9 @@ def verify_token(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if credentials is None:
+        raise credentials_exception
 
     try:
         # Extract token from credentials

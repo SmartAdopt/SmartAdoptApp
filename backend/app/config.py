@@ -2,17 +2,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 # Get the path to the project root directory
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-class JWTSettings(BaseSettings):
+class AppSettings(BaseSettings):
     # Required variables from environment
     SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ENV: str
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
 
 # Instance for global use in the application
-jwt_settings = JWTSettings()  # type: ignore
+app_settings = AppSettings()  # type: ignore

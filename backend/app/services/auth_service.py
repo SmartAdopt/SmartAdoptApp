@@ -11,7 +11,7 @@ from app.models import User, Admin, Adopter
 
 # Schema imports
 from app.schemas.auth_schemas import RegisterRequest, LoginRequest
-from typing import cast, Optional
+from typing import cast, Dict, Any
 
 # JWT utilities
 from app.utils.jwt.jwt_utils import create_access_token
@@ -80,14 +80,14 @@ def login_user(db: Session, login_data: LoginRequest):
 
     # Generate JWT token only for admin or adopter roles
     if user.type.lower() in ["admin", "adopter"]:
-        token = create_access_token(cast(str, user.email), cast(str, user.type))
+        access_token = create_access_token(cast(str, user.email), cast(str, user.type))
     else:
-        token = ""
+        access_token = ""
 
     # Create user response with necessary data and token
     user_response = {
-        "token": token,
-        "token_type": "bearer" if token else "",
+        "token": access_token,
+        "token_type": "bearer" if access_token else "",
         "id": cast(int, user.user_id),
         "first_name": cast(str, user.first_name),
         "last_name": cast(str, user.last_name),
@@ -100,31 +100,73 @@ def login_user(db: Session, login_data: LoginRequest):
     return user_response
 
 
-def get_all_users(db: Session, user_id: Optional[int] = None):
-    # Get all users, optionally filtered by ID
+def oauth_login_or_register(
+    db: Session, user_info: Dict[str, Any], role: str = "adopter"
+) -> Dict[str, Any]:
+    # Handle OAuth login or auto-registration
 
-    # Create base query for users
-    query = db.query(User)
+    # Extract user info from Google
+    email = user_info.get("email")
+    first_name = user_info.get("given_name", "")
+    last_name = user_info.get("family_name", "")
 
-    # Filter by ID if provided
-    if user_id:
-        query = query.filter(User.user_id == user_id)
+    # Check if user exists
+    existing_user = db.query(User).filter(User.email == email).first()
 
-    # Execute query and get all users
-    users = query.all()
+    if existing_user:
+        # User exists, generate token
+        if existing_user.type.lower() in ["adopter"]:
+            access_token = create_access_token(
+                str(existing_user.email), str(existing_user.type)
+            )
+        else:
+            access_token = ""
 
-    # Convert users to dictionary responses
-    user_responses = [
-        {
-            "id": cast(int, user.user_id),
-            "first_name": cast(str, user.first_name),
-            "last_name": cast(str, user.last_name),
-            "email": cast(str, user.email),
-            "role": cast(str, user.type),
-            "created_at": getattr(user, "created_at", None),
+        return {
+            "access_token": access_token,
+            "token_type": "bearer" if access_token else "",
+            "message": "Login successful",
+            "id": existing_user.user_id,
+            "first_name": existing_user.first_name,
+            "last_name": existing_user.last_name,
+            "email": existing_user.email,
+            "role": existing_user.type,
+            "created_at": getattr(existing_user, "created_at", None),
         }
-        for user in users
-    ]
+    else:
+        # User doesn't exist, auto-register with Google info
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(b"google_oauth_user", salt).decode("utf-8")
 
-    # Return list of user responses
-    return user_responses
+        user_common_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "phone_number": "",
+            "password_hash": hashed,
+        }
+
+        # Create user based on role
+        if role.lower() == "admin":
+            new_user = Admin(**user_common_data)
+        else:
+            new_user = Adopter(**user_common_data)
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        # Generate token for new user
+        access_token = create_access_token(str(new_user.email), str(new_user.type))
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "message": "Registration successful",
+            "id": new_user.user_id,
+            "first_name": new_user.first_name,
+            "last_name": new_user.last_name,
+            "email": new_user.email,
+            "role": new_user.type,
+            "created_at": getattr(new_user, "created_at", None),
+        }

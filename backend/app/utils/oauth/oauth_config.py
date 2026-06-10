@@ -5,14 +5,13 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 
-class JWTSettings(BaseSettings):
-    # Required variables from .env file
-    SECRET_KEY: str = ""
-    ALGORITHM: str = ""
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 0
+class OAuthSettings(BaseSettings):
+    # Required variables from environment
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
 
 # Instance for global use in the application
-jwt_settings = JWTSettings()
+oauth_settings = OAuthSettings()  # type: ignore

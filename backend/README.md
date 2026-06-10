@@ -5,9 +5,9 @@ SmartAdopt application backend, built with FastAPI, SQLAlchemy, and PostgreSQL.
 ## Table of Contents
 - [Description](#description)
 - [Project Structure](#project-structure)
-- [Recent Changes](#recent-changes)
 - [Technologies](#technologies)
 - [Run Locally](#run-locally)
+- [Testing](#testing)
 - [Endpoints](#endpoints)
 - [Data Models](#data-models)
 - [Development Notes](#development-notes)
@@ -24,7 +24,8 @@ SmartAdopt is a platform for pet adoption management. This backend provides a RE
 backend/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI application entry point
+│   ├── config.py              # Application configuration using pydantic_settings
+│   ├── main.py                # FastAPI application entry point
 │   ├── database/              # Database configuration
 │   │   ├── __init__.py
 │   │   └── postgres/
@@ -39,7 +40,9 @@ backend/
 │   │   └── adopter.py         # Adopter model (inherits from User)
 │   ├── routes/                # API routes
 │   │   ├── __init__.py
-│   │   └── auth_routes.py     # Authentication endpoints
+│   │   ├── auth_routes.py     # Authentication endpoints
+│   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   └── adopter_routes.py  # Adopter-protected endpoints
 │   ├── schemas/               # Pydantic schemas
 │   │   ├── __init__.py
 │   │   └── auth_schemas.py    # Request/response schemas for auth
@@ -48,54 +51,20 @@ backend/
 │   │   └── auth_service.py    # Authentication services
 │   └── utils/                 # Utilities
 │       ├── __init__.py
-│       └── jwt/               # JWT authentication utilities
+│       ├── jwt/               # JWT authentication utilities
+│       │   ├── __init__.py
+│       │   ├── jwt_config.py  # JWT configuration using pydantic_settings
+│       │   └── jwt_utils.py   # JWT token creation and verification
+│       └── oauth/             # OAuth 2.0 utilities
 │           ├── __init__.py
-│           ├── jwt_config.py  # JWT configuration using pydantic_settings
-│           └── jwt_utils.py   # JWT token creation and verification
+│           ├── oauth_config.py    # OAuth configuration using pydantic_settings
+│           └── google_oauth.py     # Google OAuth integration
 ├── docs/                      # Documentation
+│   └── README_JWT.md          # Complete JWT documentation
 ├── tests/                     # Unit tests
 ├── Dockerfile                 # Docker configuration
 └── requirements.txt           # Python dependencies
 ```
-
-## Recent Changes
-
-### JWT Authentication Implementation 
-
-**Changes:**
-1. **JWT Configuration** - Added `app/utils/jwt/` folder with:
-   - `jwt_config.py`: Configuration using pydantic_settings to read JWT environment variables
-   - `jwt_utils.py`: Token creation and verification functions
-2. **Token Generation** - Modified `login_user` in `auth_service.py` to generate JWT tokens for admin and adopter roles only
-3. **Protected Endpoint** - Reactivated `/auth/list` endpoint with JWT protection using `verify_token` dependency
-4. **Environment Variables** - Added JWT variables to `docker-compose-local.yml` for container configuration
-
-**Impact:**
-- Admin and Adopter users receive JWT tokens upon successful login
-- Regular users (role: user) receive empty tokens
-- Protected endpoints require valid JWT token in Authorization header
-- Tokens expire after 5 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
-
-### Import Fix
-
-**Problem:** The backend failed to start with the error:
-```
-ImportError: cannot import name 'User' from 'app.models'
-```
-
-**Solution:**
-1. **`app/models/__init__.py`** - Added model exports:
-   ```python
-   from .user import User
-   from .admin import Admin
-   from .adopter import Adopter
-
-   __all__ = ["User", "Admin", "Adopter"]
-   ```
-
-2. **`app/database/postgres/__init__.py`** - Created this missing file to enable relative imports from `postgres_db.py`
-
-**Impact:** The backend now starts correctly and can import SQLAlchemy models without errors.
 
 ## Technologies
 
@@ -106,6 +75,7 @@ ImportError: cannot import name 'User' from 'app.models'
 - **Uvicorn** - ASGI server to run FastAPI
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
+- **Authlib** - OAuth 2.0 integration for Google login
 
 
 ### Run Locally
@@ -113,7 +83,7 @@ ImportError: cannot import name 'User' from 'app.models'
 #### Prerequisites
 - Python 3.12+
 - A PostgreSQL database running (can be started locally using the root orchestration: `docker compose -f docker-compose-local.yml up -d postgres`)
-- A `.env` file configured at the root repository directory (the backend configuration loads it automatically from `../../.env`).
+- A `.env` file configured at the root repository directory (refer to `.env.example` for required variables)
 
 #### Start the Server
 ```bash
@@ -126,6 +96,26 @@ pip install -r requirements.txt
 # Run the server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+## Testing
+
+The backend uses Python 3.12 in the remote pipeline. Static analysis and code quality work includes a set of modern, high-speed toolsets:
+
+### Linter (ruff)
+```bash
+python -m ruff check backend/
+```
+
+### Format (black)
+```bash
+python -m black --check backend/
+```
+
+### Static Types (mypy)
+```bash
+python -m mypy backend/ --ignore-missing-imports
+```
+
 
 #### Default Admin User
 
@@ -208,45 +198,127 @@ Content-Type: application/json
 **Note:**
 - Admin and Adopter users receive a valid JWT token in `access_token`
 - Regular users (role: user) receive an empty `access_token` and `token_type`
-- The token expires after 5 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
+- The token expires after 10 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
 
 **Error Responses**
 - `401 Unauthorized`: Invalid email or password
 - `500 Internal Server Error`: Server error
 
-#### Get Users List (Protected)
+#### Google OAuth Login
 
 **Request**
 ```http
-GET /auth/list?user_id=123
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+GET /auth/login/google?role=adopter
 ```
 
-**Query Parameters**
-- `user_id`: Filter users by ID. If not provided, returns all users.
+**Query Parameters:**
+- `role` (optional): Role for auto-registration if user doesn't exist (default: "adopter")
+
+**Response:** Redirect to Google OAuth consent screen
+
+#### Google OAuth Callback
+
+**Request**
+```http
+GET /auth/google/callback?code=...&role=adopter
+```
+
+**Query Parameters:**
+- `code` (required): Authorization code from Google
+- `role` (optional): Role for auto-registration (default: "adopter")
+
+**Response (200 OK) - Existing User:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "message": "Login successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@gmail.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T12:00:00Z"
+}
+```
+
+**Response (200 OK) - New User (Auto-registered):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "message": "Registration successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@gmail.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T12:00:00Z"
+}
+```
+
+**Note:** Google OAuth automatically registers users if they don't exist in the system. The user's email, first name, and last name are obtained from Google. A default password is set for OAuth users.
+
+**Error Responses**
+- `302 Found`: Redirect failed - Google OAuth not available
+- `401 Unauthorized`: Google authentication failed
+
+### Protected Endpoints
+
+#### GET /admin/dashboard
+
+Admin-only endpoint protected by JWT and role-based authorization.
+
+**Request**
+```http
+GET /admin/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
 **Response (200 OK)**
 ```json
 {
-  "users": [
-    {
-      "id": 123,
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "user@example.com",
-      "role": "adopter",
-      "created_at": "2026-06-05T12:00:00Z"
-    }
-  ],
-  "total": 1
+  "message": "Welcome to Admin Dashboard",
+  "user_email": "admin@example.com",
+  "user_role": "admin",
+  "dashboard_data": {
+    "total_adoptions": 75,
+    "pending_requests": 12
+  }
 }
 ```
 
 **Error Responses**
-- `401 Unauthorized`: Missing or invalid JWT token
-- `500 Internal Server Error`: Server error
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "admin"
 
-**Note:** This endpoint requires a valid JWT token in the `Authorization` header. Only users with admin or adopter roles receive tokens upon login.
+#### GET /adopter/home
+
+Adopter-only endpoint protected by JWT and role-based authorization.
+
+**Request**
+```http
+GET /adopter/home
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Welcome to Adopter Home",
+  "user_email": "adopter@example.com",
+  "user_role": "adopter",
+  "home_data": {
+    "available_pets": 45,
+    "my_adoptions": 2,
+    "favorite_pets": 8
+  }
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
 
 ## Data Models
 
@@ -308,80 +380,33 @@ We use **Bcrypt** to handle credentials securely through an adaptive, one-way ha
 
 ## JWT Authentication
 
-The application implements JSON Web Token (JWT) authentication for protecting sensitive endpoints.
+The application implements JSON Web Token (JWT) authentication for protecting sensitive endpoints. For complete documentation on JWT implementation, refer to `docs/README_JWT.md`.
 
-### Architecture
+### Overview
 
-JWT authentication is implemented in a modular way using the following structure:
-
-```
-app/utils/jwt/
-├── __init__.py
-├── jwt_config.py  # Configuration using pydantic_settings
-└── jwt_utils.py   # Token creation and verification
-```
+- Access tokens with 10-minute expiration
+- Role-based authorization (admin, adopter)
+- Token type checking (access/refresh ready for future implementation)
+- Protected endpoints with role verification
 
 ### Configuration
 
-JWT configuration is managed through environment variables:
+JWT configuration is managed through environment variables. Refer to the `.env.example` file in the project root for the required variables:
 
 - `SECRET_KEY`: Secret key used to sign JWT tokens
 - `ALGORITHM`: Hashing algorithm (default: HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 5)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 10)
 
-These variables are loaded using `pydantic_settings` from the system environment, which are passed via Docker Compose from the root `.env` file.
+### Google OAuth Configuration
 
-### Token Creation
+Google OAuth is configured through environment variables:
 
-The `create_access_token(email, role)` function in `jwt_utils.py`:
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 
-1. Receives user email and role as parameters
-2. Calculates expiration time (current time + configured minutes)
-3. Creates token payload with:
-   - `sub`: User email (subject)
-   - `role`: User role (admin/adopter)
-   - `exp`: Expiration timestamp
-   - `iat`: Issued at timestamp
-4. Encodes and signs the token using the SECRET_KEY and ALGORITHM
-5. Returns the encoded JWT string
+To obtain these credentials, refer to the complete Google OAuth documentation in `docs/README_JWT.md`.
 
-### Token Verification
-
-The `verify_token(credentials)` function in `jwt_utils.py`:
-
-1. Uses FastAPI's `Depends` to extract the token from the `Authorization` header
-2. Decodes and verifies the token signature
-3. Checks if the token has expired
-4. Returns the token payload if valid
-5. Raises `401 Unauthorized` if token is invalid, expired, or missing
-
-### Token Usage in Login
-
-In `auth_service.py`, the `login_user` function:
-
-1. Authenticates user credentials (email and password)
-2. Checks user role:
-   - If role is `admin` or `adopter`: Generates JWT token
-   - If role is `user`: Returns empty token
-3. Returns user data with token in the response
-
-### Protected Endpoints
-
-Endpoints can be protected by adding the `verify_token` dependency:
-
-```python
-@router.get("/protected-endpoint")
-def protected_route(token_payload: dict = Depends(verify_token)):
-    # token_payload contains the decoded JWT payload
-    return {"message": "Access granted", "user": token_payload}
-```
-
-The `/auth/list` endpoint is protected and requires:
-- Valid JWT token in `Authorization: Bearer <token>` header
-- Token must not be expired
-- Token must be signed with the correct SECRET_KEY
-
-### Using JWT Tokens
+### Token Usage
 
 1. **Login to get token:**
    ```http
@@ -394,13 +419,13 @@ The `/auth/list` endpoint is protected and requires:
 
 2. **Use token in protected requests:**
    ```http
-   GET /auth/list
+   GET /admin/dashboard
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
 ### Security Considerations
 
-- Tokens expire after 5 minutes to limit exposure if compromised
+- Tokens expire after 10 minutes to limit exposure if compromised
 - Only admin and adopter roles receive tokens
 - Regular users cannot access protected endpoints
 - SECRET_KEY should be changed in production environments
