@@ -56,8 +56,8 @@ export const LoginForm = () => {
       if (userRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // Any other role (like 'adopter') goes to the profile page
-        navigate("/adopter/profile");
+        // SOLUCIÓN: Cambia "/adopter/profile" por "/adopter/dashboard"
+        navigate("/adopter/dashboard"); 
       }
     } catch (err) {
       if (err instanceof Error) {

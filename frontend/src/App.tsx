@@ -1,49 +1,29 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthProvider";
-import { ProtectedRoute } from "./routes/ProtectedRoute";
+import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import HomePage from "./pages/HomePage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
+// Configuración del Tema
+import { theme } from "./theme/theme";
+
+// Proveedores y Enrutador Global
+import { AuthProvider } from "./context/AuthProvider";
+import { AppRouter } from "./routes/AppRouter";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* ==============================
-              PUBLIC ROUTES
-              Anyone can view them without logging in
-            ============================== */}
-          <Route path="/" element={<HomePage />} />{" "}
-          {/* This is your Landing Page! */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          {/* ==============================
-              PRIVATE ROUTES (Adopter)
-              Require being logged in
-            ============================== */}
-          <Route element={<ProtectedRoute />}>
-            {/* Internal views will go here when the adopter logs in */}
-            <Route
-              path="/adopter/profile"
-              element={<div>Perfil del Adoptante</div>}
-            />
-          </Route>
-          {/* ==============================
-              PRIVATE ROUTES (Admin)
-              Require being logged in and having the Admin role
-            ============================== */}
-          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          </Route>
-          {/* Fallback route: If they enter a URL that does not exist, send them home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider theme={theme}>
+      {/* CssBaseline normaliza estilos globales y aplica el fondo del tema */}
+      <CssBaseline /> 
+      
+      <AuthProvider>
+        <BrowserRouter>
+          {/* ¡Toda la lógica de rutas vive ahora dentro de AppRouter! 
+            App.tsx se mantiene limpio, inyectando solo dependencias globales.
+          */}
+          <AppRouter />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
