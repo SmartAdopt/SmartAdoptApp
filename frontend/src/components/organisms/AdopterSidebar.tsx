@@ -30,8 +30,13 @@ export const AdopterSidebar = () => {
 
   const { logout } = useAuth();
 
-  const handleLogout = () => {
+  // Función actualizada: Asíncrona, limpia tokens, y redirige a la raíz "/"
+  const handleLogout = async () => {
+    // 1. Resetea el contexto global de autenticación
     logout();
+
+    // 2. Limpia asíncronamente las referencias de los tokens del localStorage
+    await Promise.resolve(); // Fuerza el contexto de ejecución asíncrono
 
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -39,7 +44,8 @@ export const AdopterSidebar = () => {
 
     sessionStorage.clear();
 
-    navigate("/login");
+    // 3. Invoca el router push para redirigir al landing page público (raíz)
+    navigate("/", { replace: true });
   };
 
   return (
