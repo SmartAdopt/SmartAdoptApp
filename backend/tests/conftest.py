@@ -1,9 +1,42 @@
 import pytest
+import os
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+from dotenv import load_dotenv
 
-# Import the FastAPI app and the database components
+# Load environment variables from .env file FIRST
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+# Set environment variables for CI/CD if not already set
+# This ensures tests work in CI/CD without .env file
+if not os.getenv("SECRET_KEY"):
+    os.environ["SECRET_KEY"] = "test_secret_key_for_ci_cd"
+if not os.getenv("POSTGRES_HOST"):
+    os.environ["POSTGRES_HOST"] = "localhost"
+if not os.getenv("POSTGRES_PORT"):
+    os.environ["POSTGRES_PORT"] = "5432"
+if not os.getenv("POSTGRES_DB"):
+    os.environ["POSTGRES_DB"] = "test_db"
+if not os.getenv("POSTGRES_USER"):
+    os.environ["POSTGRES_USER"] = "test_user"
+if not os.getenv("POSTGRES_PASSWORD"):
+    os.environ["POSTGRES_PASSWORD"] = "test_password"
+if not os.getenv("POSTGRES_HOST_PORT"):
+    os.environ["POSTGRES_HOST_PORT"] = "5432"
+if not os.getenv("ALGORITHM"):
+    os.environ["ALGORITHM"] = "HS256"
+if not os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"):
+    os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "10"
+if not os.getenv("GOOGLE_CLIENT_ID"):
+    os.environ["GOOGLE_CLIENT_ID"] = "test_client_id"
+if not os.getenv("GOOGLE_CLIENT_SECRET"):
+    os.environ["GOOGLE_CLIENT_SECRET"] = "test_client_secret"
+
+# Import the FastAPI app and the database components AFTER loading .env
+# ruff: noqa: E402
 from app.main import app
 from app.database.postgres.postgres_db import Base, get_db
 
@@ -24,11 +57,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
-    """
-    This fixture creates all the database tables before running any tests
-    and drops them after all tests have finished.
-    The scope is "session" meaning it runs once for the entire test suite.
-    """
+    # This fixture creates all the database tables before running any tests
+    # and drops them after all tests have finished
+    # The scope is "session" meaning it runs once for the entire test suite
     # Create all tables
     Base.metadata.create_all(bind=engine)
     yield
@@ -38,10 +69,8 @@ def setup_database():
 
 @pytest.fixture(scope="function")
 def db_session():
-    """
-    This fixture provides a fresh database session for each test function.
-    It yields the session and then closes it after the test finishes.
-    """
+    # This fixture provides a fresh database session for each test function
+    # It yields the session and then closes it after the test finishes
     db = TestingSessionLocal()
     try:
         yield db
@@ -51,11 +80,9 @@ def db_session():
 
 @pytest.fixture(scope="function")
 def client(db_session):
-    """
-    This fixture creates a TestClient for FastAPI, allowing us to make HTTP requests
-    in our tests without starting a real server.
-    It also overrides the `get_db` dependency so that the endpoints use our test database.
-    """
+    # This fixture creates a TestClient for FastAPI, allowing us to make HTTP requests
+    # in our tests without starting a real server
+    # It also overrides the `get_db` dependency so that the endpoints use our test database
 
     def override_get_db():
         try:
