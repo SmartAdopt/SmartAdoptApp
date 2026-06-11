@@ -401,7 +401,7 @@ Google OAuth is configured through environment variables:
 - `GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 
-To obtain these credentials, refer to the complete Google OAuth documentation in `docs/README_JWT.md`.
+To obtain these credentials, refer to the complete Google OAuth documentation in `docs/README_OAUTH.md`.
 
 ### Token Usage
 

@@ -110,17 +110,39 @@ This project includes a local compose file: `docker-compose-local.yml`.
 Create a `.env` file at the project root. Refer to `.env.example` for the required variables:
 
 ```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=smartadopt_dev
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST_PORT=5432
-SECRET_KEY=abcdefegdsjhdsfdffd
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10
+# PostgreSQL
+POSTGRES_HOST=host_name_or_ip
+POSTGRES_PORT=database_port
+POSTGRES_DB=database_name
+POSTGRES_USER=database_user
+POSTGRES_PASSWORD=database_password
+POSTGRES_HOST_PORT=host_port
+
+# JWT
+SECRET_KEY=secret_key_string
+ALGORITHM=algorithm_name
+ACCESS_TOKEN_EXPIRE_MINUTES=expiration_minutes
+
+# Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# MongoDB
+MONGO_HOST=mongo_host
+MONGO_PORT=mongo_port
+MONGO_DB=mongo_database_name
+MONGO_USER=mongo_user
+MONGO_PASSWORD=mongo_password
+
+# Docker & Ports
+BACKEND_INTERNAL_PORT=backend_internal_port
+BACKEND_EXTERNAL_PORT=backend_external_port
+FRONTEND_INTERNAL_PORT=frontend_internal_port
+FRONTEND_EXTERNAL_PORT=frontend_external_port
+MONGO_EXTERNAL_PORT=mongo_external_port
+
+# API URLs
+VITE_API_URL=api_url
 ```
 
 > Notes
@@ -282,23 +304,6 @@ All environments expect a `.env` file at the **repository root**. The `.env` fil
 
 > This README only shows **templates**. Never publish real credentials.
 
-### Local (.env)
-
-Refer to `.env.example` for the required variables:
-
-```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=smartadopt_dev
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST_PORT=5432
-SECRET_KEY=abcdefghijklmnopqrstuvwxyz
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-```
 
 ### QA (.env)
 
@@ -314,7 +319,7 @@ POSTGRES_USER=qa_db_user
 POSTGRES_PASSWORD=change_me_qa
 
 # ─── MongoDB ──────────────────────────────────────────
-MONGO_HOST=mongodb
+MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_DB=smartadopt_qa
 MONGO_USER=qa_mongo_user
@@ -328,6 +333,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10
 # ─── Google OAuth ─────────────────────────────────────
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Docker & Ports ───────────────────────────────────
+BACKEND_INTERNAL_PORT=9090
+BACKEND_EXTERNAL_PORT=8000
+FRONTEND_INTERNAL_PORT=80
+FRONTEND_EXTERNAL_PORT=8080
+MONGO_EXTERNAL_PORT=27017
+
+# ─── API URLs ─────────────────────────────────────────
+VITE_API_URL=http://localhost:8000
 ```
 ### PRODUCTION (.env)
 ```
@@ -342,7 +357,7 @@ POSTGRES_USER=prod_db_user
 POSTGRES_PASSWORD=change_me_prod
 
 # ─── MongoDB ──────────────────────────────────────────
-MONGO_HOST=mongodb
+MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_DB=smartadopt_prod
 MONGO_USER=prod_mongo_user
@@ -356,6 +371,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # ─── Google OAuth ─────────────────────────────────────
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Docker & Ports ───────────────────────────────────
+BACKEND_INTERNAL_PORT=9090
+BACKEND_EXTERNAL_PORT=8000
+FRONTEND_INTERNAL_PORT=80
+FRONTEND_EXTERNAL_PORT=8080
+MONGO_EXTERNAL_PORT=27017
+
+# ─── API URLs ─────────────────────────────────────────
+VITE_API_URL=http://localhost:8000
 ```
 
 ## GitHub Secrets (required)
