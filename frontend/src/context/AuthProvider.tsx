@@ -28,11 +28,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
+  setUser(null);
+  setToken(null);
 
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+
+  sessionStorage.clear();
+
+  localStorage.removeItem("refresh_token");
   };
 
   return (
