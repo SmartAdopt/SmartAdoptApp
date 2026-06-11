@@ -1,487 +1,778 @@
+# Implementación de Google OAuth 2.0 en SmartAdopt
+
+## ¿Qué es OAuth 2.0?
+
+OAuth 2.0 es un sistema de autenticación estándar que permite a los usuarios iniciar sesión en aplicaciones utilizando sus cuentas de Google existentes, sin necesidad de crear nuevas contraseñas. Es el mismo sistema que utilizan muchas aplicaciones populares como Spotify, Netflix y Airbnb.
+
+## ¿Por qué implementamos OAuth 2.0 en SmartAdopt?
+
+Implementamos Google OAuth para mejorar la experiencia de usuario en SmartAdopt:
+
+- **Registro más rápido**: Los usuarios pueden registrarse en segundos sin completar formularios largos
+- **Sin contraseñas que recordar**: Los usuarios utilizan su cuenta de Google, que ya conocen
+- **Mayor seguridad**: Google se encarga de validar la identidad del usuario
+- **Reduce fricción**: Menos barreras para que los usuarios adopten la plataforma
+- **Emails verificados**: Google garantiza que el email es real y válido
+
+## ¿Cómo funciona para el usuario final?
+
+### Flujo de inicio de sesión con Google OAuth 2.0
+
+1. **El usuario hace clic en "Iniciar sesión con Google"**
+   - Puede elegir registrarse como "Adoptante"
+
+2. **Redirección a Google**
+   - El usuario es redirigido a la página de inicio de sesión de Google
+   - Google muestra su cuenta y pide permiso para compartir información básica
+
+3. **Autorización**
+   - El usuario acepta compartir su nombre, email y foto de perfil con SmartAdopt
+   - Esta información es necesaria para crear su cuenta automáticamente
+
+4. **Registro automático**
+   - Si es la primera vez que el usuario accede, SmartAdopt crea su cuenta automáticamente
+   - Si ya tiene una cuenta, simplemente inicia sesión
+
+5. **Acceso a la plataforma**
+   - El usuario accede inmediatamente a SmartAdopt con su cuenta creada/iniciada
+
+## ¿Qué información compartimos con Google?
+
+Solo solicitamos la información básica necesaria para crear la cuenta:
+
+- **Email**: Para identificar al usuario de manera única
+- **Nombre**: Para personalizar la experiencia
+- **Apellido**: Para completar el perfil del usuario
+
+No solicitamos información sensible como datos financieros o información de contacto adicional.
+
+## ¿Qué pasa si el usuario ya tiene una cuenta?
+
+Si el usuario ya se registró anteriormente con Google OAuth:
+- El sistema reconoce su email
+- Inicia sesión automáticamente
+- No crea una cuenta duplicada
+
+Si el usuario se registró con email y contraseña tradicional:
+- Puede utilizar el mismo email con Google OAuth
+- El sistema lo reconocerá como el mismo usuario
+- Podrá acceder con ambos métodos
+
+## Seguridad de la implementación
+
+Nuestra implementación de OAuth sigue los estándares de seguridad más altos:
+
+- **Validación por Google**: Google verifica la identidad del usuario antes de autorizar
+- **Comunicación segura**: Toda la comunicación se realiza mediante HTTPS (encriptado)
+- **Sin exposición de datos sensibles**: Las credenciales de OAuth nunca se exponen en el frontend
+- **Tokens seguros**: Utilizamos tokens JWT para gestionar las sesiones de manera segura
+- **Protección contra ataques**: Implementamos medidas para prevenir ataques CSRF y otros vectores de ataque
+
+## Roles de usuario
+
+El sistema permite registrar usuarios con el rol de adoptante mediante OAuth:
+
+- **Adoptante**: Usuario que busca adoptar mascotas
+
+
+## Beneficios para el negocio
+
+- **Mayor tasa de conversión**: Menos usuarios abandonan el proceso de registro
+- **Datos de calidad**: Los emails proporcionados por Google están verificados
+- **Menos soporte**: Menos problemas de "olvidé mi contraseña"
+- **Experiencia moderna**: Alineada con las expectativas de los usuarios actuales
+
+## Consideraciones técnicas (resumen ejecutivo)
+
+- Utilizamos el protocolo OAuth 2.0 estándar de Google con OpenID Connect (OIDC)
+- La implementación se encuentra en el backend (Python/FastAPI)
+- Los usuarios se almacenan en PostgreSQL igual que los usuarios tradicionales
+- Los usuarios de OAuth reciben un token JWT para gestionar su sesión
+- El sistema es compatible con el registro tradicional (email/contraseña)
 # JWT Authentication Documentation
 
-This document provides detailed information about the JWT (JSON Web Token) authentication implementation in the SmartAdopt backend.
+
 
 ## Table of Contents
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Configuration](#configuration)
-- [Token Creation](#token-creation)
-- [Token Verification](#token-verification)
-- [Token Usage in Login](#token-usage-in-login)
-- [Protected Endpoints](#protected-endpoints)
-- [Using JWT Tokens](#using-jwt-tokens)
-- [Security Considerations](#security-considerations)
-- [Troubleshooting](#troubleshooting)
+
+
+
+1. [Overview](#overview)
+
+2. [Architecture](#architecture)
+
+3. [Configuration](#configuration)
+
+4. [Token Structure](#token-structure)
+
+5. [JWT Functions](#jwt-functions)
+
+6. [API Endpoints](#api-endpoints)
+
+7. [Usage Examples](#usage-examples)
+
+8. [Security Considerations](#security-considerations)
+
+9. [Troubleshooting](#troubleshooting)
+
+10. [Future Enhancements](#future-enhancements)
+
+
 
 ## Overview
 
-The SmartAdopt backend implements JWT authentication to protect sensitive endpoints. JWT tokens are issued to users with admin or adopter roles upon successful login, allowing them to access protected resources.
 
-**Key Features:**
-- Tokens are generated only for admin and adopter roles
-- Regular users (role: user) receive empty tokens and cannot access protected endpoints
-- Tokens expire after 5 minutes (configurable)
-- Tokens are signed using HS256 algorithm
-- Protected endpoints require valid JWT token in Authorization header
+
+SmartAdopt uses JWT (JSON Web Token) authentication to protect API endpoints. Users with admin or adopter roles receive JWT tokens upon successful login, allowing them to access protected resources.
+
+
+
+Current implementation includes:
+
+- Access tokens with 10-minute expiration
+
+- Role-based authorization (admin, adopter)
+
+- Token type checking (access/refresh ready for future implementation)
+
+- Protected endpoints with role verification
+
+
 
 ## Architecture
 
-JWT authentication is implemented in a modular way using the following structure:
+
+
+JWT authentication is implemented in the following structure:
+
+
 
 ```
-backend/app/utils/jwt/
-├── __init__.py
-├── jwt_config.py  # Configuration using pydantic_settings
-└── jwt_utils.py   # Token creation and verification
+
+backend/app/
+
+├── config.py              # Centralized application configuration using pydantic_settings
+├── utils/jwt/
+│   └── jwt_utils.py     # Token creation and verification
+
+├── routes/
+
+│   ├── auth_routes.py   # Register and login endpoints
+
+│   ├── admin_routes.py  # Admin-protected endpoints
+
+│   └── adopter_routes.py # Adopter-protected endpoints
+
+└── services/
+
+    └── auth_service.py  # Authentication logic
+
 ```
 
-### jwt_config.py
 
-Configuration file that manages JWT settings using `pydantic_settings`:
-
-```python
-from pydantic_settings import BaseSettings
-
-
-class JWTSettings(BaseSettings):
-    # Required variables from environment
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-
-
-# Instance for global use in the application
-jwt_settings = JWTSettings()
-```
-
-### jwt_utils.py
-
-Utility functions for token creation and verification:
-
-- `create_access_token(email, role)`: Creates a JWT token with user data
-- `verify_token(credentials)`: FastAPI dependency that verifies and decodes JWT tokens
 
 ## Configuration
 
-JWT configuration is managed through environment variables:
+
 
 ### Environment Variables
 
-- `SECRET_KEY`: Secret key used to sign JWT tokens
-- `ALGORITHM`: Hashing algorithm (default: HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 5)
+
+
+JWT configuration is managed through environment variables. Refer to the `.env.example` file in the project root for the required variables:
+
+
+
+```env
+
+# JWT
+
+SECRET_KEY=secret_key_string
+
+ALGORITHM=algorithm_name 
+
+ACCESS_TOKEN_EXPIRE_MINUTES=expiration_minutes
+
+```
+
+
+
+### Configuration
+
+JWT configuration is managed through the centralized `app/config.py` file using pydantic_settings. The following variables are required:
+
+```python
+class Settings(BaseSettings):
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+```
+
+```
+
+
 
 ### Docker Compose Configuration
 
+
+
 These variables are passed to the backend container via `docker-compose-local.yml`:
 
+
+
 ```yaml
+
 backend:
+
   environment:
+
     - SECRET_KEY=${SECRET_KEY}
+
     - ALGORITHM=${ALGORITHM}
+
     - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+
 ```
 
-### Root .env File
 
-The actual values are stored in the root `.env` file:
 
-```env
-SECRET_KEY=SmartAdopt!
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=5
-```
+## Token Structure
 
-**Important:** Change the `SECRET_KEY` in production environments to a strong, random value.
 
-## Token Creation
 
-The `create_access_token(email, role)` function in `jwt_utils.py`:
+### Access Token Payload
 
-```python
-def create_access_token(email: str, role: str) -> str:
-    # Create a JWT access token with user data and expiration
-    # Calculate expiration time (current time + configured minutes)
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    # Create token payload with user data and expiration
-    to_encode = {
-        "sub": email,
-        "role": role,
-        "exp": expire,
-        "iat": datetime.utcnow()
-    }
-    
-    # Encode and sign the token
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    
-    return encoded_jwt
-```
 
-### Process
 
-1. Receives user email and role as parameters
-2. Calculates expiration time (current time + configured minutes)
-3. Creates token payload with:
-   - `sub`: User email (subject)
-   - `role`: User role (admin/adopter)
-   - `exp`: Expiration timestamp
-   - `iat`: Issued at timestamp
-4. Encodes and signs the token using the SECRET_KEY and ALGORITHM
-5. Returns the encoded JWT string
+The JWT token contains the following fields:
 
-### Token Payload Example
+
 
 ```json
+
 {
-  "sub": "admin@example.com",
+
+  "sub": "user@example.com",
+
   "role": "admin",
+
   "exp": 1733440000,
-  "iat": 1733439700
+
+  "iat": 1733439700,
+
+  "type": "access"
+
 }
+
 ```
 
-## Token Verification
 
-The `verify_token(credentials)` function in `jwt_utils.py`:
+
+**Field Descriptions:**
+
+- `sub`: User email (subject)
+
+- `role`: User role (admin or adopter)
+
+- `exp`: Expiration timestamp
+
+- `iat`: Issued at timestamp
+
+- `type`: Token type (access or refresh)
+
+
+
+## JWT Functions
+
+
+
+### create_access_token(email, role)
+
+
+
+Creates a JWT access token with user data and expiration.
+
+
 
 ```python
-async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    # Verify JWT token and return payload
-    token = credentials.credentials
+
+def create_access_token(email: str, role: str) -> str:
+
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     
-    try:
-        # Decode and verify token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        # Check expiration
-        if datetime.utcnow() > datetime.fromtimestamp(payload["exp"]):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has expired"
-            )
-        
-        return payload
-        
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
-```
 
-### Process
+    to_encode = {
 
-1. Uses FastAPI's `Depends` to extract the token from the `Authorization` header
-2. Decodes and verifies the token signature
-3. Checks if the token has expired
-4. Returns the token payload if valid
-5. Raises `401 Unauthorized` if token is invalid, expired, or missing
+        "sub": email,
 
-### Error Responses
+        "role": role,
 
-- `401 Unauthorized`: Invalid token signature
-- `401 Unauthorized`: Token has expired
-- `401 Unauthorized`: Missing token
+        "exp": expire,
 
-## Token Usage in Login
+        "iat": datetime.utcnow(),
 
-In `auth_service.py`, the `login_user` function:
+        "type": "access"
 
-```python
-def login_user(db: Session, login_data: LoginRequest):
-    # Authenticate a user with email and password
-
-    # Search for user by email in database
-    user = db.query(User).filter(User.email == login_data.email).first()
-    if not user:
-        raise ValueError("Invalid email or password")
-
-    # Verify password using bcrypt
-    if not bcrypt.checkpw(
-        login_data.password.encode("utf-8"), user.password_hash.encode("utf-8")
-    ):
-        raise ValueError("Invalid email or password")
-
-    # Generate JWT token only for admin or adopter roles
-    if user.type.lower() in ["admin", "adopter"]:
-        token = create_access_token(user.email, user.type)
-    else:
-        token = ""
-
-    # Create user response with necessary data and token
-    user_response = {
-        "token": token,
-        "token_type": "bearer" if token else "",
-        "id": cast(int, user.user_id),
-        "first_name": cast(str, user.first_name),
-        "last_name": cast(str, user.last_name),
-        "email": cast(str, user.email),
-        "role": cast(str, user.type),
-        "created_at": getattr(user, "created_at", None)
     }
 
-    return user_response
+    
+
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 ```
 
-### Process
 
-1. Authenticates user credentials (email and password)
-2. Checks user role:
-   - If role is `admin` or `adopter`: Generates JWT token
-   - If role is `user`: Returns empty token
-3. Returns user data with token in the response
 
-### Login Response Examples
+### verify_token(credentials)
 
-**Admin/Adopter User:**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTczMzQ0MDAwMCwiaWF0IjoxNzMzNDM5NzAwfQ.signature",
-  "token_type": "bearer",
-  "message": "Login successful",
-  "id": 1,
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "admin@example.com",
-  "role": "admin",
-  "created_at": "2026-06-05T12:00:00Z"
-}
-```
 
-**Regular User:**
-```json
-{
-  "access_token": "",
-  "token_type": "",
-  "message": "Login successful",
-  "id": 2,
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "email": "user@example.com",
-  "role": "user",
-  "created_at": "2026-06-05T12:00:00Z"
-}
-```
 
-## Protected Endpoints
+FastAPI dependency that verifies JWT tokens from Authorization header.
 
-Endpoints can be protected by adding the `verify_token` dependency:
+
 
 ```python
-from app.utils.jwt.jwt_utils import verify_token
 
-@router.get("/protected-endpoint")
-def protected_route(token_payload: dict = Depends(verify_token)):
-    # token_payload contains the decoded JWT payload
-    return {"message": "Access granted", "user": token_payload}
+def verify_token(
+
+    credentials: HTTPAuthorizationCredentials = Security(security),
+
+) -> Dict[str, Any]:
+
+    token = credentials.credentials
+
+    
+
+    try:
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        return payload
+
+    except JWTError:
+
+        raise HTTPException(
+
+            status_code=status.HTTP_401_UNAUTHORIZED,
+
+            detail="Could not validate credentials",
+
+            headers={"WWW-Authenticate": "Bearer"},
+
+        )
+
 ```
 
-### Current Protected Endpoints
 
-#### Get Users List (`/auth/list`)
+
+## API Endpoints
+
+
+
+### Authentication Endpoints
+
+
+
+#### POST /auth/register
+
+
+
+Register a new user (admin or adopter).
+
+
 
 **Request:**
-```http
-GET /auth/list?user_id=123
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+```json
+
+{
+
+  "first_name": "John",
+
+  "last_name": "Doe",
+
+  "email": "admin@example.com",
+
+  "phone_number": "1234567890",
+
+  "password": "password123",
+
+  "requested_role": "admin"
+
+}
+
 ```
 
-**Query Parameters:**
-- `user_id`: Filter users by ID. If not provided, returns all users.
+
+
+**Response (201 Created):**
+
+```json
+
+{
+
+  "message": "User registered successfully",
+
+  "user_id": 1,
+
+  "created_at": "2026-06-09T12:00:00Z"
+
+}
+
+```
+
+
+
+#### POST /auth/login
+
+
+
+Authenticate user and receive access token.
+
+
+
+**Request:**
+
+```json
+
+{
+
+  "email": "admin@example.com",
+
+  "password": "password123"
+
+}
+
+```
+
+
 
 **Response (200 OK):**
+
 ```json
+
 {
-  "users": [
-    {
-      "id": 123,
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "user@example.com",
-      "role": "adopter",
-      "created_at": "2026-06-05T12:00:00Z"
-    }
-  ],
-  "total": 1
+
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+
+  "token_type": "bearer",
+
+  "message": "Login successful",
+
+  "id": 1,
+
+  "first_name": "John",
+
+  "last_name": "Doe",
+
+  "email": "admin@example.com",
+
+  "role": "admin",
+
+  "created_at": "2026-06-09T12:00:00Z"
+
 }
+
 ```
+
+
+
+**Note:** Only users with role `admin` or `adopter` receive tokens. Regular users receive empty tokens.
+
+
+
+### Protected Endpoints
+
+
+
+#### GET /admin/dashboard
+
+
+
+Admin-only endpoint protected by JWT and role-based authorization.
+
+
+
+**Request:**
+
+```http
+
+GET /admin/dashboard
+
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+```
+
+
+
+**Response (200 OK):**
+
+```json
+
+{
+
+  "message": "Welcome to Admin Dashboard",
+
+  "user_email": "admin@example.com",
+
+  "user_role": "admin",
+
+  "dashboard_data": {
+
+    "total_adoptions": 75,
+
+    "pending_requests": 12
+
+  }
+
+}
+
+```
+
+
 
 **Error Responses:**
-- `401 Unauthorized`: Missing or invalid JWT token
-- `500 Internal Server Error`: Server error
 
-### Requirements for Protected Endpoints
+- `401 Unauthorized`: Missing or invalid token
 
-- Valid JWT token in `Authorization: Bearer <token>` header
-- Token must not be expired
-- Token must be signed with the correct SECRET_KEY
-- Token must contain valid payload structure
+- `403 Forbidden`: User role is not "admin"
 
-## Using JWT Tokens
 
-### Step 1: Login to Get Token
 
-```http
-POST /auth/login
-Content-Type: application/json
+#### GET /adopter/home
 
-{
-  "email": "admin@example.com",
-  "password": "password123"
-}
-```
 
-**Response:**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "message": "Login successful",
-  "id": 1,
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "admin@example.com",
-  "role": "admin",
-  "created_at": "2026-06-05T12:00:00Z"
-}
-```
 
-### Step 2: Use Token in Protected Requests
+Adopter-only endpoint protected by JWT and role-based authorization.
+
+
+
+**Request:**
 
 ```http
-GET /auth/list
+
+GET /adopter/home
+
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
 ```
 
-### Using with cURL
+
+
+**Response (200 OK):**
+
+```json
+
+{
+
+  "message": "Welcome to Adopter Home",
+
+  "user_email": "adopter@example.com",
+
+  "user_role": "adopter",
+
+  "home_data": {
+
+    "available_pets": 45,
+
+    "my_adoptions": 2,
+
+    "favorite_pets": 8
+
+  }
+
+}
+
+```
+
+
+**Error Responses:**
+
+- `401 Unauthorized`: Unauthorized access
+
+- `403 Forbidden`: User role is not "adopter"
+
+
+
+## Usage Examples
+
+
+
+### Using JWT Tokens
+
+
+
+**Step 1: Login to get token**
 
 ```bash
-# Login
+
 curl -X POST http://localhost:8000/auth/login \
+
   -H "Content-Type: application/json" \
+
   -d '{"email":"admin@example.com","password":"password123"}'
 
-# Use token
-curl -X GET http://localhost:8000/auth/list \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-### Using with Postman
 
-1. Make a POST request to `/auth/login` with credentials
-2. Copy the `access_token` from the response
-3. For subsequent requests, add the header:
-   - Key: `Authorization`
-   - Value: `Bearer <your_token_here>`
+
+**Step 2: Use token for protected requests**
+
+```bash
+
+curl -X GET http://localhost:8000/admin/dashboard \
+
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+```
+
+
 
 ## Security Considerations
 
+
+
 ### Token Expiration
 
-- Tokens expire after 5 minutes by default
+
+
+- Tokens expire after 10 minutes by default
+
 - This limits exposure if a token is compromised
+
 - Clients must re-login after expiration
+
 - Expiration time is configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`
+
+
 
 ### Role-Based Access
 
+
+
 - Only admin and adopter roles receive tokens
+
 - Regular users (role: user) receive empty tokens
+
 - This prevents unauthorized access to protected endpoints
+
 - Role is verified during login before token generation
+
+- Role is verified on each protected endpoint request
+
+
 
 ### Secret Key Management
 
+
+
 - `SECRET_KEY` should be changed in production environments
+
 - Use a strong, random key (at least 32 characters)
+
 - Never commit the secret key to version control
+
 - Use environment variables or secret management systems
+
+
 
 ### HTTPS in Production
 
+
+
 - Tokens should be transmitted via HTTPS in production
+
 - This prevents token interception during transmission
+
 - Configure SSL/TLS certificates on your production server
 
-### Token Storage
 
-- Store tokens securely on the client side
-- Use httpOnly cookies for web applications when possible
-- Avoid storing tokens in localStorage for sensitive applications
-- Implement token refresh mechanisms for better UX
 
 ## Troubleshooting
 
-### Common Issues
 
-#### 401 Unauthorized: "Not authenticated"
 
-**Cause:** Missing or invalid JWT token in Authorization header
+### Common Errors
 
-**Solution:**
-- Ensure you're sending the token in the `Authorization` header
-- Format should be: `Authorization: Bearer <token>`
-- Verify the token is not expired
-- Check that the token was received from a successful login
 
-#### 401 Unauthorized: "Invalid token"
 
-**Cause:** Token signature is invalid or corrupted
+**401 Unauthorized: "Could not validate credentials"**
 
-**Solution:**
-- Verify the `SECRET_KEY` matches between token generation and verification
-- Ensure the token hasn't been modified
-- Check that the `ALGORITHM` is consistent (HS256)
-- Try logging in again to get a fresh token
+- Check token is in `Authorization: Bearer <token>` header
 
-#### 401 Unauthorized: "Token has expired"
+- Verify token is not expired
 
-**Cause:** Token has exceeded its expiration time
+- Ensure token was received from successful login
 
-**Solution:**
-- Login again to get a fresh token
-- Consider increasing `ACCESS_TOKEN_EXPIRE_MINUTES` if needed
-- Implement token refresh mechanism for better UX
 
-#### Empty Token After Login
 
-**Cause:** User role is not admin or adopter
+**403 Forbidden: "Access denied"**
 
-**Solution:**
-- Verify the user's role in the database
-- Only admin and adopter roles receive tokens
+- Verify user role matches endpoint requirements
+
+- Check role in database
+
+- Only admin can access `/admin/dashboard`
+
+- Only adopter can access `/adopter/home`
+
+
+
+**401 Unauthorized: "Invalid token type"**
+
+- Ensure token payload includes `"type": "access"`
+
+- Check token wasn't modified
+
+
+
+**Empty token after login**
+
+- User role is not admin or adopter
+
 - Regular users (role: user) receive empty tokens by design
 
-#### Algorithm Not Supported Error
 
-**Cause:** `ALGORITHM` environment variable is empty or invalid
 
-**Solution:**
-- Verify `ALGORITHM` is set in `.env` file
-- Ensure it's passed to the Docker container
-- Check `docker-compose-local.yml` environment section
+### Debug Commands
 
-### Debug Mode
 
-To enable detailed error messages for debugging:
 
-1. Check the backend logs:
 ```bash
+
+# Check backend logs
+
 docker-compose -f docker-compose-local.yml logs backend
-```
 
-2. Verify environment variables in the container:
-```bash
+
+
+# Verify environment variables
+
 docker-compose -f docker-compose-local.yml exec backend env
+
+
+
+# Test token decoding
+
+python -c "from jose import jwt; print(jwt.decode('token', 'secret', algorithms=['HS256']))"
+
 ```
 
-3. Test token decoding manually:
-```python
-from jose import jwt
-token = "your_token_here"
-payload = jwt.decode(token, "your_secret_key", algorithms=["HS256"])
-print(payload)
-```
+
+
+## Future Enhancements
+
+
+
+The current implementation is designed to be extended with the following features:
+
+
+
+- Refresh token mechanism (requires PostgreSQL)
+
+- Token blacklist for logout (requires PostgreSQL)
+
+- Token rotation for enhanced security
+
+- Multi-factor authentication integration

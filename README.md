@@ -48,14 +48,28 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 SmartAdoptApp/
 ├── backend/                 # FastAPI backend application
 │   ├── app/
-│   │   ├── database/       # Database configurations (PostgreSQL, MongoDB)
-│   │   ├── models/         # SQLAlchemy ORM models (User, Admin, Adopter)
-│   │   ├── routes/         # API endpoints (auth, etc.)
-│   │   ├── schemas/        # Pydantic schemas for validation
-│   │   ├── services/       # Business logic layer
-│   │   └── utils/          # Utility functions
+│   │   ├── config.py        # Application configuration using pydantic_settings
+│   │   ├── main.py          # FastAPI application entry point
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB)
+│   │   │   └── postgres/    # PostgreSQL configuration
+│   │   │       └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   ├── services/        # Business logic layer
+│   │   └── utils/           # Utility functions
+│   │       ├── jwt/         # JWT authentication utilities
+│   │       │   └── jwt_utils.py   # JWT token creation and verification
+│   │       └── oauth/       # OAuth 2.0 utilities
+│   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
+│   │   ├── README_JWT.md    # Complete JWT documentation
+│   │   └── README_OAUTH.md  # Complete OAuth documentation
 │   ├── tests/              # Backend tests
+│   │   ├── conftest.py      # Test configuration
+│   │   ├── test_auth.py     # Authentication tests
+│   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   └── test_main.py     # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
 ├── frontend/               # React frontend application
@@ -78,6 +92,7 @@ SmartAdoptApp/
 ├── docker-compose-local.yml    # Local development compose
 ├── docker-compose-qa.yml       # QA environment compose
 ├── docker-compose-production.yml # Production environment compose
+├── .env.example               # Environment variables template
 └── .env                    # Environment variables (not committed)
 ```
 
@@ -92,18 +107,42 @@ This project includes a local compose file: `docker-compose-local.yml`.
 
 ## Environment Local
 
-Create a `.env` file at the project root with the following variables:
+Create a `.env` file at the project root. Refer to `.env.example` for the required variables:
 
 ```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=smartadopt_dev
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST_PORT=5432
-SECRET_KEY=abcdefegdsjhdsfdffd
-ALGORITHM=ALGORITHM_NAME 
-ACCESS_TOKEN_EXPIRE_MINUTES=10
+# PostgreSQL
+POSTGRES_HOST=host_name_or_ip
+POSTGRES_PORT=database_port
+POSTGRES_DB=database_name
+POSTGRES_USER=database_user
+POSTGRES_PASSWORD=database_password
+POSTGRES_HOST_PORT=host_port
+
+# JWT
+SECRET_KEY=secret_key_string
+ALGORITHM=algorithm_name
+ACCESS_TOKEN_EXPIRE_MINUTES=expiration_minutes
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# MongoDB
+MONGO_HOST=mongo_host
+MONGO_PORT=mongo_port
+MONGO_DB=mongo_database_name
+MONGO_USER=mongo_user
+MONGO_PASSWORD=mongo_password
+
+# Docker & Ports
+BACKEND_INTERNAL_PORT=backend_internal_port
+BACKEND_EXTERNAL_PORT=backend_external_port
+FRONTEND_INTERNAL_PORT=frontend_internal_port
+FRONTEND_EXTERNAL_PORT=frontend_external_port
+MONGO_EXTERNAL_PORT=mongo_external_port
+
+# API URLs
+VITE_API_URL=api_url
 ```
 
 > Notes
@@ -146,11 +185,17 @@ This starts only the backend, PostgreSQL, and MongoDB containers, which is usefu
 
 ### Authentication
 
-The application uses role-based authentication:
+The application uses JWT (JSON Web Token) authentication with role-based authorization:
 - **Admin:** Full access to dashboard and management features
 - **Adopter:** Access to adoption features and pet browsing
 
-**Note:** JWT token implementation is planned for future development. Currently, `access_token` is empty in the login response.
+**Current Implementation:**
+- Access tokens with 10-minute expiration
+- Role-based authorization (admin, adopter)
+- Token type checking (access/refresh ready for future implementation)
+- Protected endpoints with role verification
+
+**Note:** Only admin and adopter roles receive JWT tokens. Regular users receive empty tokens. For complete JWT documentation, refer to `backend/docs/README_JWT.md`.
 
 ### Ports (Local)
 
@@ -259,20 +304,6 @@ All environments expect a `.env` file at the **repository root**. The `.env` fil
 
 > This README only shows **templates**. Never publish real credentials.
 
-### Local (.env)
-
-```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=smartadopt_dev
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST_PORT=5432
-SECRET_KEY=abcdefghijklmnopqrstuvwxyz
-ALGORITHM=ALGORITHM_NAME
-ACCESS_TOKEN_EXPIRE_MINUTES=5
-
-```
 
 ### QA (.env)
 
@@ -288,15 +319,30 @@ POSTGRES_USER=qa_db_user
 POSTGRES_PASSWORD=change_me_qa
 
 # ─── MongoDB ──────────────────────────────────────────
-MONGO_HOST=mongodb
+MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_DB=smartadopt_qa
 MONGO_USER=qa_mongo_user
 MONGO_PASSWORD=change_me_qa
 
-# ─── Security & JWT (FastAPI) ─────────────────────────
+# ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=tu_secreto_jwt_qa
 ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10
+
+# ─── Google OAuth ─────────────────────────────────────
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Docker & Ports ───────────────────────────────────
+BACKEND_INTERNAL_PORT=9090
+BACKEND_EXTERNAL_PORT=8000
+FRONTEND_INTERNAL_PORT=80
+FRONTEND_EXTERNAL_PORT=8080
+MONGO_EXTERNAL_PORT=27017
+
+# ─── API URLs ─────────────────────────────────────────
+VITE_API_URL=http://localhost:8000
 ```
 ### PRODUCTION (.env)
 ```
@@ -311,16 +357,30 @@ POSTGRES_USER=prod_db_user
 POSTGRES_PASSWORD=change_me_prod
 
 # ─── MongoDB ──────────────────────────────────────────
-MONGO_HOST=mongodb
+MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_DB=smartadopt_prod
 MONGO_USER=prod_mongo_user
 MONGO_PASSWORD=change_me_prod
 
-# ─── Security & JWT (FastAPI) ─────────────────────────
+# ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=tu_secreto_jwt_prod_seguro
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# ─── Google OAuth ─────────────────────────────────────
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Docker & Ports ───────────────────────────────────
+BACKEND_INTERNAL_PORT=9090
+BACKEND_EXTERNAL_PORT=8000
+FRONTEND_INTERNAL_PORT=80
+FRONTEND_EXTERNAL_PORT=8080
+MONGO_EXTERNAL_PORT=27017
+
+# ─── API URLs ─────────────────────────────────────────
+VITE_API_URL=http://localhost:8000
 ```
 
 ## GitHub Secrets (required)
