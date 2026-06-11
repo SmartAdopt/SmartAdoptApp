@@ -21,20 +21,22 @@ services:
   backend:
     image: ${DOCKER_USERNAME}/backend-qa:qa
     container_name: smart-adopt-backend-qa
-    # Puerto interno SOLO: el exterior accede a través de nginx
     expose:
       - "9090"
     environment:
       - ENV=qa
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-smartadopt_qa}?authSource=admin
+      - POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT}
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:${MONGO_PORT}/${MONGO_DB}?authSource=admin
       - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM:-HS256}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,7 +50,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 60s
 
   frontend:
     image: ${DOCKER_USERNAME}/frontend-qa:qa
@@ -64,8 +66,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: smart-adopt-postgres-qa
-    expose:
-      - "5432"
+    ports:
+      - "${POSTGRES_HOST_PORT}:${POSTGRES_PORT}"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -84,10 +86,10 @@ services:
   mongo:
     image: mongo:7
     container_name: smart-adopt-mongo-qa
-    expose:
-      - "27017"
+    ports:
+      - "${MONGO_EXTERNAL_PORT}:${MONGO_PORT}"
     environment:
-      - MONGO_INITDB_DATABASE=${MONGO_DB:-smartadopt_qa}
+      - MONGO_INITDB_DATABASE=${MONGO_DB}
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     volumes:
