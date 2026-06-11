@@ -1,3 +1,5 @@
+// src/context/AuthContext.ts
+
 import { createContext } from "react";
 
 import type { AuthSession, AuthUser } from "../types/auth.types";

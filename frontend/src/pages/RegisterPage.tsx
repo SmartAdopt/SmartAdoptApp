@@ -2,12 +2,10 @@
 import { AuthTemplate } from "../components/templates/AuthTemplate";
 import { RegisterForm } from "../components/organisms/RegisterForm";
 
-const RegisterPage = () => {
+export const RegisterPage = () => {
   return (
     <AuthTemplate>
       <RegisterForm />
     </AuthTemplate>
   );
 };
-
-export default RegisterPage;
