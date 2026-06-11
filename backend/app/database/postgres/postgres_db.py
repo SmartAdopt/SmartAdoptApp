@@ -1,9 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from .config import settings
+from app.config import settings
 
 # Create the database engine using the connection URL from configuration.
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(
+    f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+)
 
 # Creates temporary "connections" for each request.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

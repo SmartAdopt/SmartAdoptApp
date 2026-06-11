@@ -1,7 +1,6 @@
 # Authentication routes
 # FastAPI imports
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
@@ -10,24 +9,22 @@ from sqlalchemy.orm import Session
 from app.database.postgres.postgres_db import get_db
 
 # Schema imports
-
 from app.schemas.auth_schemas import (
     RegisterRequest,
     RegisterResponse,
     LoginRequest,
     LoginResponse,
-    UserListResponse,
 )
 
 # Service imports
 from app.services.auth_service import (
     register_user,
     login_user,
-    get_all_users,
+    oauth_login_or_register,
 )
 
-# JWT utilities
-from app.utils.jwt.jwt_utils import verify_token
+# Google OAuth
+from app.utils.oauth.google_oauth import get_google_oauth
 
 # Create router with prefix and tags
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -113,31 +110,49 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/list", response_model=UserListResponse, status_code=status.HTTP_200_OK)
-def get_users(
-    user_id: Optional[int] = None,
-    db: Session = Depends(get_db),
-    token_payload: dict = Depends(verify_token),
-):
-    # Endpoint to get all users, optionally filtered by ID (protected by JWT)
+@router.get("/login/google")
+async def login_google(request: Request, role: str = "adopter"):
+    # Redirect to Google OAuth login
+    #   role: Optional role for auto-registration (default: adopter)
     try:
-        # Call service to get users
-        users = get_all_users(db, user_id)
-        # Return user list
-        return UserListResponse(users=users, total=len(users))
-
-    except ValueError:
+        oauth = get_google_oauth()
+        redirect_uri = request.url_for("google_callback")
+        return await oauth.google.authorize_redirect(request, redirect_uri)
+    except Exception:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Invalid email or password",
-            },
+            status_code=status.HTTP_302_FOUND,
+            detail={"message": "Redirect failed - Google OAuth not available"},
+        )
+
+
+@router.get("/google/callback", name="google_callback")
+async def google_callback(
+    request: Request, role: str = "adopter", db: Session = Depends(get_db)
+):
+    # Handle Google OAuth callback
+    #   role: Role for auto-registration (default: adopter)
+    oauth = get_google_oauth()
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = await oauth.google.parse_id_token(request, token)
+
+        # Call service layer to handle OAuth login or registration
+        user_response = oauth_login_or_register(db, user_info, role)
+
+        return LoginResponse(
+            access_token=user_response["access_token"],
+            token_type=user_response["token_type"],
+            message=user_response["message"],
+            id=user_response["id"],
+            first_name=user_response["first_name"],
+            last_name=user_response["last_name"],
+            email=user_response["email"],
+            role=user_response["role"],
+            created_at=user_response["created_at"],
         )
 
     except Exception:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Internal server error",
-            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Google authentication failed"},
         )

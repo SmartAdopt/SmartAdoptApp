@@ -12,9 +12,7 @@ TEST_USER = {
 
 
 def test_register_user_success(client):
-    """
-    Test successful registration (Happy path)
-    """
+    # Test successful registration (Happy path)
     response = client.post("/auth/register", json=TEST_USER)
 
     assert response.status_code == 201
@@ -24,9 +22,7 @@ def test_register_user_success(client):
 
 
 def test_register_existing_email(client):
-    """
-    Test registration with an already existing email (Negative path)
-    """
+    # Test registration with an already existing email (Negative path)
     # 1. Register the user for the first time
     client.post("/auth/register", json=TEST_USER)
 
@@ -43,9 +39,7 @@ def test_register_existing_email(client):
 
 
 def test_register_incomplete_form(client):
-    """
-    Test registration with missing mandatory fields (Negative path)
-    """
+    # Test registration with missing mandatory fields (Negative path)
     incomplete_user = {
         "first_name": "Jane",
         "email": "jane@test.com",
@@ -59,9 +53,7 @@ def test_register_incomplete_form(client):
 
 
 def test_password_is_encrypted(client, db_session):
-    """
-    Test that the password is NOT saved in plain text in the database (Security test)
-    """
+    # Test that the password is NOT saved in plain text in the database (Security test)
     new_email = "secure.user@test.com"
     user_data = TEST_USER.copy()
     user_data["email"] = new_email
@@ -82,9 +74,7 @@ def test_password_is_encrypted(client, db_session):
 
 
 def test_login_user_success(client):
-    """
-    Test successful login (Happy path)
-    """
+    # Test successful login (Happy path)
     # 1. Ensure the user exists
     user_data = TEST_USER.copy()
     user_data["email"] = "login.test@test.com"
@@ -105,40 +95,10 @@ def test_login_user_success(client):
 
 
 def test_login_wrong_credentials(client):
-    """
-    Test login with wrong password or unregistered email (Negative path)
-    """
+    # Test login with wrong password or unregistered email (Negative path)
     login_credentials = {"email": "nonexistent@test.com", "password": "wrongpassword"}
     response = client.post("/auth/login", json=login_credentials)
 
     # Should return 401 Unauthorized
     assert response.status_code == 401
     assert "Invalid email or password" in response.json()["detail"]["message"]
-
-
-def test_protected_route_list_users(client):
-    """
-    Test accessing a protected route with and without a valid JWT token
-    """
-    # 1. Attempt to access without token (should fail)
-    response_no_token = client.get("/auth/list")
-    assert response_no_token.status_code == 401
-
-    # 2. Register and Login to get a valid token
-    user_data = TEST_USER.copy()
-    user_data["email"] = "protected.test@test.com"
-    client.post("/auth/register", json=user_data)
-
-    login_res = client.post(
-        "/auth/login",
-        json={"email": "protected.test@test.com", "password": user_data["password"]},
-    )
-    token = login_res.json()["access_token"]
-
-    # 3. Access the protected route with the token
-    headers = {"Authorization": f"Bearer {token}"}
-    response_with_token = client.get("/auth/list", headers=headers)
-
-    assert response_with_token.status_code == 200
-    assert "users" in response_with_token.json()
-    assert response_with_token.json()["total"] >= 1

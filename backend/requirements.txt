@@ -15,3 +15,5 @@ pydantic-settings
 uvicorn
 email-validator
 python-jose
+authlib
+itsdangerous
