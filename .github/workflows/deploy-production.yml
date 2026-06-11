@@ -84,17 +84,17 @@ jobs:
             POSTGRES_HOST=${{ secrets.PROD_POSTGRES_HOST }}
             POSTGRES_PORT=${{ secrets.PROD_POSTGRES_PORT }}
             POSTGRES_DB=${{ secrets.PROD_POSTGRES_DB }}
-            POSTGRES_HOST_PORT=${{ secrets.QA_POSTGRES_HOST_PORT }}
+            POSTGRES_HOST_PORT=${{ secrets.PROD_POSTGRES_HOST_PORT }}
             MONGO_USER=${{ secrets.PROD_MONGO_USER }}
             MONGO_PASSWORD=${{ secrets.PROD_MONGO_PASSWORD }}
-            MONGO_DB=${{ secrets.QA_MONGO_DB }}
-            MONGO_PORT=${{ secrets.QA_MONGO_PORT }}
-            MONGO_EXTERNAL_PORT=${{ secrets.QA_MONGO_EXTERNAL_PORT }}
+            MONGO_DB=${{ secrets.PROD_MONGO_DB }}
+            MONGO_PORT=${{ secrets.PROD_MONGO_PORT }}
+            MONGO_EXTERNAL_PORT=${{ secrets.PROD_MONGO_EXTERNAL_PORT }}
             SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
             ALGORITHM=${{ secrets.PROD_ALGORITHM }}
             ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.PROD_ACCESS_TOKEN_EXPIRE_MINUTES }}
-            GOOGLE_CLIENT_ID=${{ secrets.QA_GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.QA_GOOGLE_CLIENT_SECRET }}
+            GOOGLE_CLIENT_ID=${{ secrets.PROD_GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
             ENVEOF
             
             docker compose -f docker-compose-production.yml pull
