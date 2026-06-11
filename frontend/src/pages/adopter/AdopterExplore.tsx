@@ -10,9 +10,7 @@ export const AdopterExplore = () => {
       <Typography variant="h4" fontWeight={700}>
         Explorar Mascotas
       </Typography>
-      <Typography color="text.secondary">
-        Página en construcción
-      </Typography>
+      <Typography color="text.secondary">Página en construcción</Typography>
     </AdopterLayout>
   );
 };

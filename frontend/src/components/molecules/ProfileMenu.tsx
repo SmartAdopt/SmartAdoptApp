@@ -14,7 +14,7 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isOpen = Boolean(anchorEl);
   const navigate = useNavigate();
-  
+
   // const { logout } = useAuth(); // Future integration
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -33,7 +33,7 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
     sessionStorage.clear();
-    
+
     // Redirect to Login clearing the history stack
     navigate("/login", { replace: true });
   };
@@ -43,7 +43,7 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
       <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
         <Avatar alt={userName} src="/react.svg" />
       </IconButton>
-      
+
       <Menu
         anchorEl={anchorEl}
         open={isOpen}
@@ -56,9 +56,9 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
             {userName}
           </Typography>
         </MenuItem>
-        
+
         <MenuItem onClick={handleCloseMenu}>Mi Perfil</MenuItem>
-        
+
         <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
           Cerrar Sesión
         </MenuItem>

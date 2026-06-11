@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Box,
-} from "@mui/material";
+import { Paper, Typography, Box } from "@mui/material";
 
 interface EventCardProps {
   titulo: string;
@@ -11,12 +7,7 @@ interface EventCardProps {
   hora: string;
 }
 
-export const EventCard = ({
-  titulo,
-  lugar,
-  fecha,
-  hora,
-}: EventCardProps) => {
+export const EventCard = ({ titulo, lugar, fecha, hora }: EventCardProps) => {
   return (
     <Paper
       elevation={0}
@@ -43,31 +34,17 @@ export const EventCard = ({
             textAlign: "center",
           }}
         >
-          <Typography
-            fontWeight={700}
-          >
-            {fecha}
-          </Typography>
+          <Typography fontWeight={700}>{fecha}</Typography>
         </Box>
 
         <Box>
-          <Typography
-            fontWeight={600}
-          >
-            {titulo}
-          </Typography>
+          <Typography fontWeight={600}>{titulo}</Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
+          <Typography variant="body2" color="text.secondary">
             {lugar}
           </Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
+          <Typography variant="body2" color="text.secondary">
             {hora}
           </Typography>
         </Box>

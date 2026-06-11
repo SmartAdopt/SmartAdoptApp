@@ -57,7 +57,7 @@ export const LoginForm = () => {
         navigate("/admin/dashboard");
       } else {
         // SOLUCIÓN: Cambia "/adopter/profile" por "/adopter/dashboard"
-        navigate("/adopter/dashboard"); 
+        navigate("/adopter/dashboard");
       }
     } catch (err) {
       if (err instanceof Error) {

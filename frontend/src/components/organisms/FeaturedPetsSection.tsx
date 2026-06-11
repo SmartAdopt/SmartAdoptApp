@@ -1,11 +1,6 @@
 // src/components/organisms/FeaturedPetsSection.tsx
 
-import {
-  Paper,
-  Typography,
-  Grid,
-  Button,
-} from "@mui/material";
+import { Paper, Typography, Grid, Button } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -20,8 +15,7 @@ export const FeaturedPetsSection = () => {
 
   useEffect(() => {
     const loadPets = async () => {
-      const data =
-        await dashboardService.getFeaturedPets();
+      const data = await dashboardService.getFeaturedPets();
 
       setPets(data);
     };
@@ -47,33 +41,19 @@ export const FeaturedPetsSection = () => {
         sx={{ mb: 3 }}
       >
         <Grid item xs={6}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
-          >
+          <Typography variant="h6" fontWeight={700}>
             Mascotas Destacadas
           </Typography>
         </Grid>
 
         <Grid item xs={6} sx={{ textAlign: "right" }}>
-          <Button>
-            Ver Todas
-          </Button>
+          <Button>Ver Todas</Button>
         </Grid>
       </Grid>
 
-      <Grid
-        container
-        spacing={3}
-      >
+      <Grid container spacing={3}>
         {pets.map((pet) => (
-          <Grid
-            item
-            xs={12}
-            md={6}
-            lg={4}
-            key={pet.id}
-          >
+          <Grid item xs={12} md={6} lg={4} key={pet.id}>
             <PetCard
               nombre={pet.nombre}
               raza={pet.raza}

@@ -32,44 +32,49 @@ export const PreferencesForm = () => {
     petAgeRange: [1, 5],
   });
 
-  const handlePetTypeChange = (_: React.MouseEvent<HTMLElement>, newValue: string) => {
+  const handlePetTypeChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newValue: string,
+  ) => {
     if (newValue) setPreferences((prev) => ({ ...prev, petType: newValue }));
   };
 
-  const handleSpaceChange = (_: React.MouseEvent<HTMLElement>, newValue: string) => {
+  const handleSpaceChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newValue: string,
+  ) => {
     if (newValue) setPreferences((prev) => ({ ...prev, homeSpace: newValue }));
   };
 
-  const handleActivityChange = (_: React.ChangeEvent<HTMLInputElement> | any, newValue: number | number[]) => {
+  const handleActivityChange = (_: Event, newValue: number | number[]) => {
     setPreferences((prev) => ({ ...prev, activityLevel: newValue as number }));
   };
 
-  const handleAgeChange = (_: React.ChangeEvent<HTMLInputElement> | any, newValue: number | number[]) => {
+  const handleAgeChange = (_: Event, newValue: number | number[]) => {
     setPreferences((prev) => ({ ...prev, petAgeRange: newValue as number[] }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Saving user preferences to Backend/Local DB:", preferences);
-    
+
     // Once configuration is completed, redirect user to their personalized feed
     navigate("/adopter/dashboard");
   };
 
   return (
-    <Paper 
-      elevation={0} 
-      sx={{ 
-        p: { xs: 3, md: 5 }, 
-        borderRadius: 3, 
-        border: "1px solid", 
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 3, md: 5 },
+        borderRadius: 3,
+        border: "1px solid",
         borderColor: "divider",
-        bgcolor: "background.paper"
+        bgcolor: "background.paper",
       }}
     >
       <Box component="form" onSubmit={handleSubmit}>
         <Grid container spacing={4}>
-          
           {/* Section 1: Preferred Pet Type */}
           <Grid item xs={12}>
             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
@@ -80,30 +85,36 @@ export const PreferencesForm = () => {
               exclusive
               onChange={handlePetTypeChange}
               fullWidth
-              sx={{ gap: 2, "& .MuiToggleButton-root": { borderRadius: 2, border: "1px solid !important" } }}
+              sx={{
+                gap: 2,
+                "& .MuiToggleButton-root": {
+                  borderRadius: 2,
+                  border: "1px solid !important",
+                },
+              }}
             >
-              <ToggleButton 
-                value="dog" 
+              <ToggleButton
+                value="dog"
                 sx={{
                   py: 2,
                   "&.Mui-selected": {
                     bgcolor: "primary.main",
                     color: "primary.contrastText",
-                    "&:hover": { bgcolor: "primary.dark" }
-                  }
+                    "&:hover": { bgcolor: "primary.dark" },
+                  },
                 }}
               >
                 🐶 Perros
               </ToggleButton>
-              <ToggleButton 
-                value="cat" 
+              <ToggleButton
+                value="cat"
                 sx={{
                   py: 2,
                   "&.Mui-selected": {
                     bgcolor: "#22C55E", // Using exact success color token for Cats as defined in theme.ts
                     color: "#FFFFFF",
-                    "&:hover": { bgcolor: "#16A34A" }
-                  }
+                    "&:hover": { bgcolor: "#16A34A" },
+                  },
                 }}
               >
                 🐱 Gatos
@@ -111,7 +122,9 @@ export const PreferencesForm = () => {
             </ToggleButtonGroup>
           </Grid>
 
-          <Grid item xs={12}><Divider /></Grid>
+          <Grid item xs={12}>
+            <Divider />
+          </Grid>
 
           {/* Section 2: Home Space */}
           <Grid item xs={12}>
@@ -124,21 +137,38 @@ export const PreferencesForm = () => {
               onChange={handleSpaceChange}
               fullWidth
               orientation="vertical"
-              sx={{ gap: 1, "& .MuiToggleButton-root": { borderRadius: 1, border: "1px solid !important" } }}
+              sx={{
+                gap: 1,
+                "& .MuiToggleButton-root": {
+                  borderRadius: 1,
+                  border: "1px solid !important",
+                },
+              }}
             >
-              <ToggleButton value="apartment" sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}>
-    🏢 Departamento / Suite
+              <ToggleButton
+                value="apartment"
+                sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}
+              >
+                🏢 Departamento / Suite
               </ToggleButton>
-              <ToggleButton value="house_no_yard" sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}>
-    🏠 Casa sin patio interno
+              <ToggleButton
+                value="house_no_yard"
+                sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}
+              >
+                🏠 Casa sin patio interno
               </ToggleButton>
-              <ToggleButton value="house_yard" sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}>
-    🏡 Casa con patio o jardín
+              <ToggleButton
+                value="house_yard"
+                sx={{ py: 1.5, justifyContent: "flex-start", px: 3 }}
+              >
+                🏡 Casa con patio o jardín
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
 
-          <Grid item xs={12}><Divider /></Grid>
+          <Grid item xs={12}>
+            <Divider />
+          </Grid>
 
           {/* Section 3: Activity Level */}
           <Grid item xs={12}>
@@ -162,7 +192,9 @@ export const PreferencesForm = () => {
             </Box>
           </Grid>
 
-          <Grid item xs={12}><Divider /></Grid>
+          <Grid item xs={12}>
+            <Divider />
+          </Grid>
 
           {/* Section 4: Age Preference */}
           <Grid item xs={12}>
@@ -200,7 +232,6 @@ export const PreferencesForm = () => {
               Completar Perfil y Buscar Mi Mascota Ideal
             </Button>
           </Grid>
-
         </Grid>
       </Box>
     </Paper>

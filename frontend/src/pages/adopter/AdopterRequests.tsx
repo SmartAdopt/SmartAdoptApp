@@ -10,9 +10,7 @@ export const AdopterRequests = () => {
       <Typography variant="h4" fontWeight={700}>
         Solicitudes
       </Typography>
-      <Typography color="text.secondary">
-        Página en construcción
-      </Typography>
+      <Typography color="text.secondary">Página en construcción</Typography>
     </AdopterLayout>
   );
 };

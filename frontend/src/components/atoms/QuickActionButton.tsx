@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Box,
-} from "@mui/material";
+import { Paper, Typography, Box } from "@mui/material";
 
 interface QuickActionButtonProps {
   titulo: string;
@@ -55,10 +51,7 @@ export const QuickActionButton = ({
         {icono}
       </Box>
 
-      <Typography
-        variant="body2"
-        fontWeight={600}
-      >
+      <Typography variant="body2" fontWeight={600}>
         {titulo}
       </Typography>
     </Paper>

@@ -1,5 +1,10 @@
 // src/components/atoms/SidebarItem.tsx
-import { ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import {
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import { type ReactNode } from "react";
 
 interface SidebarItemProps {
@@ -9,7 +14,12 @@ interface SidebarItemProps {
   onClick: () => void;
 }
 
-export const SidebarItem = ({ icon, label, selected = false, onClick }: SidebarItemProps) => {
+export const SidebarItem = ({
+  icon,
+  label,
+  selected = false,
+  onClick,
+}: SidebarItemProps) => {
   return (
     <ListItem disablePadding sx={{ mb: 0.5 }}>
       <ListItemButton
@@ -32,11 +42,11 @@ export const SidebarItem = ({ icon, label, selected = false, onClick }: SidebarI
         >
           {icon}
         </ListItemIcon>
-        <ListItemText 
-          primary={label} 
-          primaryTypographyProps={{ 
-            fontWeight: selected ? 600 : 400 
-          }} 
+        <ListItemText
+          primary={label}
+          primaryTypographyProps={{
+            fontWeight: selected ? 600 : 400,
+          }}
         />
       </ListItemButton>
     </ListItem>

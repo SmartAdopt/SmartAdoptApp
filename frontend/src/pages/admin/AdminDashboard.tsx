@@ -106,19 +106,39 @@ export const AdminDashboard = () => {
       <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Estado del Sistema
       </Typography>
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid", borderColor: "grey.200" }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "grey.200",
+        }}
+      >
         {/* Placeholder para la lista de estados del sistema que vemos en tu prototipo */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography variant="body2" fontWeight={500}>● Generador de Biografías IA</Typography>
-          <Typography variant="body2" color="success.main">Activo</Typography>
+          <Typography variant="body2" fontWeight={500}>
+            ● Generador de Biografías IA
+          </Typography>
+          <Typography variant="body2" color="success.main">
+            Activo
+          </Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography variant="body2" fontWeight={500}>● Motor de Emparejamiento</Typography>
-          <Typography variant="body2" color="success.main">Activo</Typography>
+          <Typography variant="body2" fontWeight={500}>
+            ● Motor de Emparejamiento
+          </Typography>
+          <Typography variant="body2" color="success.main">
+            Activo
+          </Typography>
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="body2" fontWeight={500}>● Sistema de Notificaciones</Typography>
-          <Typography variant="body2" color="success.main">Activo</Typography>
+          <Typography variant="body2" fontWeight={500}>
+            ● Sistema de Notificaciones
+          </Typography>
+          <Typography variant="body2" color="success.main">
+            Activo
+          </Typography>
         </Box>
       </Paper>
     </AdminLayout>

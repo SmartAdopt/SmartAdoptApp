@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Grid,
-} from "@mui/material";
+import { Paper, Typography, Grid } from "@mui/material";
 
 import {
   Pets as PetsIcon,
@@ -24,11 +20,7 @@ export const CommunityImpact = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ mb: 3 }}
-      >
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
         Impacto de la Comunidad
       </Typography>
 

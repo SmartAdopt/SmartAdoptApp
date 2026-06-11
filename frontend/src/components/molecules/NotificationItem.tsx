@@ -1,7 +1,4 @@
-import {
-  Box,
-  Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 interface NotificationItemProps {
   titulo: string;
@@ -22,24 +19,15 @@ export const NotificationItem = ({
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        fontWeight={600}
-        gutterBottom
-      >
+      <Typography fontWeight={600} gutterBottom>
         {titulo}
       </Typography>
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
-      >
+      <Typography variant="body2" color="text.secondary">
         {descripcion}
       </Typography>
 
-      <Typography
-        variant="caption"
-        color="text.secondary"
-      >
+      <Typography variant="caption" color="text.secondary">
         {fecha}
       </Typography>
     </Box>

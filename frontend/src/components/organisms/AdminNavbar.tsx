@@ -1,5 +1,8 @@
 import { AppBar, Toolbar, Box, Chip, IconButton, Tooltip } from "@mui/material";
-import { CheckCircle as CheckCircleIcon, Logout as LogoutIcon } from "@mui/icons-material";
+import {
+  CheckCircle as CheckCircleIcon,
+  Logout as LogoutIcon,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "../atoms/Logo";
 import { useAuth } from "../../hooks/useAuth";
@@ -29,13 +32,15 @@ export const AdminNavbar = () => {
       position="sticky"
       color="inherit"
       elevation={0}
-      sx={{ 
-        borderBottom: "1px solid", 
+      sx={{
+        borderBottom: "1px solid",
         borderColor: "divider",
-        bgcolor: "#FFFFFF"
+        bgcolor: "#FFFFFF",
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between", py: 1, px: { xs: 2, md: 4 } }}>
+      <Toolbar
+        sx={{ justifyContent: "space-between", py: 1, px: { xs: 2, md: 4 } }}
+      >
         {/* BRAND BLOCK */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Logo />
@@ -48,30 +53,30 @@ export const AdminNavbar = () => {
             label="¡Bienvenido de vuelta, Administrador!"
             color="success"
             variant="outlined"
-            sx={{ 
-              bgcolor: "#F0FDF4", 
+            sx={{
+              bgcolor: "#F0FDF4",
               color: "success.dark",
               fontWeight: 500,
               border: "none",
-              display: { xs: "none", sm: "inline-flex" } // Responsive control
+              display: { xs: "none", sm: "inline-flex" }, // Responsive control
             }}
           />
 
           {/* LOGOUT SYSTEM BUTTON */}
           <Tooltip title="Cerrar sesión">
-            <IconButton 
-              color="inherit" 
+            <IconButton
+              color="inherit"
               onClick={handleLogout}
-              sx={{ 
-                border: "1px solid", 
+              sx={{
+                border: "1px solid",
                 borderColor: "grey.200",
                 borderRadius: 2,
                 transition: "all 0.2s ease",
                 "&:hover": {
                   bgcolor: "#FEF2F2", // Very light red
                   color: "error.main",
-                  borderColor: "error.light"
-                }
+                  borderColor: "error.light",
+                },
               }}
             >
               <LogoutIcon />

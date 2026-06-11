@@ -1,10 +1,6 @@
 // src/components/organisms/QuickActionsPanel.tsx
 
-import {
-  Paper,
-  Typography,
-  Grid,
-} from "@mui/material";
+import { Paper, Typography, Grid } from "@mui/material";
 
 import {
   Search as SearchIcon,
@@ -30,11 +26,7 @@ export const QuickActionsPanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={600}
-        sx={{ mb: 3 }}
-      >
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>
         Acciones Rápidas
       </Typography>
 
@@ -43,9 +35,7 @@ export const QuickActionsPanel = () => {
           <QuickActionButton
             titulo="Explorar"
             icono={<SearchIcon />}
-            onClick={() =>
-              navigate("/adopter/explore")
-            }
+            onClick={() => navigate("/adopter/explore")}
           />
         </Grid>
 
@@ -53,9 +43,7 @@ export const QuickActionsPanel = () => {
           <QuickActionButton
             titulo="Favoritos"
             icono={<FavoriteIcon />}
-            onClick={() =>
-              navigate("/adopter/favorites")
-            }
+            onClick={() => navigate("/adopter/favorites")}
           />
         </Grid>
 
@@ -63,9 +51,7 @@ export const QuickActionsPanel = () => {
           <QuickActionButton
             titulo="Mi Perfil"
             icono={<PersonIcon />}
-            onClick={() =>
-              navigate("/adopter/profile")
-            }
+            onClick={() => navigate("/adopter/profile")}
           />
         </Grid>
 
@@ -73,9 +59,7 @@ export const QuickActionsPanel = () => {
           <QuickActionButton
             titulo="Solicitudes"
             icono={<DescriptionIcon />}
-            onClick={() =>
-              navigate("/adopter/requests")
-            }
+            onClick={() => navigate("/adopter/requests")}
           />
         </Grid>
       </Grid>

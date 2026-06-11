@@ -47,7 +47,8 @@ export const RegisterForm = () => {
   const validateName = (name: string): string => {
     if (!name.trim()) return "Este campo es requerido";
     if (name.trim().length < 2) return "Debe tener al menos 2 caracteres";
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name)) return "Solo se permiten letras y espacios";
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name))
+      return "Solo se permiten letras y espacios";
     return "";
   };
 
@@ -63,7 +64,8 @@ export const RegisterForm = () => {
     // Remove spaces and special characters for validation
     const cleanPhone = phone.replace(/\s/g, "");
     // Must be exactly 10 digits and start with 09
-    if (!/^09\d{8}$/.test(cleanPhone)) return "Debe tener 10 dígitos y empezar con 09";
+    if (!/^09\d{8}$/.test(cleanPhone))
+      return "Debe tener 10 dígitos y empezar con 09";
     return "";
   };
 
@@ -74,7 +76,10 @@ export const RegisterForm = () => {
     return "";
   };
 
-  const validateConfirmPassword = (password: string, confirm: string): string => {
+  const validateConfirmPassword = (
+    password: string,
+    confirm: string,
+  ): string => {
     if (!confirm) return "Este campo es requerido";
     if (password !== confirm) return "Las contraseñas no coinciden";
     return "";
@@ -108,7 +113,9 @@ export const RegisterForm = () => {
     setFieldErrors((prev) => ({ ...prev, [name]: errorMessage }));
   };
 
-  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleConfirmPasswordChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const value = e.target.value;
     setConfirmPassword(value);
     if (error) setError("");
@@ -127,7 +134,10 @@ export const RegisterForm = () => {
       email: validateEmail(formData.email),
       phone_number: validatePhone(formData.phone_number),
       password: validatePassword(formData.password),
-      confirmPassword: validateConfirmPassword(formData.password, confirmPassword),
+      confirmPassword: validateConfirmPassword(
+        formData.password,
+        confirmPassword,
+      ),
     };
 
     setFieldErrors(errors);

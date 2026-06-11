@@ -1,19 +1,19 @@
 // src/components/templates/MainLayout.tsx
-import { 
-  Box, 
-  AppBar, 
-  Toolbar, 
-  Container, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemText 
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Container,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 // Atomic Components
-import { Logo } from "../atoms/Logo"; 
+import { Logo } from "../atoms/Logo";
 import { ProfileMenu } from "../molecules/ProfileMenu";
 
 interface MainLayoutProps {
@@ -25,7 +25,7 @@ interface MainLayoutProps {
 const DRAWER_WIDTH = 240;
 
 // ENTERPRISE BEST PRACTICE:
-// Define sidebar navigation items as a constant array. 
+// Define sidebar navigation items as a constant array.
 // This makes it scalable and easy to maintain when adding new modules.
 const ADMIN_NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard" },
@@ -34,7 +34,11 @@ const ADMIN_NAV_ITEMS = [
   { label: "Métricas", path: "/admin/metrics" },
 ];
 
-export const MainLayout = ({ children, isAdmin = false, userName }: MainLayoutProps) => {
+export const MainLayout = ({
+  children,
+  isAdmin = false,
+  userName,
+}: MainLayoutProps) => {
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
@@ -42,17 +46,22 @@ export const MainLayout = ({ children, isAdmin = false, userName }: MainLayoutPr
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-      
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       {/* ==============================
           GLOBAL HEADER (AppBar)
           ============================== */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1, 
-          bgcolor: "background.paper", 
-          boxShadow: 1 
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          bgcolor: "background.paper",
+          boxShadow: 1,
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -98,11 +107,11 @@ export const MainLayout = ({ children, isAdmin = false, userName }: MainLayoutPr
           MAIN CONTENT AREA
           Dynamically adjusts width based on Sidebar presence
           ============================== */}
-      <Box 
-        component="main" 
-        sx={{ 
-          flexGrow: 1, 
-          p: 3, 
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
           width: { sm: `calc(100% - ${isAdmin ? DRAWER_WIDTH : 0}px)` },
           transition: "width 0.3s ease", // Smooth transition if state changes
         }}
@@ -112,7 +121,6 @@ export const MainLayout = ({ children, isAdmin = false, userName }: MainLayoutPr
           {children}
         </Container>
       </Box>
-      
     </Box>
   );
 };

@@ -1,8 +1,6 @@
 // src/components/templates/AdopterLayout.tsx
 
-import {
-  Box,
-} from "@mui/material";
+import { Box } from "@mui/material";
 
 import { type ReactNode } from "react";
 
@@ -12,9 +10,7 @@ interface AdopterLayoutProps {
   children: ReactNode;
 }
 
-export const AdopterLayout = ({
-  children,
-}: AdopterLayoutProps) => {
+export const AdopterLayout = ({ children }: AdopterLayoutProps) => {
   return (
     <Box
       sx={{

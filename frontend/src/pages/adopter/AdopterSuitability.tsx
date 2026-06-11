@@ -10,9 +10,7 @@ export const AdopterSuitability = () => {
       <Typography variant="h4" fontWeight={700}>
         Idoneidad
       </Typography>
-      <Typography color="text.secondary">
-        Página en construcción
-      </Typography>
+      <Typography color="text.secondary">Página en construcción</Typography>
     </AdopterLayout>
   );
 };

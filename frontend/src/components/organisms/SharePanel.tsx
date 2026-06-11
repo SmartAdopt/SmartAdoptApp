@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Paper, Typography, Button } from "@mui/material";
 
 import { Share as ShareIcon } from "@mui/icons-material";
 
@@ -18,26 +14,15 @@ export const SharePanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ mb: 2 }}
-      >
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Comparte SmartAdopt
       </Typography>
 
-      <Typography
-        color="text.secondary"
-        sx={{ mb: 3 }}
-      >
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
         Ayuda a más mascotas compartiendo la plataforma.
       </Typography>
 
-      <Button
-        startIcon={<ShareIcon />}
-        variant="outlined"
-        fullWidth
-      >
+      <Button startIcon={<ShareIcon />} variant="outlined" fullWidth>
         Compartir
       </Button>
     </Paper>

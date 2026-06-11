@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Paper, Typography, Button } from "@mui/material";
 
 export const DonationPanel = () => {
   return (
@@ -16,25 +12,15 @@ export const DonationPanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ mb: 2 }}
-      >
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Apoya una Fundación
       </Typography>
 
-      <Typography
-        color="text.secondary"
-        sx={{ mb: 3 }}
-      >
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
         Tu ayuda permite rescatar y cuidar más mascotas.
       </Typography>
 
-      <Button
-        fullWidth
-        variant="contained"
-      >
+      <Button fullWidth variant="contained">
         Donar Ahora
       </Button>
     </Paper>

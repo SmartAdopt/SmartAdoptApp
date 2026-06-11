@@ -49,8 +49,7 @@ export const dashboardService = {
       {
         id: "1",
         titulo: "Cómo preparar tu hogar para una adopción",
-        descripcion:
-          "Consejos esenciales para recibir una mascota en casa.",
+        descripcion: "Consejos esenciales para recibir una mascota en casa.",
         categoria: "Guía",
         minutosLectura: 5,
         imagen: articleImage,
@@ -69,8 +68,7 @@ export const dashboardService = {
       {
         id: "3",
         titulo: "Primeros días con tu nueva mascota",
-        descripcion:
-          "Errores comunes que debes evitar durante la adaptación.",
+        descripcion: "Errores comunes que debes evitar durante la adaptación.",
         categoria: "Consejos",
         minutosLectura: 7,
         imagen: articleImage,

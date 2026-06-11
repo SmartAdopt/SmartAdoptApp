@@ -33,13 +33,15 @@ export const AdminActionCard = ({
         height: "100%",
       }}
     >
-      <Box sx={{ color: `${buttonColor}.main`, mb: 2 }}>
-        {icon}
-      </Box>
+      <Box sx={{ color: `${buttonColor}.main`, mb: 2 }}>{icon}</Box>
       <Typography variant="subtitle1" fontWeight={700} gutterBottom>
         {title}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flexGrow: 1 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 3, flexGrow: 1 }}
+      >
         {description}
       </Typography>
       <Button

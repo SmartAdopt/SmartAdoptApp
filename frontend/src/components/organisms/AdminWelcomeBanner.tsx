@@ -23,7 +23,8 @@ export const AdminWelcomeBanner = () => {
           Bienvenido, Administrador
         </Typography>
         <Typography variant="body2" sx={{ opacity: 0.9 }}>
-          Estás gestionando la conexión entre 5 mascotas disponibles y 4 solicitudes pendientes.
+          Estás gestionando la conexión entre 5 mascotas disponibles y 4
+          solicitudes pendientes.
         </Typography>
       </Box>
       <Button
@@ -34,7 +35,7 @@ export const AdminWelcomeBanner = () => {
           color: "text.primary",
           "&:hover": { bgcolor: "grey.100" },
           fontWeight: 600,
-          whiteSpace: "nowrap"
+          whiteSpace: "nowrap",
         }}
       >
         Revisar Solicitudes

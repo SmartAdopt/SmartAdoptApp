@@ -1,7 +1,4 @@
-import {
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -12,13 +9,11 @@ import type { Notification } from "../../types/dashboard.types";
 import { NotificationItem } from "../molecules/NotificationItem";
 
 export const NotificationsPanel = () => {
-  const [notifications, setNotifications] =
-    useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     const load = async () => {
-      const data =
-        await dashboardService.getNotifications();
+      const data = await dashboardService.getNotifications();
 
       setNotifications(data);
     };
@@ -36,11 +31,7 @@ export const NotificationsPanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ mb: 2 }}
-      >
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Notificaciones
       </Typography>
 

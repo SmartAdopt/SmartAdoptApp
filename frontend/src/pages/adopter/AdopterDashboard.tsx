@@ -1,10 +1,6 @@
 // src/pages/adopter/AdopterDashboard.tsx
 
-import {
-  Grid,
-  Typography,
-  Box,
-} from "@mui/material";
+import { Grid, Typography, Box } from "@mui/material";
 
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 
@@ -22,16 +18,11 @@ export const AdopterDashboard = () => {
   return (
     <AdopterLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          fontWeight={700}
-        >
+        <Typography variant="h4" fontWeight={700}>
           Bienvenido a SmartAdopt
         </Typography>
 
-        <Typography
-          color="text.secondary"
-        >
+        <Typography color="text.secondary">
           Encuentra a tu compañero ideal
         </Typography>
       </Box>

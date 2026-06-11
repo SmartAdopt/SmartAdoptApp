@@ -1,8 +1,4 @@
-import {
-  Paper,
-  Typography,
-  Box,
-} from "@mui/material";
+import { Paper, Typography, Box } from "@mui/material";
 
 interface StatCardProps {
   titulo: string;
@@ -10,11 +6,7 @@ interface StatCardProps {
   icono: React.ReactNode;
 }
 
-export const StatCard = ({
-  titulo,
-  valor,
-  icono,
-}: StatCardProps) => {
+export const StatCard = ({ titulo, valor, icono }: StatCardProps) => {
   return (
     <Paper
       elevation={0}
@@ -35,18 +27,11 @@ export const StatCard = ({
         {icono}
       </Box>
 
-      <Typography
-        variant="h4"
-        fontWeight={700}
-      >
+      <Typography variant="h4" fontWeight={700}>
         {valor}
       </Typography>
 
-      <Typography
-        color="text.secondary"
-      >
-        {titulo}
-      </Typography>
+      <Typography color="text.secondary">{titulo}</Typography>
     </Paper>
   );
 };

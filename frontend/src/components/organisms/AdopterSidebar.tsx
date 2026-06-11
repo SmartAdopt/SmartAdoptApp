@@ -1,12 +1,6 @@
 // src/components/organisms/AdopterSidebar.tsx
 
-import {
-  Box,
-  Typography,
-  List,
-  Divider,
-  Button,
-} from "@mui/material";
+import { Box, Typography, List, Divider, Button } from "@mui/material";
 
 import {
   Home as HomeIcon,
@@ -30,12 +24,12 @@ export const AdopterSidebar = () => {
 
   const { logout } = useAuth();
 
-  // Función actualizada: Asíncrona, limpia tokens, y redirige a la raíz "/"
+  // Function updated: Asynchronous, clears tokens, and redirects to root "/"
   const handleLogout = async () => {
-    // 1. Resetea el contexto global de autenticación
+    // 1. The context reset is handled by the useAuth hook's internal
     logout();
 
-    // 2. Limpia asíncronamente las referencias de los tokens del localStorage
+    // 2. Clears tokens from localStorage and sessionStorage asynchronously to ensure all operations complete before redirection
     await Promise.resolve(); // Fuerza el contexto de ejecución asíncrono
 
     localStorage.removeItem("access_token");
@@ -44,7 +38,7 @@ export const AdopterSidebar = () => {
 
     sessionStorage.clear();
 
-    // 3. Invoca el router push para redirigir al landing page público (raíz)
+    // 3. Summon the router push to redirect to the public landing page (root)
     navigate("/", { replace: true });
   };
 
@@ -61,18 +55,11 @@ export const AdopterSidebar = () => {
       }}
     >
       <Box sx={{ p: 3 }}>
-        <Typography
-          variant="h5"
-          fontWeight={700}
-          color="primary"
-        >
+        <Typography variant="h5" fontWeight={700} color="primary">
           SmartAdopt
         </Typography>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-        >
+        <Typography variant="body2" color="text.secondary">
           Encuentra tu compañero ideal
         </Typography>
       </Box>
@@ -83,73 +70,43 @@ export const AdopterSidebar = () => {
         <SidebarItem
           icon={<HomeIcon />}
           label="Inicio"
-          selected={
-            location.pathname ===
-            "/adopter/dashboard"
-          }
-          onClick={() =>
-            navigate("/adopter/dashboard")
-          }
+          selected={location.pathname === "/adopter/dashboard"}
+          onClick={() => navigate("/adopter/dashboard")}
         />
 
         <SidebarItem
           icon={<SearchIcon />}
           label="Explorar"
-          selected={
-            location.pathname ===
-            "/adopter/explore"
-          }
-          onClick={() =>
-            navigate("/adopter/explore")
-          }
+          selected={location.pathname === "/adopter/explore"}
+          onClick={() => navigate("/adopter/explore")}
         />
 
         <SidebarItem
           icon={<DescriptionIcon />}
           label="Solicitudes"
-          selected={
-            location.pathname ===
-            "/adopter/requests"
-          }
-          onClick={() =>
-            navigate("/adopter/requests")
-          }
+          selected={location.pathname === "/adopter/requests"}
+          onClick={() => navigate("/adopter/requests")}
         />
 
         <SidebarItem
           icon={<FavoriteIcon />}
           label="Favoritos"
-          selected={
-            location.pathname ===
-            "/adopter/favorites"
-          }
-          onClick={() =>
-            navigate("/adopter/favorites")
-          }
+          selected={location.pathname === "/adopter/favorites"}
+          onClick={() => navigate("/adopter/favorites")}
         />
 
         <SidebarItem
           icon={<AssignmentTurnedInIcon />}
           label="Idoneidad"
-          selected={
-            location.pathname ===
-            "/adopter/suitability"
-          }
-          onClick={() =>
-            navigate("/adopter/suitability")
-          }
+          selected={location.pathname === "/adopter/suitability"}
+          onClick={() => navigate("/adopter/suitability")}
         />
 
         <SidebarItem
           icon={<PersonIcon />}
           label="Perfil"
-          selected={
-            location.pathname ===
-            "/adopter/profile"
-          }
-          onClick={() =>
-            navigate("/adopter/profile")
-          }
+          selected={location.pathname === "/adopter/profile"}
+          onClick={() => navigate("/adopter/profile")}
         />
       </List>
 

@@ -1,7 +1,4 @@
-import {
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -12,13 +9,11 @@ import type { Event } from "../../types/dashboard.types";
 import { EventCard } from "../molecules/EventCard";
 
 export const EventsPanel = () => {
-  const [events, setEvents] =
-    useState<Event[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     const load = async () => {
-      const data =
-        await dashboardService.getEvents();
+      const data = await dashboardService.getEvents();
 
       setEvents(data);
     };
@@ -37,11 +32,7 @@ export const EventsPanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ mb: 2 }}
-      >
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Próximos Eventos
       </Typography>
 
