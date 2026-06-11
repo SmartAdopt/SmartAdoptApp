@@ -46,7 +46,7 @@ export const FeaturedPetsSection = () => {
         alignItems="center"
         sx={{ mb: 3 }}
       >
-        <Grid item>
+        <Grid item xs={6}>
           <Typography
             variant="h6"
             fontWeight={700}
@@ -55,7 +55,7 @@ export const FeaturedPetsSection = () => {
           </Typography>
         </Grid>
 
-        <Grid item>
+        <Grid item xs={6} sx={{ textAlign: "right" }}>
           <Button>
             Ver Todas
           </Button>

@@ -10,7 +10,7 @@ import {
   Button,
 } from "@mui/material";
 
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { FavoriteBorder as FavoriteBorderIcon } from "@mui/icons-material";
 
 interface PetCardProps {
   nombre: string;
@@ -52,7 +52,7 @@ export const PetCard = ({
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          mb={1}
+          sx={{ mb: 1 }}
         >
           <Typography
             variant="h6"
@@ -74,7 +74,7 @@ export const PetCard = ({
         <Stack
           direction="row"
           spacing={1}
-          mb={2}
+          sx={{ mb: 2 }}
         >
           <Chip
             label={edad}

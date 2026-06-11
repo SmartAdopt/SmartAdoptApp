@@ -44,7 +44,7 @@ export const ArticlesSection = () => {
         alignItems="center"
         sx={{ mb: 3 }}
       >
-        <Grid item>
+        <Grid item xs={6}>
           <Typography
             variant="h6"
             fontWeight={700}
@@ -53,7 +53,7 @@ export const ArticlesSection = () => {
           </Typography>
         </Grid>
 
-        <Grid item>
+        <Grid item xs={6} sx={{ textAlign: "right" }}>
           <Button>
             Ver Todos
           </Button>

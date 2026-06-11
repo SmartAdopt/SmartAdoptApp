@@ -8,13 +8,15 @@ import {
   Button,
 } from "@mui/material";
 
-import HomeIcon from "@mui/icons-material/Home";
-import SearchIcon from "@mui/icons-material/Search";
-import DescriptionIcon from "@mui/icons-material/Description";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
-import PersonIcon from "@mui/icons-material/Person";
-import LogoutIcon from "@mui/icons-material/Logout";
+import {
+  Home as HomeIcon,
+  Search as SearchIcon,
+  Description as DescriptionIcon,
+  Favorite as FavoriteIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
+} from "@mui/icons-material";
 
 import { useLocation, useNavigate } from "react-router-dom";
 

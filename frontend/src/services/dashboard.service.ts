@@ -79,45 +79,44 @@ export const dashboardService = {
   },
 
   async getNotifications(): Promise<Notification[]> {
-  return [
-    {
-      id: "1",
-      titulo: "Nueva coincidencia",
-      descripcion: "Max coincide con tus preferencias.",
-      fecha: "Hace 2 horas",
-    },
-    {
-      id: "2",
-      titulo: "Solicitud actualizada",
-      descripcion: "Tu solicitud fue revisada.",
-      fecha: "Hace 1 día",
-    },
-    {
-      id: "3",
-      titulo: "Nueva mascota",
-      descripcion: "Se agregó una mascota cercana.",
-      fecha: "Hace 2 días",
-    },
-  ];
-},
+    return [
+      {
+        id: "1",
+        titulo: "Nueva coincidencia",
+        descripcion: "Max coincide con tus preferencias.",
+        fecha: "Hace 2 horas",
+      },
+      {
+        id: "2",
+        titulo: "Solicitud actualizada",
+        descripcion: "Tu solicitud fue revisada.",
+        fecha: "Hace 1 día",
+      },
+      {
+        id: "3",
+        titulo: "Nueva mascota",
+        descripcion: "Se agregó una mascota cercana.",
+        fecha: "Hace 2 días",
+      },
+    ];
+  },
 
-async getEvents(): Promise<Event[]> {
-  return [
-    {
-      id: "1",
-      titulo: "Jornada de Adopción",
-      lugar: "Parque La Carolina",
-      fecha: "22 JUN",
-      hora: "10:00 - 15:00",
-    },
-    {
-      id: "2",
-      titulo: "Taller de Cuidado",
-      lugar: "Fundación Patitas",
-      fecha: "28 JUN",
-      hora: "14:00 - 17:00",
-    },
-  ];
-},
-
+  async getEvents(): Promise<Event[]> {
+    return [
+      {
+        id: "1",
+        titulo: "Jornada de Adopción",
+        lugar: "Parque La Carolina",
+        fecha: "22 JUN",
+        hora: "10:00 - 15:00",
+      },
+      {
+        id: "2",
+        titulo: "Taller de Cuidado",
+        lugar: "Fundación Patitas",
+        fecha: "28 JUN",
+        hora: "14:00 - 17:00",
+      },
+    ];
+  },
 };

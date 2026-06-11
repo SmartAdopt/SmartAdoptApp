@@ -6,7 +6,7 @@ import { HowItWorksSection } from "../components/organisms/HowItWorksSection";
 import { ImpactSection } from "../components/organisms/ImpactSection";
 import { Footer } from "../components/organisms/Footer";
 
-const HomePage = () => {
+export const HomePage = () => {
   return (
     <Box
       sx={{
@@ -30,4 +30,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+ 

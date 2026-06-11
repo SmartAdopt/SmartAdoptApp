@@ -6,10 +6,12 @@ import {
   Grid,
 } from "@mui/material";
 
-import SearchIcon from "@mui/icons-material/Search";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import PersonIcon from "@mui/icons-material/Person";
-import DescriptionIcon from "@mui/icons-material/Description";
+import {
+  Search as SearchIcon,
+  Favorite as FavoriteIcon,
+  Person as PersonIcon,
+  Description as DescriptionIcon,
+} from "@mui/icons-material";
 
 import { useNavigate } from "react-router-dom";
 
@@ -37,7 +39,7 @@ export const QuickActionsPanel = () => {
       </Typography>
 
       <Grid container spacing={2}>
-        <Grid item>
+        <Grid item xs={6} sm={3}>
           <QuickActionButton
             titulo="Explorar"
             icono={<SearchIcon />}
@@ -47,7 +49,7 @@ export const QuickActionsPanel = () => {
           />
         </Grid>
 
-        <Grid item>
+        <Grid item xs={6} sm={3}>
           <QuickActionButton
             titulo="Favoritos"
             icono={<FavoriteIcon />}
@@ -57,7 +59,7 @@ export const QuickActionsPanel = () => {
           />
         </Grid>
 
-        <Grid item>
+        <Grid item xs={6} sm={3}>
           <QuickActionButton
             titulo="Mi Perfil"
             icono={<PersonIcon />}
@@ -67,7 +69,7 @@ export const QuickActionsPanel = () => {
           />
         </Grid>
 
-        <Grid item>
+        <Grid item xs={6} sm={3}>
           <QuickActionButton
             titulo="Solicitudes"
             icono={<DescriptionIcon />}

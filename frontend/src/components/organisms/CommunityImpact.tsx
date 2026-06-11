@@ -4,9 +4,11 @@ import {
   Grid,
 } from "@mui/material";
 
-import PetsIcon from "@mui/icons-material/Pets";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import GroupsIcon from "@mui/icons-material/Groups";
+import {
+  Pets as PetsIcon,
+  Favorite as FavoriteIcon,
+  Groups as GroupsIcon,
+} from "@mui/icons-material";
 
 import { StatCard } from "../atoms/StatCard";
 
@@ -35,7 +37,7 @@ export const CommunityImpact = () => {
           <StatCard
             titulo="Mascotas Adoptadas"
             valor="1,245"
-            icono={<PetsIcon color="primary" />}
+            icono={<PetsIcon sx={{ color: "primary.main" }} />}
           />
         </Grid>
 
@@ -43,7 +45,7 @@ export const CommunityImpact = () => {
           <StatCard
             titulo="Familias Felices"
             valor="987"
-            icono={<FavoriteIcon color="error" />}
+            icono={<FavoriteIcon sx={{ color: "error.main" }} />}
           />
         </Grid>
 
@@ -51,7 +53,7 @@ export const CommunityImpact = () => {
           <StatCard
             titulo="Usuarios Activos"
             valor="5,321"
-            icono={<GroupsIcon color="success" />}
+            icono={<GroupsIcon sx={{ color: "success.main" }} />}
           />
         </Grid>
       </Grid>

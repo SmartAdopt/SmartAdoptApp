@@ -4,7 +4,7 @@ import {
   Button,
 } from "@mui/material";
 
-import ShareIcon from "@mui/icons-material/Share";
+import { Share as ShareIcon } from "@mui/icons-material";
 
 export const SharePanel = () => {
   return (

@@ -1,52 +1,44 @@
 // src/components/atoms/SidebarItem.tsx
-
-import {
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
+import { ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import { type ReactNode } from "react";
 
 interface SidebarItemProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   selected?: boolean;
   onClick: () => void;
 }
 
-export const SidebarItem = ({
-  icon,
-  label,
-  selected = false,
-  onClick,
-}: SidebarItemProps) => {
+export const SidebarItem = ({ icon, label, selected = false, onClick }: SidebarItemProps) => {
   return (
-    <ListItemButton
-      selected={selected}
-      onClick={onClick}
-      sx={{
-        borderRadius: 2,
-        mb: 1,
-
-        "&.Mui-selected": {
-          backgroundColor: "#E8F5E9",
-          color: "#2E7D32",
-        },
-
-        "&.Mui-selected:hover": {
-          backgroundColor: "#DDF3E1",
-        },
-      }}
-    >
-      <ListItemIcon
+    <ListItem disablePadding sx={{ mb: 0.5 }}>
+      <ListItemButton
+        selected={selected}
+        onClick={onClick}
         sx={{
-          color: selected ? "#2E7D32" : "inherit",
-          minWidth: 40,
+          borderRadius: 2,
+          "&.Mui-selected": {
+            bgcolor: "primary.light",
+            color: "primary.main",
+            "&:hover": { bgcolor: "primary.light" },
+          },
         }}
       >
-        {icon}
-      </ListItemIcon>
-
-      <ListItemText primary={label} />
-    </ListItemButton>
+        <ListItemIcon
+          sx={{
+            color: selected ? "primary.main" : "text.secondary",
+            minWidth: 40,
+          }}
+        >
+          {icon}
+        </ListItemIcon>
+        <ListItemText 
+          primary={label} 
+          primaryTypographyProps={{ 
+            fontWeight: selected ? 600 : 400 
+          }} 
+        />
+      </ListItemButton>
+    </ListItem>
   );
 };
