@@ -49,8 +49,7 @@ if not os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"):
 # ruff: noqa: E402
 from app.main import app
 from app.database.postgres.postgres_db import Base, get_db
-from app.database.redis import redis_client
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # Import models to ensure they are registered with Base before creating tables
 

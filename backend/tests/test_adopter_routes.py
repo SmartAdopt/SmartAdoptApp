@@ -1,5 +1,4 @@
 from app.models.adopter import Adopter
-from app.models.user import User
 from jose import jwt
 from app.config import settings
 

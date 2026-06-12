@@ -1,5 +1,4 @@
 from app.models.user import User
-from app.database.redis import redis_client
 from jose import jwt
 from app.config import settings
 from datetime import datetime, timedelta
@@ -134,7 +133,7 @@ def test_refresh_token_success(client):
     # In a real scenario, you would wait for expiration or manually modify the token
 
     # 3. Refresh the token
-    refresh_response = client.post(
+    client.post(
         "/auth/refresh",
         headers={"Authorization": f"Bearer {access_token}"},
         cookies={"refresh_token": refresh_token_cookie}
@@ -258,7 +257,7 @@ def test_blacklisted_token_rejected_in_protected_endpoint(client):
 
     # 2. Manually add the token to blacklist (simulating logout)
     from app.utils.jwt.jwt_utils import add_token_to_blacklist
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     exp_timestamp = payload.get("exp")
@@ -333,7 +332,6 @@ def test_decode_token_status_invalid():
 def test_register_validation_error(client):
     # Test register with validation error (Negative path)
     # This test covers lines 81-86 in auth_routes.py
-    from app.schemas.auth_schemas import RegisterRequest
     from unittest.mock import patch
 
     # Mock register_user to raise ValueError (not email related)
