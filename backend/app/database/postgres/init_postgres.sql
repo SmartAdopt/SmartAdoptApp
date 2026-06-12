@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS adopter (
 
 -- Insert default admin user with explicit ID 1
 INSERT INTO "user" (user_id, first_name, last_name, email, phone_number, password_hash, type)
-VALUES (1, 'admin', 'admin', 'admin@smartadopt.com', NULL, '$2b$12$kmyKbMUGNla12wrOsL/iJeBcvt8HkiO3mq3o8IpQ3hH/ou8RO3eZ6', 'admin');
+VALUES (1, 'admin', 'admin', 'admin@smartadopt.com', NULL, '$2b$12$Q5ra0nerUv/TCpR63My05.Zi1f3kzLGcoxodianygpYprQYFj2BW6', 'admin');
 
 -- Insert admin entry
 INSERT INTO admin (user_id)

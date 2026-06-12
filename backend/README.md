@@ -21,46 +21,38 @@ SmartAdopt is a platform for pet adoption management. This backend provides a RE
 ## Project Structure
 
 ```
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── config.py              # Application configuration using pydantic_settings
-│   ├── main.py                # FastAPI application entry point
-│   ├── database/              # Database configuration
-│   │   ├── __init__.py
-│   │   └── postgres/
-│   │       ├── __init__.py    # Created to enable imports
-│   │       ├── postgres_db.py # SQLAlchemy configuration (Base, Session)
-│   │       └── init_postgres.sql # Table initialization script
-│   ├── models/                # SQLAlchemy models
-│   │   ├── __init__.py        # Exports User, Admin, Adopter
-│   │   ├── user.py            # Base user model
-│   │   ├── admin.py           # Admin model (inherits from User)
-│   │   └── adopter.py         # Adopter model (inherits from User)
-│   ├── routes/                # API routes
-│   │   ├── __init__.py
-│   │   ├── auth_routes.py     # Authentication endpoints
-│   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   └── adopter_routes.py  # Adopter-protected endpoints
-│   ├── schemas/               # Pydantic schemas
-│   │   ├── __init__.py
-│   │   └── auth_schemas.py    # Request/response schemas for auth
-│   ├── services/              # Business logic
-│   │   ├── __init__.py
-│   │   └── auth_service.py    # Authentication services
-│   └── utils/                 # Utilities
-│       ├── __init__.py
-│       ├── jwt/               # JWT authentication utilities
-│       │   ├── __init__.py
-│       │   └── jwt_utils.py   # JWT token creation and verification
-│       └── oauth/             # OAuth 2.0 utilities
-│           ├── __init__.py
-│           └── google_oauth.py # Google OAuth integration
-├── docs/                      # Documentation
-│   └── README_JWT.md          # Complete JWT documentation
-├── tests/                     # Unit tests
-├── Dockerfile                 # Docker configuration
-└── requirements.txt           # Python dependencies
+backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── config.py        # Application configuration using pydantic_settings
+│   │   ├── main.py          # FastAPI application entry point
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
+│   │   │   ├── postgres/    # PostgreSQL configuration
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   └── redis/       # Redis configuration for token management
+│   │   │       └── redis_db.py    # Redis client configuration
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   └── adopter_routes.py  # Adopter-protected endpoints
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   ├── services/        # Business logic layer
+│   │   │   └── auth_service.py    # Authentication services
+│   │   └── utils/           # Utility functions
+│   │       ├── jwt/         # JWT authentication utilities
+│   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
+│   │       └── oauth/       # OAuth 2.0 utilities
+│   │       │   └── google_oauth.py     # Google OAuth integration
+│   ├── docs/               # Documentation
+│   │   ├── README_JWT.md    # Complete JWT documentation
+│   │   └── README_OAUTH.md  # Complete OAuth documentation
+│   ├── tests/              # Backend tests
+│   │   ├── conftest.py      # Test configuration
+│   │   ├── test_auth.py     # Authentication tests
+│   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   └── test_main.py     # Main endpoint tests
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container configuration
 ```
 
 ## Technologies
@@ -119,7 +111,7 @@ python -m mypy backend/ --ignore-missing-imports
 When the PostgreSQL database is initialized using the provided script, a default admin user is automatically created with the following credentials:
 
 - **Email:** admin@smartadopt.com
-- **Password:** admin123
+- **Password:** Admin1234
 - **Role:** admin
 
 This user can be used to:
@@ -382,9 +374,12 @@ The application implements JSON Web Token (JWT) authentication for protecting se
 ### Overview
 
 - Access tokens with 10-minute expiration
+- Refresh tokens with configurable expiration (default: 7 days)
 - Role-based authorization (admin, adopter)
-- Token type checking (access/refresh ready for future implementation)
+- Token type checking (access/refresh)
+- Token blacklist for immediate revocation
 - Protected endpoints with role verification
+- Redis-based token storage and management
 
 ### Configuration
 
@@ -393,6 +388,7 @@ JWT configuration is managed through environment variables. Refer to the `.env.e
 - `SECRET_KEY`: Secret key used to sign JWT tokens
 - `ALGORITHM`: Hashing algorithm (default: HS256)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 10)
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time in days (default: 7)
 
 ### Google OAuth Configuration
 
@@ -420,13 +416,40 @@ To obtain these credentials, refer to the complete Google OAuth documentation in
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
+3. **Refresh expired token:**
+   ```http
+   POST /auth/refresh
+   Authorization: Bearer <expired_access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+4. **Logout (revoke tokens):**
+   ```http
+   POST /auth/logout
+   Authorization: Bearer <access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+### Token Blacklist
+
+The application implements a token blacklist mechanism using Redis to immediately revoke access tokens:
+
+- When a user logs out, their access token is added to a blacklist in Redis
+- Blacklisted tokens are rejected even if they haven't expired
+- Blacklisted tokens automatically expire from Redis when the original token would have expired
+- All protected endpoints check the blacklist before accepting a token
+- This provides immediate security by allowing token revocation without waiting for natural expiration
+
 ### Security Considerations
 
 - Tokens expire after 10 minutes to limit exposure if compromised
+- Refresh tokens are stored in Redis with rotation on each refresh
+- Token blacklist allows immediate revocation of compromised tokens
 - Only admin and adopter roles receive tokens
 - Regular users cannot access protected endpoints
 - SECRET_KEY should be changed in production environments
 - Tokens are transmitted via HTTPS in production (recommended)
+- HTTP-Only cookies prevent XSS attacks on refresh tokens
 
 ## License
 

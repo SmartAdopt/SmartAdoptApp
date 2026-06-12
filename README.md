@@ -50,16 +50,22 @@ SmartAdoptApp/
 │   ├── app/
 │   │   ├── config.py        # Application configuration using pydantic_settings
 │   │   ├── main.py          # FastAPI application entry point
-│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB)
-│   │   │   └── postgres/    # PostgreSQL configuration
-│   │   │       └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
+│   │   │   ├── postgres/    # PostgreSQL configuration
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   └── redis/       # Redis configuration for token management
+│   │   │       └── redis_db.py    # Redis client configuration
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
 │   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   └── adopter_routes.py  # Adopter-protected endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   ├── services/        # Business logic layer
+│   │   │   └── auth_service.py    # Authentication services
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
-│   │       │   └── jwt_utils.py   # JWT token creation and verification
+│   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
 │   │       └── oauth/       # OAuth 2.0 utilities
 │   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
@@ -191,9 +197,20 @@ The application uses JWT (JSON Web Token) authentication with role-based authori
 
 **Current Implementation:**
 - Access tokens with 10-minute expiration
+- Refresh tokens with configurable expiration (default: 7 days)
 - Role-based authorization (admin, adopter)
-- Token type checking (access/refresh ready for future implementation)
+- Token type checking (access/refresh)
+- Token blacklist for immediate revocation
 - Protected endpoints with role verification
+- Redis-based token storage and management
+- HTTP-Only cookies for refresh token security
+
+**Token Blacklist:**
+- When a user logs out, their access token is added to a blacklist in Redis
+- Blacklisted tokens are rejected even if they haven't expired
+- Blacklisted tokens automatically expire from Redis when the original token would have expired
+- All protected endpoints check the blacklist before accepting a token
+- This provides immediate security by allowing token revocation without waiting for natural expiration
 
 **Note:** Only admin and adopter roles receive JWT tokens. Regular users receive empty tokens. For complete JWT documentation, refer to `backend/docs/README_JWT.md`.
 
