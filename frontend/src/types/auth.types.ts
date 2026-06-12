@@ -17,13 +17,15 @@ export interface LoginApiRequest {
 
 export interface LoginApiResponse {
   access_token: string;
+  token_type: string;
   message: string;
   id: number;
   first_name: string;
-  last_name?: string; // Optional because the Admin may not have it according to the contract
+  last_name: string;
   email: string;
-  role: Role;
+  role: "admin" | "adopter" | "user";
   created_at?: string;
+  refresh_token?: string; // <-- Add this property as optional
 }
 
 export interface RegisterApiRequest {
@@ -63,6 +65,8 @@ export interface AuthUser {
 }
 
 export interface AuthSession {
-  accessToken: string;
-  user: AuthUser; // Here we do nest the user to keep the global state organized
+id: number;
+  name: string;
+  email: string;
+  role: "admin" | "adopter" | "user";
 }

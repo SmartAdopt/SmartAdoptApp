@@ -12,15 +12,21 @@ import type {
 import { adaptLoginResponse } from "../utils/auth.adapters";
 
 export const authService = {
-  login: async (credentials: LoginApiRequest): Promise<AuthSession> => {
+login: async (credentials: LoginApiRequest): Promise<AuthSession> => {
     try {
       const response = await apiClient.post<LoginApiResponse>(
         "/auth/login",
         credentials,
       );
 
-      // CRITICAL FIX: Transform the raw response through our adapter
-      // This creates the "user" object that the UI is looking for.
+      // Save both tokens in LocalStorage
+      if (response.data.access_token) {
+        localStorage.setItem("access_token", response.data.access_token);
+      }
+      if (response.data.refresh_token) {
+        localStorage.setItem("refresh_token", response.data.refresh_token);
+      }
+
       return adaptLoginResponse(response.data);
     } catch (error) {
       throw authService.handleApiError(error, "Invalid credentials");

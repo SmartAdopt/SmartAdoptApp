@@ -11,12 +11,11 @@ import {
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { AuthToggle } from "../molecules/AuthToggle";
 import { SocialLoginGroup } from "../molecules/SocialLoginGroup";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../context/AuthContext"; // Note: Updated path to our actual Context
 import { authService } from "../../services/auth.service";
-import type { LoginApiRequest } from "../../types/auth.types"; // Import the strict contract type
+import type { LoginApiRequest } from "../../types/auth.types";
 
 export const LoginForm = () => {
-  // 1. Drive the form inputs with local state using the API interface
   const [credentials, setCredentials] = useState<LoginApiRequest>({
     email: "",
     password: "",
@@ -24,18 +23,15 @@ export const LoginForm = () => {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 2. We use the login function from our AuthContext to save the session after successful login
-  const { login } = useAuth();
+  const { loginUser } = useAuth(); // Note: Changed to match our AuthContext signature
   const navigate = useNavigate();
 
-  // Handle generic input changes for scalability
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
-    if (error) setError(""); // Clear error when user types
+    if (error) setError(""); 
   };
 
-  // 3. Function that runs when the form is submitted
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -43,27 +39,22 @@ export const LoginForm = () => {
 
     try {
       const session = await authService.login(credentials);
+      
+      // Save the session globally and in local storage
+      loginUser(session);
 
-      // 🕵️‍♂️ DIAGNOSTIC LINE: Check the console (F12) to see exactly what arrived
-      console.log("Sesión recibida del Backend:", session);
-
-      // Save the session in the global context
-      login(session);
-
-      // Extract the role, convert it to lowercase, and use Optional Chaining (?.)
-      const userRole = session.user?.role?.toLowerCase();
+      const userRole = session.role?.toLowerCase();
 
       if (userRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // SOLUCIÓN: Cambia "/adopter/profile" por "/adopter/dashboard"
         navigate("/adopter/dashboard");
       }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Invalid credentials. Please try again.");
+        setError("Credenciales inválidas. Por favor intenta nuevamente.");
       }
     } finally {
       setIsLoading(false);
@@ -81,18 +72,16 @@ export const LoginForm = () => {
         Inicia sesión para acceder a tu cuenta
       </Typography>
 
-      {/* FORM: Connected to the handleSubmit function */}
       <Box
         component="form"
         onSubmit={handleSubmit}
         sx={{ display: "flex", flexDirection: "column", gap: 3 }}
       >
-        {/* Display backend validation errors if they exist */}
         {error && <Alert severity="error">{error}</Alert>}
 
         <TextField
           label="Correo Electrónico"
-          name="email" // Required to bind with handleChange
+          name="email"
           variant="outlined"
           fullWidth
           required
@@ -103,7 +92,7 @@ export const LoginForm = () => {
         />
         <TextField
           label="Contraseña"
-          name="password" // Required to bind with handleChange
+          name="password"
           type="password"
           variant="outlined"
           fullWidth
@@ -114,13 +103,7 @@ export const LoginForm = () => {
           InputProps={{ sx: { bgcolor: "grey.50" } }}
         />
 
-        <Alert severity="info" sx={{ borderRadius: 2 }}>
-          <strong>Credenciales de Demostración:</strong>
-          <br />
-          Admin: admin@smartadopt.com / admin123
-          <br />
-          Adoptante: tu@ejemplo.com / user123
-        </Alert>
+        {/* Removed Demo Credentials Alert to keep UI clean */}
 
         <Button
           type="submit"
@@ -139,6 +122,7 @@ export const LoginForm = () => {
         </Button>
       </Box>
 
+      {/* Renders our updated SocialLoginGroup which only has Google now */}
       <SocialLoginGroup />
 
       <Box sx={{ textAlign: "center", mt: 4 }}>

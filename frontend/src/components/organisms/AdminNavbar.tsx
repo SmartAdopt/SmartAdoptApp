@@ -1,30 +1,19 @@
+// src/components/organisms/AdminNavbar.tsx
 import { AppBar, Toolbar, Box, Chip, IconButton, Tooltip } from "@mui/material";
 import {
   CheckCircle as CheckCircleIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
 import { Logo } from "../atoms/Logo";
 import { useAuth } from "../../hooks/useAuth";
 
 export const AdminNavbar = () => {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+  // We extract logoutUser from our new Context
+  const { logoutUser } = useAuth();
 
   const handleLogout = () => {
-    // 1. Clear session from global React context state
-    logout();
-
-    // 2. Erase core security tokens and session metadata from persistent storage
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-
-    // 3. Purge volatile session data
-    sessionStorage.clear();
-
-    // 4. Redirect to the login page clearing the history stack route
-    navigate("/login", { replace: true });
+    // logoutUser already handles clearing tokens and redirecting to /login
+    logoutUser();
   };
 
   return (
