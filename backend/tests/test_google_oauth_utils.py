@@ -5,4 +5,4 @@ def test_get_google_oauth():
     oauth_instance = get_google_oauth()
 
     assert oauth_instance is not None
-    assert hasattr(oauth_instance, 'google')
+    assert hasattr(oauth_instance, "google")

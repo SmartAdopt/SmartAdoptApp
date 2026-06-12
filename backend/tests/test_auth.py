@@ -117,10 +117,10 @@ def test_refresh_token_success(client):
     user_data["email"] = "refresh.test@test.com"
     client.post("/auth/register", json=user_data)
 
-    login_response = client.post("/auth/login", json={
-        "email": "refresh.test@test.com",
-        "password": user_data["password"]
-    })
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "refresh.test@test.com", "password": user_data["password"]},
+    )
 
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
@@ -136,7 +136,7 @@ def test_refresh_token_success(client):
     client.post(
         "/auth/refresh",
         headers={"Authorization": f"Bearer {access_token}"},
-        cookies={"refresh_token": refresh_token_cookie}
+        cookies={"refresh_token": refresh_token_cookie},
     )
 
     # Note: This might fail if the access token is still valid
@@ -151,10 +151,10 @@ def test_refresh_token_rejects_valid_access_token(client):
     user_data["email"] = "refresh.reject@test.com"
     client.post("/auth/register", json=user_data)
 
-    login_response = client.post("/auth/login", json={
-        "email": "refresh.reject@test.com",
-        "password": user_data["password"]
-    })
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "refresh.reject@test.com", "password": user_data["password"]},
+    )
 
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
@@ -164,7 +164,7 @@ def test_refresh_token_rejects_valid_access_token(client):
     refresh_response = client.post(
         "/auth/refresh",
         headers={"Authorization": f"Bearer {access_token}"},
-        cookies={"refresh_token": refresh_token_cookie}
+        cookies={"refresh_token": refresh_token_cookie},
     )
 
     # Should return 400 Bad Request
@@ -179,18 +179,17 @@ def test_refresh_token_without_refresh_cookie(client):
     user_data["email"] = "refresh.nocookie@test.com"
     client.post("/auth/register", json=user_data)
 
-    login_response = client.post("/auth/login", json={
-        "email": "refresh.nocookie@test.com",
-        "password": user_data["password"]
-    })
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "refresh.nocookie@test.com", "password": user_data["password"]},
+    )
 
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
 
     # 2. Try to refresh without refresh token cookie
     refresh_response = client.post(
-        "/auth/refresh",
-        headers={"Authorization": f"Bearer {access_token}"}
+        "/auth/refresh", headers={"Authorization": f"Bearer {access_token}"}
     )
 
     # Should return 401 Unauthorized
@@ -206,10 +205,10 @@ def test_logout_with_blacklist(client):
     user_data["email"] = "logout.blacklist@test.com"
     client.post("/auth/register", json=user_data)
 
-    login_response = client.post("/auth/login", json={
-        "email": "logout.blacklist@test.com",
-        "password": user_data["password"]
-    })
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "logout.blacklist@test.com", "password": user_data["password"]},
+    )
 
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
@@ -219,7 +218,7 @@ def test_logout_with_blacklist(client):
     logout_response = client.post(
         "/auth/logout",
         headers={"Authorization": f"Bearer {access_token}"},
-        cookies={"refresh_token": refresh_token_cookie}
+        cookies={"refresh_token": refresh_token_cookie},
     )
 
     assert logout_response.status_code == 200
@@ -247,10 +246,13 @@ def test_blacklisted_token_rejected_in_protected_endpoint(client):
     user_data["email"] = "blacklist.protected@test.com"
     client.post("/auth/register", json=user_data)
 
-    login_response = client.post("/auth/login", json={
-        "email": "blacklist.protected@test.com",
-        "password": user_data["password"]
-    })
+    login_response = client.post(
+        "/auth/login",
+        json={
+            "email": "blacklist.protected@test.com",
+            "password": user_data["password"],
+        },
+    )
 
     assert login_response.status_code == 200
     access_token = login_response.json()["access_token"]
@@ -259,7 +261,9 @@ def test_blacklisted_token_rejected_in_protected_endpoint(client):
     from app.utils.jwt.jwt_utils import add_token_to_blacklist
     from datetime import datetime
 
-    payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    payload = jwt.decode(
+        access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+    )
     exp_timestamp = payload.get("exp")
     if exp_timestamp:
         exp_datetime = datetime.fromtimestamp(exp_timestamp)
@@ -283,12 +287,13 @@ def test_verify_token_with_expired_token(client):
         "exp": datetime.utcnow() - timedelta(minutes=1),  # Expired
         "iat": datetime.utcnow() - timedelta(minutes=2),
     }
-    expired_token = jwt.encode(expired_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    expired_token = jwt.encode(
+        expired_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # Create credentials with expired token
     credentials = HTTPAuthorizationCredentials(
-        scheme="Bearer",
-        credentials=expired_token
+        scheme="Bearer", credentials=expired_token
     )
 
     # Try to verify expired token
@@ -310,7 +315,9 @@ def test_decode_token_status_expired():
         "exp": datetime.utcnow() - timedelta(minutes=1),
         "iat": datetime.utcnow() - timedelta(minutes=2),
     }
-    expired_token = jwt.encode(expired_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    expired_token = jwt.encode(
+        expired_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # Decode token status
     status = decode_token_status(expired_token)
@@ -335,7 +342,7 @@ def test_register_validation_error(client):
     from unittest.mock import patch
 
     # Mock register_user to raise ValueError (not email related)
-    with patch('app.routes.auth_routes.register_user') as mock_register:
+    with patch("app.routes.auth_routes.register_user") as mock_register:
         mock_register.side_effect = ValueError("Invalid phone number")
 
         user_data = {
@@ -359,7 +366,7 @@ def test_register_internal_error(client):
     from unittest.mock import patch
 
     # Mock register_user to raise generic Exception
-    with patch('app.routes.auth_routes.register_user') as mock_register:
+    with patch("app.routes.auth_routes.register_user") as mock_register:
         mock_register.side_effect = Exception("Database connection failed")
 
         user_data = {
@@ -383,7 +390,7 @@ def test_login_internal_error(client):
     from unittest.mock import patch
 
     # Mock login_user to raise generic Exception
-    with patch('app.routes.auth_routes.login_user') as mock_login:
+    with patch("app.routes.auth_routes.login_user") as mock_login:
         mock_login.side_effect = Exception("Database connection failed")
 
         login_credentials = {
@@ -409,16 +416,18 @@ def test_refresh_internal_error(client):
         "role": "adopter",
         "exp": datetime.utcnow() - timedelta(minutes=1),  # Expired
     }
-    expired_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    expired_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # Mock refresh_tokens to raise generic Exception
-    with patch('app.routes.auth_routes.refresh_tokens') as mock_refresh:
+    with patch("app.routes.auth_routes.refresh_tokens") as mock_refresh:
         mock_refresh.side_effect = Exception("Redis connection failed")
 
         response = client.post(
             "/auth/refresh",
             headers={"Authorization": f"Bearer {expired_token}"},
-            cookies={"refresh_token": "test_refresh_token"}
+            cookies={"refresh_token": "test_refresh_token"},
         )
 
         # Should return 500 Internal Server Error
@@ -437,16 +446,18 @@ def test_logout_internal_error(client):
         "role": "adopter",
         "exp": 9999999999,
     }
-    valid_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    valid_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # Mock logout_user to raise generic Exception
-    with patch('app.routes.auth_routes.logout_user') as mock_logout:
+    with patch("app.routes.auth_routes.logout_user") as mock_logout:
         mock_logout.side_effect = Exception("Redis connection failed")
 
         response = client.post(
             "/auth/logout",
             headers={"Authorization": f"Bearer {valid_token}"},
-            cookies={"refresh_token": "test_refresh_token"}
+            cookies={"refresh_token": "test_refresh_token"},
         )
 
         # Should return 500 Internal Server Error

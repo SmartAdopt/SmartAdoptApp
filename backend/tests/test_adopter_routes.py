@@ -22,12 +22,13 @@ def test_adopter_home_success(client, db_session):
         "role": "adopter",
         "exp": 9999999999,  # Far future
     }
-    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    adopter_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Access adopter home
     response = client.get(
-        "/adopter/home",
-        headers={"Authorization": f"Bearer {adopter_token}"}
+        "/adopter/home", headers={"Authorization": f"Bearer {adopter_token}"}
     )
 
     assert response.status_code == 200
@@ -42,6 +43,7 @@ def test_adopter_home_unauthorized_role(client, db_session):
     # Test adopter home with non-adopter user (Negative path)
     # 1. Create an admin user
     from app.models.admin import Admin
+
     admin_user = Admin(
         first_name="Admin",
         last_name="User",
@@ -58,12 +60,13 @@ def test_adopter_home_unauthorized_role(client, db_session):
         "role": "admin",
         "exp": 9999999999,
     }
-    admin_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    admin_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Try to access adopter home with non-adopter role
     response = client.get(
-        "/adopter/home",
-        headers={"Authorization": f"Bearer {admin_token}"}
+        "/adopter/home", headers={"Authorization": f"Bearer {admin_token}"}
     )
 
     # Should return 403 Forbidden
@@ -82,8 +85,7 @@ def test_adopter_home_no_token(client):
 def test_adopter_home_invalid_token(client):
     # Test adopter home with invalid token (Negative path)
     response = client.get(
-        "/adopter/home",
-        headers={"Authorization": "Bearer invalid_token"}
+        "/adopter/home", headers={"Authorization": "Bearer invalid_token"}
     )
 
     # Should return 401 Unauthorized (from verify_token)
@@ -111,17 +113,19 @@ def test_adopter_home_with_blacklisted_token(client, db_session):
         "role": "adopter",
         "exp": 9999999999,
     }
-    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    adopter_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Add token to blacklist
     from app.utils.jwt.jwt_utils import add_token_to_blacklist
     from datetime import datetime, timedelta
+
     add_token_to_blacklist(adopter_token, datetime.utcnow() + timedelta(hours=1))
 
     # 4. Try to access adopter home with blacklisted token
     response = client.get(
-        "/adopter/home",
-        headers={"Authorization": f"Bearer {adopter_token}"}
+        "/adopter/home", headers={"Authorization": f"Bearer {adopter_token}"}
     )
 
     # Should return 401 Unauthorized (token is blacklisted)

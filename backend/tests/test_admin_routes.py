@@ -22,12 +22,13 @@ def test_admin_dashboard_success(client, db_session):
         "role": "admin",
         "exp": 9999999999,  # Far future
     }
-    admin_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    admin_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Access admin dashboard
     response = client.get(
-        "/admin/dashboard",
-        headers={"Authorization": f"Bearer {admin_token}"}
+        "/admin/dashboard", headers={"Authorization": f"Bearer {admin_token}"}
     )
 
     assert response.status_code == 200
@@ -42,6 +43,7 @@ def test_admin_dashboard_unauthorized_role(client, db_session):
     # Test admin dashboard with non-admin user (Negative path)
     # 1. Create a regular user
     from app.models.adopter import Adopter
+
     regular_user = Adopter(
         first_name="Regular",
         last_name="User",
@@ -58,12 +60,13 @@ def test_admin_dashboard_unauthorized_role(client, db_session):
         "role": "adopter",
         "exp": 9999999999,
     }
-    regular_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    regular_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Try to access admin dashboard with non-admin role
     response = client.get(
-        "/admin/dashboard",
-        headers={"Authorization": f"Bearer {regular_token}"}
+        "/admin/dashboard", headers={"Authorization": f"Bearer {regular_token}"}
     )
 
     # Should return 403 Forbidden
@@ -82,8 +85,7 @@ def test_admin_dashboard_no_token(client):
 def test_admin_dashboard_invalid_token(client):
     # Test admin dashboard with invalid token (Negative path)
     response = client.get(
-        "/admin/dashboard",
-        headers={"Authorization": "Bearer invalid_token"}
+        "/admin/dashboard", headers={"Authorization": "Bearer invalid_token"}
     )
 
     # Should return 401 Unauthorized (from verify_token)
@@ -111,17 +113,19 @@ def test_admin_dashboard_with_blacklisted_token(client, db_session):
         "role": "admin",
         "exp": 9999999999,
     }
-    admin_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    admin_token = jwt.encode(
+        token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
 
     # 3. Add token to blacklist
     from app.utils.jwt.jwt_utils import add_token_to_blacklist
     from datetime import datetime, timedelta
+
     add_token_to_blacklist(admin_token, datetime.utcnow() + timedelta(hours=1))
 
     # 4. Try to access admin dashboard with blacklisted token
     response = client.get(
-        "/admin/dashboard",
-        headers={"Authorization": f"Bearer {admin_token}"}
+        "/admin/dashboard", headers={"Authorization": f"Bearer {admin_token}"}
     )
 
     # Should return 401 Unauthorized (token is blacklisted)
