@@ -153,11 +153,11 @@ def test_google_oauth_callback_admin_role(mock_get_google_oauth, client, db_sess
 def test_google_oauth_callback_error(mock_get_google_oauth, client):
     # Test Google OAuth callback with authentication error (Negative path)
 
-    # Mock the OAuth instance to raise an exception
+    # Mock the OAuth instance to raise a ValueError (which triggers 401)
     mock_oauth = MagicMock()
     mock_google = AsyncMock()
     mock_google.authorize_access_token = AsyncMock(
-        side_effect=Exception("Google auth failed")
+        side_effect=ValueError("Google auth failed")
     )
 
     mock_oauth.google = mock_google

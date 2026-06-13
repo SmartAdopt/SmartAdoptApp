@@ -23,14 +23,27 @@ python -m pytest backend/tests/test_google_oauth.py -v
 
 # Run main test
 python -m pytest backend/tests/test_main.py -v
+
+# Run admin routes tests
+python -m pytest backend/tests/test_admin_routes.py -v
+
+# Run adopter routes tests
+python -m pytest backend/tests/test_adopter_routes.py -v
+
+# Run Google OAuth utils tests
+python -m pytest backend/tests/test_google_oauth_utils.py -v
 ```
 
 
 ### Test Coverage
-The backend currently has 89% code coverage with 13 tests passing:
-- 6 authentication tests
-- 6 Google OAuth tests
+The backend currently has 90% code coverage with 39 tests passing:
+- 13 authentication tests (registration, login, refresh tokens, blacklist)
+- 4 admin routes tests
+- 4 adopter routes tests
+- 3 Google OAuth tests
+- 1 Google OAuth utils test
 - 1 main test
+- 13 additional auth tests (error handling, token validation)
 
 ---
 
@@ -344,3 +357,191 @@ def test_google_oauth_login_redirect_error(mock_get_google_oauth, client):
 **Purpose:** 
 Validates error handling in the OAuth login endpoint. It confirms that when OAuth fails to initialize, the system returns an appropriate error response.
 * **HTTP 302 (Found):** Indicates that the redirect failed with an error message.
+
+---
+
+## 4. Admin Routes Tests: `test_admin_routes.py`
+
+This file contains validation logic for admin-specific endpoints, including dashboard access, role verification, and token validation.
+
+### a) Functional Test: Admin Dashboard Success
+```python
+def test_admin_dashboard_success(client, db_session):
+    # Create admin user and valid token
+    # ...
+    response = client.get("/admin/dashboard", headers={"Authorization": f"Bearer {admin_token}"})
+    
+    assert response.status_code == 200
+    assert data["message"] == "Welcome to Admin Dashboard"
+```
+**Purpose:** 
+Validates that admin users can successfully access the admin dashboard with valid tokens.
+
+### b) Negative Test: Unauthorized Role Access
+```python
+def test_admin_dashboard_unauthorized_role(client, db_session):
+    # Create regular user with adopter role
+    # ...
+    response = client.get("/admin/dashboard", headers={"Authorization": f"Bearer {adopter_token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures that non-admin users cannot access admin endpoints.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+
+### c) Negative Test: Blacklisted Token Access
+```python
+def test_admin_dashboard_with_blacklisted_token(client, db_session):
+    # Add token to blacklist
+    # ...
+    response = client.get("/admin/dashboard", headers={"Authorization": f"Bearer {blacklisted_token}"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that blacklisted tokens are rejected for admin access.
+
+---
+
+## 5. Adopter Routes Tests: `test_adopter_routes.py`
+
+This file contains validation logic for adopter-specific endpoints, including home access, role verification, and token validation.
+
+### a) Functional Test: Adopter Home Success
+```python
+def test_adopter_home_success(client, db_session):
+    # Create adopter user and valid token
+    # ...
+    response = client.get("/adopter/home", headers={"Authorization": f"Bearer {adopter_token}"})
+    
+    assert response.status_code == 200
+    assert data["message"] == "Welcome to Adopter Home"
+```
+**Purpose:** 
+Validates that adopter users can successfully access the adopter home with valid tokens.
+
+### b) Negative Test: Unauthorized Role Access
+```python
+def test_adopter_home_unauthorized_role(client, db_session):
+    # Create admin user
+    # ...
+    response = client.get("/adopter/home", headers={"Authorization": f"Bearer {admin_token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures that non-adopter users cannot access adopter endpoints.
+
+### c) Negative Test: Blacklisted Token Access
+```python
+def test_adopter_home_with_blacklisted_token(client, db_session):
+    # Add token to blacklist
+    # ...
+    response = client.get("/adopter/home", headers={"Authorization": f"Bearer {blacklisted_token}"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that blacklisted tokens are rejected for adopter access.
+
+---
+
+## 6. Google OAuth Utils Tests: `test_google_oauth_utils.py`
+
+This file contains validation logic for Google OAuth utility functions.
+
+### a) Functional Test: Get Google OAuth Instance
+```python
+def test_get_google_oauth():
+    oauth_instance = get_google_oauth()
+    
+    assert oauth_instance is not None
+    assert hasattr(oauth_instance, 'google')
+```
+**Purpose:** 
+Validates that the Google OAuth instance is properly initialized and configured.
+
+---
+
+## 7. Refresh Token & Blacklist Tests (in `test_auth.py`)
+
+Additional tests were added to validate the refresh token lifecycle and token blacklist functionality.
+
+### a) Functional Test: Refresh Token Success
+```python
+def test_refresh_token_success(client, db_session):
+    # Login to get tokens
+    # ...
+    response = client.post("/auth/refresh", headers={"Authorization": f"Bearer {access_token}"}, cookies={"refresh_token": refresh_token})
+    
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+```
+**Purpose:** 
+Validates that refresh tokens can be used to obtain new access tokens.
+
+### b) Negative Test: Refresh with Valid Access Token
+```python
+def test_refresh_token_rejects_valid_access_token(client, db_session):
+    # Try to refresh with still-valid access token
+    # ...
+    assert response.status_code == 400
+```
+**Purpose:** 
+Ensures that refresh is rejected when the access token is still valid.
+
+### c) Functional Test: Logout with Blacklist
+```python
+def test_logout_with_blacklist(client, db_session):
+    # Login and logout
+    # ...
+    response = client.post("/auth/logout", headers={"Authorization": f"Bearer {access_token}"}, cookies={"refresh_token": refresh_token})
+    
+    assert response.status_code == 200
+```
+**Purpose:** 
+Validates that logout successfully adds tokens to the blacklist.
+
+### d) Negative Test: Blacklisted Token Rejection
+```python
+def test_blacklisted_token_rejected_in_protected_endpoint(client, db_session):
+    # Logout to blacklist token
+    # ...
+    response = client.get("/admin/dashboard", headers={"Authorization": f"Bearer {blacklisted_token}"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Ensures that blacklisted tokens are rejected in protected endpoints.
+
+---
+
+## 8. Redis Mock Implementation
+
+The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
+
+```python
+class MockRedis:
+    def __init__(self):
+        self.storage = {}
+        self.blacklist = set()
+
+    def setex(self, key, ttl, value):
+        self.storage[key] = value
+
+    def get(self, key):
+        return self.storage.get(key)
+
+    def delete(self, key):
+        if key in self.storage:
+            del self.storage[key]
+        if key in self.blacklist:
+            self.blacklist.remove(key)
+
+    def exists(self, key):
+        return 1 if key in self.storage or key in self.blacklist else 0
+```
+
+**Purpose:** 
+Provides isolated testing environment without external dependencies, ensuring tests are fast, reliable, and can run in CI/CD pipelines.

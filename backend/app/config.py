@@ -24,10 +24,17 @@ class Settings(BaseSettings):
     # JWT variables
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
 
     # Google OAuth variables
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
+
+    # Redis variables
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+    REDIS_PASSWORD: str
 
     # Use .env if it exists (local), otherwise use os.environ (CI/CD)
     model_config = SettingsConfigDict(

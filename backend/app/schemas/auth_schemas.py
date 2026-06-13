@@ -88,3 +88,9 @@ class LoginResponse(BaseModel):
     email: EmailStr = Field(..., description="User's email")
     role: str = Field(..., description="User role")
     created_at: Optional[datetime] = Field(None, description="Registration date")
+
+
+class RefreshTokenResponse(BaseModel):
+    # Schema for refresh token response
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field("bearer", description="Token type")
