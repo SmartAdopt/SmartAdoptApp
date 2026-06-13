@@ -145,17 +145,19 @@ def test_backblaze_upload_invalid_file_type(client, db_session):
         token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
 
-    # 3. Try to upload a non-image file
-    file_data = b"fake_pdf_data"
-    image_file = BytesIO(file_data)
-    image_file.name = "test.pdf"
-    image_file.content_type = "application/pdf"
+    # 3. Mock bucket_exists to return True
+    with patch("app.routes.backblaze_routes.bucket_exists", return_value=True):
+        # 4. Try to upload a non-image file
+        file_data = b"fake_pdf_data"
+        image_file = BytesIO(file_data)
+        image_file.name = "test.pdf"
+        image_file.content_type = "application/pdf"
 
-    response = client.post(
-        "/backblaze/upload",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        files={"file": ("test.pdf", image_file, "application/pdf")},
-    )
+        response = client.post(
+            "/backblaze/upload",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            files={"file": ("test.pdf", image_file, "application/pdf")},
+        )
 
     # Should return 400 Bad Request
     assert response.status_code == 400
