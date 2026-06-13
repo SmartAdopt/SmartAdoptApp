@@ -8,8 +8,8 @@ TEST_USER = {
     "first_name": "John",
     "last_name": "Doe",
     "email": "john.doe@test.com",
-    "phone_number": "1234567890",
-    "password": "securepassword123",
+    "phone_number": "0912345678",
+    "password": "Securepassword123",
     "requested_role": "adopter",
 }
 
@@ -60,7 +60,7 @@ def test_password_is_encrypted(client, db_session):
     new_email = "secure.user@test.com"
     user_data = TEST_USER.copy()
     user_data["email"] = new_email
-    user_data["password"] = "my_secret_password"
+    user_data["password"] = "My_secret_password123"
 
     # Register the user
     response = client.post("/auth/register", json=user_data)

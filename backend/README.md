@@ -341,7 +341,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 The application implements industry-standard security practices to protect user data (Admins and Adopters):
 
-- **Input Validation:** Done automatically using Pydantic schemas.
+- **Input Validation:** Done automatically using Pydantic schemas with custom field validators:
+  - Names (first_name, last_name): Only letters allowed (including Spanish characters áéíóúñÑ), 2-50 characters
+  - Phone number: Exactly 10 digits, numeric only
+  - Password: Minimum 8 characters, must contain at least one uppercase letter, one lowercase letter, and one number
+  - Role: Only accepts 'admin' or 'adopter'
+  - Email: Validated format using EmailStr
 - **CORS Configuration:** Strictly configured to allow requests only from trusted frontend origins.
 - **Password Protection:** Passwords are never stored in plain text.
 

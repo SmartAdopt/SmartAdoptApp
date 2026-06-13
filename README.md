@@ -334,6 +334,7 @@ POSTGRES_PORT=5432
 POSTGRES_DB=smartadopt_qa
 POSTGRES_USER=qa_db_user
 POSTGRES_PASSWORD=change_me_qa
+POSTGRES_HOST_PORT=5432
 
 # ─── MongoDB ──────────────────────────────────────────
 MONGO_HOST=mongo
@@ -341,6 +342,7 @@ MONGO_PORT=27017
 MONGO_DB=smartadopt_qa
 MONGO_USER=qa_mongo_user
 MONGO_PASSWORD=change_me_qa
+MONGO_EXTERNAL_PORT=27017
 
 # ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=tu_secreto_jwt_qa
@@ -356,7 +358,7 @@ BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
 FRONTEND_INTERNAL_PORT=80
 FRONTEND_EXTERNAL_PORT=8080
-MONGO_EXTERNAL_PORT=27017
+
 
 # ─── API URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8000
