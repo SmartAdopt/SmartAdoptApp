@@ -340,6 +340,8 @@ def logout(
                         "message": "Internal server error",
                     },
                 )
+            except Exception:
+                pass  # If token is invalid, just continue with logout
 
         # Revoke the refresh token in Redis and clear the cookie
         logout_user(refresh_token)

@@ -41,6 +41,13 @@ backend/                 # FastAPI backend application
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py    # Authentication services
 │   │   │   └── backblaze_service.py # Backblaze B2 service
+│   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   └── adopter_routes.py  # Adopter-protected endpoints
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   ├── services/        # Business logic layer
+│   │   │   └── auth_service.py    # Authentication services
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -50,6 +57,7 @@ backend/                 # FastAPI backend application
 │   │   ├── README_JWT.md    # Complete JWT documentation
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   └── README_BACKBLAZE.md # Complete Backblaze B2 documentation
+│   │   └── README_OAUTH.md  # Complete OAuth documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
