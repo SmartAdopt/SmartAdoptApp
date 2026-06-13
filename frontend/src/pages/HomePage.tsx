@@ -1,4 +1,5 @@
 // src/pages/HomePage.tsx
+
 import { Box } from "@mui/material";
 import { Navbar } from "../components/organisms/Navbar";
 import { HeroSection } from "../components/organisms/HeroSection";

@@ -1,3 +1,5 @@
+// src/components/organisms/AdminWelcomeBanner.tsx
+
 import { Paper, Typography, Button, Box } from "@mui/material";
 import { ArrowForward as ArrowForwardIcon } from "@mui/icons-material";
 
@@ -6,7 +8,7 @@ export const AdminWelcomeBanner = () => {
     <Paper
       elevation={0}
       sx={{
-        bgcolor: "#059669", // Verde del prototipo
+        bgcolor: "#059669", // Green background for admin banner
         color: "white",
         p: { xs: 3, md: 4 },
         borderRadius: 3,

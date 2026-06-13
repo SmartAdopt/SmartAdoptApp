@@ -1,7 +1,6 @@
 // src/components/organisms/AdopterSidebar.tsx
 
-import { Box, Typography, List, Divider, Button } from "@mui/material";
-
+import { Box, List, Button, Divider } from "@mui/material";
 import {
   Home as HomeIcon,
   Search as SearchIcon,
@@ -10,63 +9,45 @@ import {
   AssignmentTurnedIn as AssignmentTurnedInIcon,
   Person as PersonIcon,
   Logout as LogoutIcon,
+  Language as LanguageIcon, // Icon for public site navigation
 } from "@mui/icons-material";
-
 import { useLocation, useNavigate } from "react-router-dom";
-
 import { SidebarItem } from "../atoms/SidebarItem";
-
+import { Logo } from "../atoms/Logo"; // Imported to replace the placeholder
 import { useAuth } from "../../hooks/useAuth";
 
 export const AdopterSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const { logout } = useAuth();
-
-  // Function updated: Asynchronous, clears tokens, and redirects to root "/"
-  const handleLogout = async () => {
-    // 1. The context reset is handled by the useAuth hook's internal
-    logout();
-
-    // 2. Clears tokens from localStorage and sessionStorage asynchronously to ensure all operations complete before redirection
-    await Promise.resolve(); // Fuerza el contexto de ejecución asíncrono
-
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-
-    sessionStorage.clear();
-
-    // 3. Summon the router push to redirect to the public landing page (root)
-    navigate("/", { replace: true });
-  };
+  const { logoutUser } = useAuth();
 
   return (
     <Box
       sx={{
         width: 260,
-        minHeight: "100vh",
         bgcolor: "#FFFFFF",
-        borderRight: "1px solid #E5E7EB",
-
+        borderRight: "1px solid",
+        borderColor: "divider",
         display: "flex",
         flexDirection: "column",
+        py: 3,
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" fontWeight={700} color="primary">
-          SmartAdopt
-        </Typography>
-
-        <Typography variant="body2" color="text.secondary">
-          Encuentra tu compañero ideal
-        </Typography>
+      {/* 1. CLICKABLE LOGO: Navigates to the public landing page */}
+      <Box
+        onClick={() => navigate("/")}
+        sx={{
+          px: 3,
+          mb: 4,
+          cursor: "pointer",
+          transition: "opacity 0.2s",
+          "&:hover": { opacity: 0.8 },
+        }}
+      >
+        <Logo />
       </Box>
 
-      <Divider />
-
-      <List sx={{ px: 2, py: 2 }}>
+      <List sx={{ px: 2, flexGrow: 1 }}>
         <SidebarItem
           icon={<HomeIcon />}
           label="Inicio"
@@ -108,9 +89,17 @@ export const AdopterSidebar = () => {
           selected={location.pathname === "/adopter/profile"}
           onClick={() => navigate("/adopter/profile")}
         />
-      </List>
 
-      <Box sx={{ flexGrow: 1 }} />
+        <Divider sx={{ my: 2 }} />
+
+        {/* 2. PUBLIC SITE NAVIGATION: Standard item to go back to landing page */}
+        <SidebarItem
+          icon={<LanguageIcon />}
+          label="Ver Sitio Público"
+          selected={location.pathname === "/"}
+          onClick={() => navigate("/")}
+        />
+      </List>
 
       <Box sx={{ p: 2 }}>
         <Button
@@ -118,9 +107,9 @@ export const AdopterSidebar = () => {
           startIcon={<LogoutIcon />}
           variant="outlined"
           color="inherit"
-          onClick={handleLogout}
+          onClick={() => logoutUser()}
         >
-          Cerrar sesión
+          Cerrar Sesión
         </Button>
       </Box>
     </Box>

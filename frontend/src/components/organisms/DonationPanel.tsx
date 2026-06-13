@@ -1,3 +1,5 @@
+// src/components/organisms/DonationPanel.tsx
+
 import { Paper, Typography, Button } from "@mui/material";
 
 export const DonationPanel = () => {

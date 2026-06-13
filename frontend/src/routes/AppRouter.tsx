@@ -1,24 +1,29 @@
 // src/routes/AppRouter.tsx
+
 import { Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "./ProtectedRoute";
+import { ProtectedRoute } from "./guards/ProtectedRoute"; // <-- Updated import path
 
 // ==============================
-// PUBLIC PAGES (Fallo lógico corregido: Estandarizado a Named Imports)
+// PUBLIC PAGES
 // ==============================
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 
 // ==============================
-// PROTECTED PAGES
+// PROTECTED PAGES (Adopter)
 // ==============================
 import { AdopterDashboard } from "../pages/adopter/AdopterDashboard";
-import { AdminDashboard } from "../pages/admin/AdminDashboard";
 import { AdopterProfile } from "../pages/adopter/AdopterProfile";
 import { AdopterExplore } from "../pages/adopter/AdopterExplore";
 import { AdopterRequests } from "../pages/adopter/AdopterRequests";
 import { AdopterFavorites } from "../pages/adopter/AdopterFavorites";
 import { AdopterSuitability } from "../pages/adopter/AdopterSuitability";
+
+// ==============================
+// PROTECTED PAGES (Admin)
+// ==============================
+import { AdminDashboard } from "../pages/admin/AdminDashboard";
 
 export const AppRouter = () => {
   return (
@@ -29,7 +34,8 @@ export const AppRouter = () => {
       <Route path="/register" element={<RegisterPage />} />
 
       {/* PRIVATE ROUTES (Adopter) */}
-      <Route element={<ProtectedRoute />}>
+      {/* CRITICAL FIX: Explicitly restrict these routes to 'adopter' only */}
+      <Route element={<ProtectedRoute allowedRoles={["adopter"]} />}>
         <Route path="/adopter/dashboard" element={<AdopterDashboard />} />
         <Route path="/adopter/explore" element={<AdopterExplore />} />
         <Route path="/adopter/requests" element={<AdopterRequests />} />
@@ -39,8 +45,10 @@ export const AppRouter = () => {
       </Route>
 
       {/* PRIVATE ROUTES (Admin) */}
+      {/* Explicitly restrict to 'admin' only */}
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        {/* Future admin routes will go here */}
       </Route>
 
       {/* FALLBACK */}

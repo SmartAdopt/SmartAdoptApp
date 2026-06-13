@@ -1,11 +1,9 @@
+// src/components/organisms/ArticlesSection.tsx
+
 import { Paper, Typography, Grid, Button } from "@mui/material";
-
 import { useEffect, useState } from "react";
-
 import { dashboardService } from "../../services/dashboard.service";
-
 import { type Article } from "../../types/dashboard.types";
-
 import { ArticleCard } from "../molecules/ArticleCard";
 
 export const ArticlesSection = () => {

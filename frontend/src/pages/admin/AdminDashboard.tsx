@@ -4,7 +4,7 @@ import { AdminWelcomeBanner } from "../../components/organisms/AdminWelcomeBanne
 import { AdminSummaryCard } from "../../components/molecules/AdminSummaryCard";
 import { AdminActionCard } from "../../components/molecules/AdminActionCard";
 
-// Íconos
+// Icons
 import {
   Pets as PetsIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,

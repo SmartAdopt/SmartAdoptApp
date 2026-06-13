@@ -1,15 +1,12 @@
 // src/pages/adopter/AdopterDashboard.tsx
 
 import { Grid, Typography, Box } from "@mui/material";
-
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
-
 import { QuickActionsPanel } from "../../components/organisms/QuickActionsPanel";
 import { FeaturedPetsSection } from "../../components/organisms/FeaturedPetsSection";
 import { ArticlesSection } from "../../components/organisms/ArticlesSection";
 import { NotificationsPanel } from "../../components/organisms/NotificationsPanel";
 import { EventsPanel } from "../../components/organisms/EventsPanel";
-
 import { CommunityImpact } from "../../components/organisms/CommunityImpact";
 import { DonationPanel } from "../../components/organisms/DonationPanel";
 import { SharePanel } from "../../components/organisms/SharePanel";

@@ -1,3 +1,5 @@
+// src/types/dashboard.types.ts
+
 export interface Pet {
   id: string;
   nombre: string;

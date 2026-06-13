@@ -1,3 +1,5 @@
+// src/components/molecules/EventCard.tsx
+
 import { Paper, Typography, Box } from "@mui/material";
 
 interface EventCardProps {

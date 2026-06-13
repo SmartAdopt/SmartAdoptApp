@@ -1,4 +1,5 @@
 // src/components/atoms/Logo.tsx
+
 import { Box, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 

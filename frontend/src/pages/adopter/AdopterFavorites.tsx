@@ -1,7 +1,6 @@
 // src/pages/adopter/AdopterFavorites.tsx
 
 import { Typography } from "@mui/material";
-
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 
 export const AdopterFavorites = () => {

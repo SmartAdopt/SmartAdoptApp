@@ -1,3 +1,5 @@
+// src/components/molecules/AdminActionCard.tsx
+
 import { Paper, Typography, Box, Button } from "@mui/material";
 import { type ReactNode } from "react";
 

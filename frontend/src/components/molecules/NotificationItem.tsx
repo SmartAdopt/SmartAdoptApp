@@ -1,3 +1,5 @@
+// src/components/molecules/NotificationItem.tsx
+
 import { Box, Typography } from "@mui/material";
 
 interface NotificationItemProps {

@@ -1,3 +1,5 @@
+// src/components/atoms/QuickActionButton.tsx
+
 import { Paper, Typography, Box } from "@mui/material";
 
 interface QuickActionButtonProps {

@@ -1,3 +1,5 @@
+// src/components/templates/AdminLayout.tsx
+
 import { Box, Container } from "@mui/material";
 import { type ReactNode } from "react";
 import { AdminNavbar } from "../organisms/AdminNavbar";

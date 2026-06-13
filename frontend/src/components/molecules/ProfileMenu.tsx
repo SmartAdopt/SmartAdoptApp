@@ -1,10 +1,8 @@
 // src/components/molecules/ProfileMenu.tsx
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Avatar, IconButton, Menu, MenuItem, Typography } from "@mui/material";
 
-// TODO: When integrating the backend, import your useAuth hook here
-// import { useAuth } from "../../context/AuthProvider";
+import { useState } from "react";
+import { Avatar, IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { useAuth } from "../../context/AuthContext";
 
 interface ProfileMenuProps {
   userName: string;
@@ -13,9 +11,9 @@ interface ProfileMenuProps {
 export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isOpen = Boolean(anchorEl);
-  const navigate = useNavigate();
 
-  // const { logout } = useAuth(); // Future integration
+  // Extract the actual function from the global context
+  const { logoutUser } = useAuth();
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -26,22 +24,18 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
   };
 
   const handleLogout = () => {
-    /* ENTERPRISE BEST PRACTICE:
-      Ideally, call your context logout here: logout();
-      For now, we manually clean up to act as a solid mold.
-    */
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userRole");
-    sessionStorage.clear();
-
-    // Redirect to Login clearing the history stack
-    navigate("/login", { replace: true });
+    handleCloseMenu();
+    logoutUser(); // We clean up the function call to just logoutUser, as it's already extracted from the context
   };
 
   return (
     <>
+      {/* Simple button (Avatar) that will replace the "Login" button */}
       <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
-        <Avatar alt={userName} src="/react.svg" />
+        {/* Show the user's initial if there's no photo */}
+        <Avatar sx={{ bgcolor: "primary.main" }}>
+          {userName.charAt(0).toUpperCase()}
+        </Avatar>
       </IconButton>
 
       <Menu
@@ -57,9 +51,7 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
           </Typography>
         </MenuItem>
 
-        <MenuItem onClick={handleCloseMenu}>Mi Perfil</MenuItem>
-
-        <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+        <MenuItem onClick={handleLogout} sx={{ color: "error.main", mt: 1 }}>
           Cerrar Sesión
         </MenuItem>
       </Menu>

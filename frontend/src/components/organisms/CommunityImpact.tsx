@@ -1,3 +1,5 @@
+// src/components/organisms/CommunityImpact.tsx
+
 import { Paper, Typography, Grid } from "@mui/material";
 
 import {

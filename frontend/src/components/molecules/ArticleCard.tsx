@@ -1,3 +1,5 @@
+// src/components/molecules/ArticleCard.tsx
+
 import {
   Card,
   CardMedia,
