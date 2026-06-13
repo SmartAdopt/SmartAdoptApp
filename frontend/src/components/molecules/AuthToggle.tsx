@@ -1,3 +1,5 @@
+// src/components/molecules/AuthToggle.tsx
+
 import { Box, Button } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -20,7 +22,8 @@ export const AuthToggle = () => {
         fullWidth
         disableElevation
         variant={isLogin ? "contained" : "text"}
-        onClick={() => navigate("/login")}
+        // FIX: Usamos replace: true para no saturar el historial del navegador
+        onClick={() => navigate("/login", { replace: true })}
         sx={{
           borderRadius: 8,
           color: isLogin ? "primary.contrastText" : "text.secondary",
@@ -37,7 +40,8 @@ export const AuthToggle = () => {
         fullWidth
         disableElevation
         variant={!isLogin ? "contained" : "text"}
-        onClick={() => navigate("/register")}
+        // FIX: Usamos replace: true aquí también
+        onClick={() => navigate("/register", { replace: true })}
         sx={{
           borderRadius: 8,
           color: !isLogin ? "primary.contrastText" : "text.secondary",

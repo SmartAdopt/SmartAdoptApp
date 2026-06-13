@@ -43,6 +43,26 @@ export const RegisterForm = () => {
     confirmPassword: "",
   });
 
+  // ==========================================
+  // REAL-TIME PASSWORD SECURITY EVALUATION
+  // ==========================================
+  const isPasswordValidLength = formData.password.length >= 8 && formData.password.length <= 16;
+  const hasPasswordUppercase = /[A-Z]/.test(formData.password);
+  const hasPasswordSymbol = /[^A-Za-z0-9]/.test(formData.password);
+  const isPasswordSecure = isPasswordValidLength && hasPasswordUppercase && hasPasswordSymbol;
+
+  const getPasswordHelperText = () => {
+    if (!formData.password) return "Requerido: 8-16 caracteres, 1 mayúscula y 1 símbolo";
+    
+    const missingCriteria = [];
+    if (!isPasswordValidLength) missingCriteria.push("8-16 caracteres");
+    if (!hasPasswordUppercase) missingCriteria.push("1 mayúscula");
+    if (!hasPasswordSymbol) missingCriteria.push("1 símbolo");
+
+    if (missingCriteria.length === 0) return "¡Contraseña segura y válida!";
+    return `Falta: ${missingCriteria.join(", ")}`;
+  };
+
   // Validation functions
   const validateName = (name: string): string => {
     if (!name.trim()) return "Este campo es requerido";
@@ -71,8 +91,14 @@ export const RegisterForm = () => {
 
   const validatePassword = (password: string): string => {
     if (!password) return "Este campo es requerido";
-    if (password.length < 8) return "Debe tener al menos 8 caracteres";
-    if (password.length > 16) return "Debe tener máximo 16 caracteres";
+    
+    const isValidLength = password.length >= 8 && password.length <= 16;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSymbol = /[^A-Za-z0-9]/.test(password);
+    
+    if (!isValidLength || !hasUppercase || !hasSymbol) {
+      return "La contraseña no cumple los requisitos de seguridad";
+    }
     return "";
   };
 
@@ -95,8 +121,6 @@ export const RegisterForm = () => {
     let errorMessage = "";
     switch (name) {
       case "first_name":
-        errorMessage = validateName(value);
-        break;
       case "last_name":
         errorMessage = validateName(value);
         break;
@@ -108,6 +132,13 @@ export const RegisterForm = () => {
         break;
       case "password":
         errorMessage = validatePassword(value);
+        // Cross-validate confirm password if it already has a value
+        if (confirmPassword) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirmPassword: validateConfirmPassword(value, confirmPassword),
+          }));
+        }
         break;
     }
     setFieldErrors((prev) => ({ ...prev, [name]: errorMessage }));
@@ -156,11 +187,9 @@ export const RegisterForm = () => {
       await authService.register(formData);
 
       // On success, notify the user and redirect to login
-      // Note: In a future iteration, consider using a MUI Snackbar instead of native alert
       alert("¡Cuenta creada con éxito! Ahora puedes iniciar sesión.");
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (err) {
-      // Extract the exact error message thrown by FastAPI (e.g., "Email already registered")
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -243,6 +272,10 @@ export const RegisterForm = () => {
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
+
+          {/* ======================================= */}
+          {/* DYNAMIC PASSWORD FIELD */}
+          {/* ======================================= */}
           <Grid item xs={12} sm={6}>
             <TextField
               label="Contraseña *"
@@ -252,8 +285,16 @@ export const RegisterForm = () => {
               required
               value={formData.password}
               onChange={handleChange}
-              error={!!fieldErrors.password}
-              helperText={fieldErrors.password || "8-16 caracteres"}
+              // Only mark as red error if they started typing and it's not secure yet
+              error={formData.password.length > 0 && !isPasswordSecure}
+              helperText={getPasswordHelperText()}
+              FormHelperTextProps={{
+                sx: { 
+                  // Make it green if secure, otherwise default color
+                  color: formData.password.length > 0 && isPasswordSecure ? "success.main" : "inherit",
+                  fontWeight: formData.password.length > 0 ? 600 : 400
+                }
+              }}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
           </Grid>
@@ -278,7 +319,8 @@ export const RegisterForm = () => {
           color="warning"
           size="large"
           fullWidth
-          disabled={isLoading}
+          // Disable button if loading OR if password is not completely secure
+          disabled={isLoading || (formData.password.length > 0 && !isPasswordSecure)}
           sx={{ py: 1.5, mt: 3 }}
         >
           {isLoading ? (
