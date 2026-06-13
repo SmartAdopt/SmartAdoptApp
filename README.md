@@ -62,6 +62,10 @@ SmartAdoptApp/
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
 │   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   └── adopter_routes.py  # Adopter-protected endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   ├── services/        # Business logic layer
 │   │   │   └── auth_service.py    # Authentication services

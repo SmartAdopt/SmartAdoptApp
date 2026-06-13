@@ -19,3 +19,4 @@ authlib
 itsdangerous
 redis
 b2sdk
+redis

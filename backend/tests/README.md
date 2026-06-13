@@ -40,6 +40,7 @@ python -m pytest backend/tests/test_backblaze_routes.py -v
 
 ### Test Coverage
 The backend currently has 90% code coverage with 45 tests passing:
+The backend currently has 90% code coverage with 39 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
 - 4 adopter routes tests
@@ -631,6 +632,7 @@ Validates error handling when Backblaze service fails.
 ---
 
 ## 9. Redis Mock Implementation
+## 8. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
 
