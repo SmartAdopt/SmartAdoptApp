@@ -35,10 +35,11 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
 - **Backend:** FastAPI + Python 3.12
-- **Databases:** PostgreSQL + MongoDB
+- **Databases:** PostgreSQL + MongoDB + Redis
 - **ORM:** SQLAlchemy
-- **Authentication:** Bcrypt (password hashing)
+- **Authentication:** Bcrypt (password hashing) + JWT
 - **Validation:** Pydantic
+- **Cloud Storage:** Backblaze B2 (image upload)
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -50,21 +51,29 @@ SmartAdoptApp/
 │   ├── app/
 │   │   ├── config.py        # Application configuration using pydantic_settings
 │   │   ├── main.py          # FastAPI application entry point
-│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB)
-│   │   │   └── postgres/    # PostgreSQL configuration
-│   │   │       └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
+│   │   │   ├── postgres/    # PostgreSQL configuration
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   └── redis/       # Redis configuration for token management
+│   │   │       └── redis_db.py    # Redis client configuration
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
-│   │   ├── routes/          # API endpoints (auth, admin, adopter)
+│   │   ├── routes/          # API endpoints
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
+│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   ├── services/        # Business logic layer
+│   │   │   └── auth_service.py    # Authentication services
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
-│   │       │   └── jwt_utils.py   # JWT token creation and verification
+│   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
 │   │       └── oauth/       # OAuth 2.0 utilities
 │   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
 │   │   ├── README_JWT.md    # Complete JWT documentation
-│   │   └── README_OAUTH.md  # Complete OAuth documentation
+│   │   ├── README_OAUTH.md  # Complete OAuth documentation
+│   │   └── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
@@ -191,9 +200,20 @@ The application uses JWT (JSON Web Token) authentication with role-based authori
 
 **Current Implementation:**
 - Access tokens with 10-minute expiration
+- Refresh tokens with configurable expiration (default: 7 days)
 - Role-based authorization (admin, adopter)
-- Token type checking (access/refresh ready for future implementation)
+- Token type checking (access/refresh)
+- Token blacklist for immediate revocation
 - Protected endpoints with role verification
+- Redis-based token storage and management
+- HTTP-Only cookies for refresh token security
+
+**Token Blacklist:**
+- When a user logs out, their access token is added to a blacklist in Redis
+- Blacklisted tokens are rejected even if they haven't expired
+- Blacklisted tokens automatically expire from Redis when the original token would have expired
+- All protected endpoints check the blacklist before accepting a token
+- This provides immediate security by allowing token revocation without waiting for natural expiration
 
 **Note:** Only admin and adopter roles receive JWT tokens. Regular users receive empty tokens. For complete JWT documentation, refer to `backend/docs/README_JWT.md`.
 
@@ -317,6 +337,7 @@ POSTGRES_PORT=5432
 POSTGRES_DB=smartadopt_qa
 POSTGRES_USER=qa_db_user
 POSTGRES_PASSWORD=change_me_qa
+POSTGRES_HOST_PORT=5432
 
 # ─── MongoDB ──────────────────────────────────────────
 MONGO_HOST=mongo
@@ -324,6 +345,7 @@ MONGO_PORT=27017
 MONGO_DB=smartadopt_qa
 MONGO_USER=qa_mongo_user
 MONGO_PASSWORD=change_me_qa
+MONGO_EXTERNAL_PORT=27017
 
 # ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=tu_secreto_jwt_qa
@@ -339,7 +361,7 @@ BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
 FRONTEND_INTERNAL_PORT=80
 FRONTEND_EXTERNAL_PORT=8080
-MONGO_EXTERNAL_PORT=27017
+
 
 # ─── API URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8000

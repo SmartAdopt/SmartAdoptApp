@@ -1,12 +1,23 @@
 # Authentication routes
 # FastAPI imports
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+    Response,
+    Security,
+)
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
 
 # Database imports
 from app.database.postgres.postgres_db import get_db
+from app.config import settings
 
 # Schema imports
 from app.schemas.auth_schemas import (
@@ -14,6 +25,7 @@ from app.schemas.auth_schemas import (
     RegisterResponse,
     LoginRequest,
     LoginResponse,
+    RefreshTokenResponse,
 )
 
 # Service imports
@@ -21,10 +33,17 @@ from app.services.auth_service import (
     register_user,
     login_user,
     oauth_login_or_register,
+    refresh_tokens,
+    logout_user,
 )
 
 # Google OAuth
 from app.utils.oauth.google_oauth import get_google_oauth
+from app.utils.jwt.jwt_utils import (
+    decode_token_status,
+    add_token_to_blacklist,
+    is_token_blacklisted,
+)
 
 # Create router with prefix and tags
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -76,11 +95,24 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+def login(login_data: LoginRequest, response: Response, db: Session = Depends(get_db)):
     # Endpoint for traditional login with email/password
     try:
         # Call service to authenticate the user
         user_response = login_user(db, login_data)
+
+        # Set the refresh token in an HTTP-Only cookie
+        refresh_token = user_response.get("refresh_token")
+        if refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=True,  # HTTPS only (cookies sent only over secure connections)
+                samesite="lax",  # CSRF protection
+                max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            )
+
         # Return login response with all fields
         return LoginResponse(
             access_token=user_response["token"],
@@ -127,7 +159,10 @@ async def login_google(request: Request, role: str = "adopter"):
 
 @router.get("/google/callback", name="google_callback")
 async def google_callback(
-    request: Request, role: str = "adopter", db: Session = Depends(get_db)
+    request: Request,
+    response: Response,
+    role: str = "adopter",
+    db: Session = Depends(get_db),
 ):
     # Handle Google OAuth callback
     #   role: Role for auto-registration (default: adopter)
@@ -138,6 +173,18 @@ async def google_callback(
 
         # Call service layer to handle OAuth login or registration
         user_response = oauth_login_or_register(db, user_info, role)
+
+        # Set the refresh token in an HTTP-Only cookie
+        refresh_token = user_response.get("refresh_token")
+        if refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=True,  # HTTPS only
+                samesite="lax",  # CSRF protection
+                max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            )
 
         return LoginResponse(
             access_token=user_response["access_token"],
@@ -151,8 +198,164 @@ async def google_callback(
             created_at=user_response["created_at"],
         )
 
-    except Exception:
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Google authentication failed"},
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Internal server error",
+            },
+        )
+
+
+# Bearer scheme for access token validation
+_bearer = HTTPBearer(auto_error=True)
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+@router.post(
+    "/refresh", response_model=RefreshTokenResponse, status_code=status.HTTP_200_OK
+)
+def refresh(
+    request: Request,
+    response: Response,
+    credentials: HTTPAuthorizationCredentials = Security(_bearer),
+):
+    # Check if access token is blacklisted (revoked)
+    if is_token_blacklisted(credentials.credentials):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Token has been revoked",
+            },
+        )
+
+    # Reject refresh if the current access token is still valid (not expired)
+    token_status = decode_token_status(credentials.credentials)
+    if token_status == "valid":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Access token is still valid, refresh is not needed",
+            },
+        )
+
+    # Validate that the refresh token cookie exists
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "No active session found",
+            },
+        )
+
+    try:
+        tokens = refresh_tokens(refresh_token)
+        # Set the new rotated refresh token in the cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh_token"],
+            httponly=True,
+            secure=True,  # HTTPS only
+            samesite="lax",  # CSRF protection
+            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        )
+        return RefreshTokenResponse(
+            access_token=tokens["access_token"],
+            token_type="bearer",
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "No active session found",
+            },
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Internal server error",
+            },
+        )
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    request: Request,
+    response: Response,
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(_optional_bearer),
+):
+    try:
+        # Validate that there is an active session cookie before attempting logout
+        refresh_token = request.cookies.get("refresh_token")
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={
+                    "message": "No active session found",
+                },
+            )
+
+        # Add access token to blacklist if provided
+        if credentials:
+            from jose import jwt
+            from app.config import settings
+            from datetime import datetime
+
+            try:
+                token = credentials.credentials
+                payload = jwt.decode(
+                    token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+                )
+                exp_timestamp = payload.get("exp")
+                if exp_timestamp:
+                    exp_datetime = datetime.fromtimestamp(exp_timestamp)
+                    add_token_to_blacklist(token, exp_datetime)
+            except HTTPException as e:
+                raise e
+            except jwt.ExpiredSignatureError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "message": "No active session found",
+                    },
+                )
+            except jwt.JWTError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "message": "No active session found",
+                    },
+                )
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "message": "Internal server error",
+                    },
+                )
+
+        # Revoke the refresh token in Redis and clear the cookie
+        logout_user(refresh_token)
+        response.delete_cookie(
+            key="refresh_token",
+            secure=True,
+            samesite="lax",
+            httponly=True,
+        )
+        return {"message": "Logged out successfully"}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Internal server error",
+            },
         )

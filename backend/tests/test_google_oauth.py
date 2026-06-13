@@ -73,8 +73,8 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
         first_name=existing_user_info["given_name"],
         last_name=existing_user_info["family_name"],
         email=existing_user_info["email"],
-        phone_number="1234567890",
-        password="testpassword",
+        phone_number="0912345678",
+        password="Testpassword123",
         requested_role="adopter",
     )
     register_user(db_session, user_data)
@@ -153,11 +153,11 @@ def test_google_oauth_callback_admin_role(mock_get_google_oauth, client, db_sess
 def test_google_oauth_callback_error(mock_get_google_oauth, client):
     # Test Google OAuth callback with authentication error (Negative path)
 
-    # Mock the OAuth instance to raise an exception
+    # Mock the OAuth instance to raise a ValueError (which triggers 401)
     mock_oauth = MagicMock()
     mock_google = AsyncMock()
     mock_google.authorize_access_token = AsyncMock(
-        side_effect=Exception("Google auth failed")
+        side_effect=ValueError("Google auth failed")
     )
 
     mock_oauth.google = mock_google

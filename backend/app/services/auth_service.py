@@ -14,7 +14,11 @@ from app.schemas.auth_schemas import RegisterRequest, LoginRequest
 from typing import cast, Dict, Any
 
 # JWT utilities
-from app.utils.jwt.jwt_utils import create_access_token
+from app.utils.jwt.jwt_utils import create_access_token, create_refresh_token
+import json
+from datetime import timedelta
+from app.config import settings
+from app.database.redis import redis_client
 
 
 def register_user(db: Session, user_data: RegisterRequest):
@@ -79,14 +83,33 @@ def login_user(db: Session, login_data: LoginRequest):
         raise ValueError("Invalid email or password")
 
     # Generate JWT token only for admin or adopter roles
+    refresh_token = ""
     if user.type.lower() in ["admin", "adopter"]:
         access_token = create_access_token(cast(str, user.email), cast(str, user.type))
+        refresh_token = create_refresh_token(
+            cast(str, user.email), cast(str, user.type)
+        )
+
+        # Save to Redis
+        user_data_json = json.dumps(
+            {
+                "email": cast(str, user.email),
+                "role": cast(str, user.type),
+                "id": cast(int, user.user_id),
+            }
+        )
+        redis_client.setex(
+            f"refresh_token:{refresh_token}",
+            timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            user_data_json,
+        )
     else:
         access_token = ""
 
     # Create user response with necessary data and token
     user_response = {
         "token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer" if access_token else "",
         "id": cast(int, user.user_id),
         "first_name": cast(str, user.first_name),
@@ -115,15 +138,34 @@ def oauth_login_or_register(
 
     if existing_user:
         # User exists, generate token
+        refresh_token = ""
         if existing_user.type.lower() in ["adopter"]:
             access_token = create_access_token(
                 str(existing_user.email), str(existing_user.type)
+            )
+            refresh_token = create_refresh_token(
+                str(existing_user.email), str(existing_user.type)
+            )
+
+            # Save to Redis
+            user_data_json = json.dumps(
+                {
+                    "email": str(existing_user.email),
+                    "role": str(existing_user.type),
+                    "id": existing_user.user_id,
+                }
+            )
+            redis_client.setex(
+                f"refresh_token:{refresh_token}",
+                timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+                user_data_json,
             )
         else:
             access_token = ""
 
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer" if access_token else "",
             "message": "Login successful",
             "id": existing_user.user_id,
@@ -158,9 +200,25 @@ def oauth_login_or_register(
 
         # Generate token for new user
         access_token = create_access_token(str(new_user.email), str(new_user.type))
+        refresh_token = create_refresh_token(str(new_user.email), str(new_user.type))
+
+        # Save to Redis
+        user_data_json = json.dumps(
+            {
+                "email": str(new_user.email),
+                "role": str(new_user.type),
+                "id": new_user.user_id,
+            }
+        )
+        redis_client.setex(
+            f"refresh_token:{refresh_token}",
+            timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            user_data_json,
+        )
 
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
             "message": "Registration successful",
             "id": new_user.user_id,
@@ -170,3 +228,37 @@ def oauth_login_or_register(
             "role": new_user.type,
             "created_at": getattr(new_user, "created_at", None),
         }
+
+
+def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    # Validate refresh token in Redis
+    user_data_json = redis_client.get(f"refresh_token:{refresh_token}")
+    if not user_data_json:
+        raise ValueError("No active session found")
+
+    # Rotate refresh token: delete old one
+    redis_client.delete(f"refresh_token:{refresh_token}")
+
+    # Parse user data
+    user_data = json.loads(user_data_json)
+    email = user_data["email"]
+    role = user_data["role"]
+
+    # Generate new tokens
+    new_access_token = create_access_token(email, role)
+    new_refresh_token = create_refresh_token(email, role)
+
+    # Store new refresh token in Redis
+    redis_client.setex(
+        f"refresh_token:{new_refresh_token}",
+        timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        user_data_json,
+    )
+
+    return {"access_token": new_access_token, "refresh_token": new_refresh_token}
+
+
+def logout_user(refresh_token: str) -> None:
+    # Delete refresh token from Redis
+    if refresh_token:
+        redis_client.delete(f"refresh_token:{refresh_token}")
