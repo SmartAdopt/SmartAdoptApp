@@ -12,7 +12,7 @@ import type {
 import { adaptLoginResponse } from "../utils/auth.adapters";
 
 export const authService = {
-login: async (credentials: LoginApiRequest): Promise<AuthSession> => {
+  login: async (credentials: LoginApiRequest): Promise<AuthSession> => {
     try {
       const response = await apiClient.post<LoginApiResponse>(
         "/auth/login",

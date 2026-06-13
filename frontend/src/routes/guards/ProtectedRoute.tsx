@@ -7,7 +7,9 @@ interface ProtectedRouteProps {
   allowedRoles: Array<"admin" | "adopter" | "user">;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  allowedRoles,
+}) => {
   const { isAuthenticated, role } = useAuth();
 
   // 1. Check if the user is logged in

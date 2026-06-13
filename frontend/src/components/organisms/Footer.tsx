@@ -99,7 +99,7 @@ export const Footer = () => {
             <Typography variant="body2" gutterBottom>
               📍 Quito, Ecuador
             </Typography>
-            
+
             {/* SOCIAL NETWORKS BLOCK WITH ENTERPRISE POLISH */}
             <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
               <IconButton
@@ -108,52 +108,52 @@ export const Footer = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ 
-                  color: "grey.400", 
+                sx={{
+                  color: "grey.400",
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     bgcolor: "rgba(24, 119, 242, 0.2)", // Subtle official brand blue tint
                     color: "#1877F2",
-                  }
+                  },
                 }}
               >
                 <FacebookIcon fontSize="small" />
               </IconButton>
-              
+
               <IconButton
                 size="small"
                 aria-label="WhatsApp"
                 href="https://wa.me/593991234567"
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ 
-                  color: "grey.400", 
+                sx={{
+                  color: "grey.400",
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     bgcolor: "rgba(37, 211, 102, 0.2)", // Subtle official brand green tint
                     color: "#25D366",
-                  }
+                  },
                 }}
               >
                 <WhatsAppIcon fontSize="small" />
               </IconButton>
-              
+
               <IconButton
                 size="small"
                 aria-label="Instagram"
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ 
-                  color: "grey.400", 
+                sx={{
+                  color: "grey.400",
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
                     bgcolor: "rgba(228, 64, 95, 0.2)", // Subtle official brand pink tint
                     color: "#E4405F",
-                  }
+                  },
                 }}
               >
                 <InstagramIcon fontSize="small" />

@@ -42,7 +42,6 @@ export const Navbar = () => {
     >
       <Container maxWidth="lg">
         <Toolbar disableGutters sx={{ justifyContent: "space-between", py: 1 }}>
-          
           {/* Logo clickeable que lleva al landing page */}
           <Box sx={{ cursor: "pointer" }} onClick={() => navigate("/")}>
             <Logo />

@@ -33,9 +33,15 @@ export const AdopterSidebar = () => {
       }}
     >
       {/* 1. CLICKABLE LOGO: Navigates to the public landing page */}
-      <Box 
-        onClick={() => navigate("/")} 
-        sx={{ px: 3, mb: 4, cursor: "pointer", transition: "opacity 0.2s", "&:hover": { opacity: 0.8 } }}
+      <Box
+        onClick={() => navigate("/")}
+        sx={{
+          px: 3,
+          mb: 4,
+          cursor: "pointer",
+          transition: "opacity 0.2s",
+          "&:hover": { opacity: 0.8 },
+        }}
       >
         <Logo />
       </Box>

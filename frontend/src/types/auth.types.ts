@@ -65,7 +65,7 @@ export interface AuthUser {
 }
 
 export interface AuthSession {
-id: number;
+  id: number;
   name: string;
   email: string;
   role: "admin" | "adopter" | "user";

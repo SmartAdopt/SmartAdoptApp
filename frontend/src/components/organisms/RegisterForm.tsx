@@ -46,14 +46,17 @@ export const RegisterForm = () => {
   // ==========================================
   // REAL-TIME PASSWORD SECURITY EVALUATION
   // ==========================================
-  const isPasswordValidLength = formData.password.length >= 8 && formData.password.length <= 16;
+  const isPasswordValidLength =
+    formData.password.length >= 8 && formData.password.length <= 16;
   const hasPasswordUppercase = /[A-Z]/.test(formData.password);
   const hasPasswordSymbol = /[^A-Za-z0-9]/.test(formData.password);
-  const isPasswordSecure = isPasswordValidLength && hasPasswordUppercase && hasPasswordSymbol;
+  const isPasswordSecure =
+    isPasswordValidLength && hasPasswordUppercase && hasPasswordSymbol;
 
   const getPasswordHelperText = () => {
-    if (!formData.password) return "Requerido: 8-16 caracteres, 1 mayúscula y 1 símbolo";
-    
+    if (!formData.password)
+      return "Requerido: 8-16 caracteres, 1 mayúscula y 1 símbolo";
+
     const missingCriteria = [];
     if (!isPasswordValidLength) missingCriteria.push("8-16 caracteres");
     if (!hasPasswordUppercase) missingCriteria.push("1 mayúscula");
@@ -91,11 +94,11 @@ export const RegisterForm = () => {
 
   const validatePassword = (password: string): string => {
     if (!password) return "Este campo es requerido";
-    
+
     const isValidLength = password.length >= 8 && password.length <= 16;
     const hasUppercase = /[A-Z]/.test(password);
     const hasSymbol = /[^A-Za-z0-9]/.test(password);
-    
+
     if (!isValidLength || !hasUppercase || !hasSymbol) {
       return "La contraseña no cumple los requisitos de seguridad";
     }
@@ -289,11 +292,14 @@ export const RegisterForm = () => {
               error={formData.password.length > 0 && !isPasswordSecure}
               helperText={getPasswordHelperText()}
               FormHelperTextProps={{
-                sx: { 
+                sx: {
                   // Make it green if secure, otherwise default color
-                  color: formData.password.length > 0 && isPasswordSecure ? "success.main" : "inherit",
-                  fontWeight: formData.password.length > 0 ? 600 : 400
-                }
+                  color:
+                    formData.password.length > 0 && isPasswordSecure
+                      ? "success.main"
+                      : "inherit",
+                  fontWeight: formData.password.length > 0 ? 600 : 400,
+                },
               }}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
             />
@@ -320,7 +326,9 @@ export const RegisterForm = () => {
           size="large"
           fullWidth
           // Disable button if loading OR if password is not completely secure
-          disabled={isLoading || (formData.password.length > 0 && !isPasswordSecure)}
+          disabled={
+            isLoading || (formData.password.length > 0 && !isPasswordSecure)
+          }
           sx={{ py: 1.5, mt: 3 }}
         >
           {isLoading ? (

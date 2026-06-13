@@ -16,7 +16,8 @@ export const apiClient = axios.create({
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  // Fix 1: Changed 'any' to 'unknown' for the rejection reason
+  reject: (reason?: unknown) => void;
 }[] = [];
 
 const processQueue = (error: Error | null, token: string | null = null) => {
@@ -46,7 +47,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Check if error is 401, it's not a retry yet, and we are not trying to refresh the token itself
     if (
@@ -56,8 +59,12 @@ apiClient.interceptors.response.use(
       originalRequest.url !== "/auth/refresh"
     ) {
       // Check if the backend explicitly says the token expired
-      const errorDetail = (error.response.data as any)?.detail;
-      const isTokenExpired = errorDetail === "Token expired" || errorDetail === "Could not validate credentials";
+      // Fix 2: Replaced 'any' with a safe TypeScript record type to satisfy ESLint
+      const errorDetail = (error.response.data as Record<string, unknown>)
+        ?.detail;
+      const isTokenExpired =
+        errorDetail === "Token expired" ||
+        errorDetail === "Could not validate credentials";
 
       if (isTokenExpired) {
         if (isRefreshing) {
@@ -87,9 +94,12 @@ apiClient.interceptors.response.use(
 
         try {
           // Call the refresh endpoint (Based on the backend's "Refresh Token.md" plan)
-          const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken
-          });
+          const refreshResponse = await axios.post(
+            `${API_BASE_URL}/auth/refresh`,
+            {
+              refresh_token: refreshToken,
+            },
+          );
 
           const newAccessToken = refreshResponse.data.access_token;
           const newRefreshToken = refreshResponse.data.refresh_token;
@@ -100,14 +110,14 @@ apiClient.interceptors.response.use(
             localStorage.setItem("refresh_token", newRefreshToken);
           }
 
-          apiClient.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+          apiClient.defaults.headers.common["Authorization"] =
+            `Bearer ${newAccessToken}`;
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
           processQueue(null, newAccessToken);
-          
+
           // Retry the original request
           return apiClient(originalRequest);
-
         } catch (refreshError) {
           // If refresh fails (e.g., refresh token expired after 7 days)
           processQueue(refreshError as Error, null);

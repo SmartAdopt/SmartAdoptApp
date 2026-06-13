@@ -29,7 +29,7 @@ export const LoginForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
-    if (error) setError(""); 
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +39,7 @@ export const LoginForm = () => {
 
     try {
       const session = await authService.login(credentials);
-      
+
       // Save the session globally and in local storage
       loginUser(session);
 

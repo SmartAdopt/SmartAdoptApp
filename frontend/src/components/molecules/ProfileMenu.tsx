@@ -11,7 +11,7 @@ interface ProfileMenuProps {
 export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isOpen = Boolean(anchorEl);
-  
+
   // Extraemos la función real del contexto global
   const { logoutUser } = useAuth();
 

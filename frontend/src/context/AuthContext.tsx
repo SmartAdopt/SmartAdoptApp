@@ -1,6 +1,11 @@
 // src/context/AuthContext.tsx
 
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 import { type AuthSession } from "../types/auth.types";
 
 interface AuthContextType {
@@ -11,29 +16,34 @@ interface AuthContextType {
   logoutUser: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Tell Vite's Fast Refresh to ignore the non-component export warning here
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthSession | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Initialize session from localStorage on application load
-  useEffect(() => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  // Lazy initialization: React only reads localStorage once during the initial render.
+  // This completely eliminates the need for an expensive useEffect and prevents cascading renders.
+  const [user, setUser] = useState<AuthSession | null>(() => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("access_token");
 
     if (storedUser && token) {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
+        return JSON.parse(storedUser);
+      } catch {
+        // Removed the unused 'error' variable to satisfy the linter
         console.error("Failed to parse user session");
         localStorage.removeItem("user");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
       }
     }
-    setIsLoading(false);
-  }, []);
+    return null; // Initial state if nothing is stored or if parsing fails
+  });
 
   const loginUser = (sessionData: AuthSession) => {
     setUser(sessionData);
@@ -56,15 +66,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logoutUser,
   };
 
-  // Prevent rendering children until session is fully checked
-  if (isLoading) {
-    return null; // Or a MUI <CircularProgress /> centered on screen
-  }
-
+  // Since lazy initialization is synchronous, we no longer need an 'isLoading' block.
+  // The layout renders instantly without flickering.
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 // Custom hook to consume the context securely
+// Tell Vite's Fast Refresh to ignore the non-component export warning here too
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
