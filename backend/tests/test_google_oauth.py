@@ -73,8 +73,8 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
         first_name=existing_user_info["given_name"],
         last_name=existing_user_info["family_name"],
         email=existing_user_info["email"],
-        phone_number="1234567890",
-        password="testpassword",
+        phone_number="0912345678",
+        password="Testpassword123",
         requested_role="adopter",
     )
     register_user(db_session, user_data)
