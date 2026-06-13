@@ -1,11 +1,9 @@
+// src/components/organisms/EventsPanel.tsx
+
 import { Paper, Typography } from "@mui/material";
-
 import { useEffect, useState } from "react";
-
 import { dashboardService } from "../../services/dashboard.service";
-
 import type { Event } from "../../types/dashboard.types";
-
 import { EventCard } from "../molecules/EventCard";
 
 export const EventsPanel = () => {

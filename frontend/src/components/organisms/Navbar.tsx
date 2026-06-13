@@ -15,20 +15,20 @@ import { ProfileMenu } from "../molecules/ProfileMenu";
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  // 1. Extraemos el estado de la sesión
+  // 1. Extract the session state
   const { isAuthenticated, role, user } = useAuth();
 
   // 2. Lógica dinámica para el botón Home (Casita)
   const handleHomeClick = () => {
     if (isAuthenticated) {
-      // Si está logueado, lo mandamos a su dashboard correspondiente
+      // If the user is authenticated, we check their role and navigate accordingly
       if (role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/adopter/dashboard");
       }
     } else {
-      // Si no está logueado, lo mandamos al login como solicitaste
+      // If the user is not authenticated, we navigate to the login page
       navigate("/login");
     }
   };
@@ -42,7 +42,7 @@ export const Navbar = () => {
     >
       <Container maxWidth="lg">
         <Toolbar disableGutters sx={{ justifyContent: "space-between", py: 1 }}>
-          {/* Logo clickeable que lleva al landing page */}
+          {/* Clickeable logo that route to the landing page */}
           <Box sx={{ cursor: "pointer" }} onClick={() => navigate("/")}>
             <Logo />
           </Box>
@@ -54,17 +54,18 @@ export const Navbar = () => {
               alignItems: "center",
             }}
           >
-            {/* Casita Dinámica */}
+            {/* Dinamic home button */}
             <IconButton color="inherit" onClick={handleHomeClick}>
               <img src="/home.svg" width={24} alt="Home" />
             </IconButton>
 
             {/* 3. Renderizado Condicional del Botón de Sesión */}
+            {/* 3. Conditional Rendering of the Login Button */}
             {isAuthenticated && user ? (
-              // Si está logueado: Mostramos su Menú de Perfil para que pueda salir
+              // If the user is authenticated: Show their Profile Menu so they can log out
               <ProfileMenu userName={user.name} />
             ) : (
-              // Si NO está logueado: Mostramos el botón azul original
+              // If the user is not authenticated: Show the original blue button
               <Button
                 variant="contained"
                 color="primary"

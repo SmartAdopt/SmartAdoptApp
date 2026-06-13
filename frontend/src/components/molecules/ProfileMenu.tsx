@@ -12,7 +12,7 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isOpen = Boolean(anchorEl);
 
-  // Extraemos la función real del contexto global
+  // Extract the actual function from the global context
   const { logoutUser } = useAuth();
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -25,14 +25,14 @@ export const ProfileMenu = ({ userName }: ProfileMenuProps) => {
 
   const handleLogout = () => {
     handleCloseMenu();
-    logoutUser(); // Esto limpia el LocalStorage y redirige automáticamente
+    logoutUser(); // We clean up the function call to just logoutUser, as it's already extracted from the context
   };
 
   return (
     <>
-      {/* Botón simple (Avatar) que reemplazará al "Iniciar Sesión" */}
+      {/* Simple button (Avatar) that will replace the "Login" button */}
       <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
-        {/* Mostramos la inicial del usuario si no hay foto */}
+        {/* Show the user's initial if there's no photo */}
         <Avatar sx={{ bgcolor: "primary.main" }}>
           {userName.charAt(0).toUpperCase()}
         </Avatar>

@@ -1,3 +1,5 @@
+// src/components/molecules/AdminSummaryCard.tsx
+
 import { Paper, Typography, Box } from "@mui/material";
 import { TrendingUp as TrendingUpIcon } from "@mui/icons-material";
 import { type ReactNode } from "react";

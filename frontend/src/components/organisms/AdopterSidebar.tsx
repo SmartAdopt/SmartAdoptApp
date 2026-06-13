@@ -1,4 +1,5 @@
 // src/components/organisms/AdopterSidebar.tsx
+
 import { Box, List, Button, Divider } from "@mui/material";
 import {
   Home as HomeIcon,

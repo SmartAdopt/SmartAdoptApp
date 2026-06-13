@@ -1,4 +1,5 @@
 // src/utils/auth.adapters.ts
+
 import type { LoginApiResponse, AuthSession } from "../types/auth.types";
 
 /**

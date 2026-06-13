@@ -1,4 +1,5 @@
 // src/pages/adopter/AdopterProfile.tsx
+
 import { Box, Typography, Container } from "@mui/material";
 import { MainLayout } from "../../components/templates/MainLayout";
 import { PreferencesForm } from "../../components/organisms/PreferencesForm";
@@ -29,7 +30,7 @@ export const AdopterProfile = () => {
           </Typography>
         </Box>
 
-        {/* Cuestionario Organism Context */}
+        {/* Preferences Form */}
         <PreferencesForm />
       </Container>
     </MainLayout>

@@ -1,11 +1,9 @@
+// src/components/organisms/NotificationsPanel.tsx
+
 import { Paper, Typography } from "@mui/material";
-
 import { useEffect, useState } from "react";
-
 import { dashboardService } from "../../services/dashboard.service";
-
 import type { Notification } from "../../types/dashboard.types";
-
 import { NotificationItem } from "../molecules/NotificationItem";
 
 export const NotificationsPanel = () => {

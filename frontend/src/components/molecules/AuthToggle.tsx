@@ -22,7 +22,7 @@ export const AuthToggle = () => {
         fullWidth
         disableElevation
         variant={isLogin ? "contained" : "text"}
-        // FIX: Usamos replace: true para no saturar el historial del navegador
+        // FIX: We use replace: true to avoid cluttering the browser history
         onClick={() => navigate("/login", { replace: true })}
         sx={{
           borderRadius: 8,
@@ -40,7 +40,7 @@ export const AuthToggle = () => {
         fullWidth
         disableElevation
         variant={!isLogin ? "contained" : "text"}
-        // FIX: Usamos replace: true aquí también
+        // FIX: We use replace: true to avoid cluttering the browser history
         onClick={() => navigate("/register", { replace: true })}
         sx={{
           borderRadius: 8,

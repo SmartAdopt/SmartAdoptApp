@@ -1,3 +1,5 @@
+// src/components/organisms/SharePanel.tsx
+
 import { Paper, Typography, Button } from "@mui/material";
 
 import { Share as ShareIcon } from "@mui/icons-material";

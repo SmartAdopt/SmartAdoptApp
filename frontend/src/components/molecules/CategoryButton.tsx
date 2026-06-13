@@ -1,11 +1,12 @@
 // src/components/molecules/CategoryButton.tsx
+
 import { Button, Typography } from "@mui/material";
 import type { ReactNode } from "react";
 
 interface CategoryButtonProps {
   title: string;
   icon: ReactNode;
-  color: "primary" | "success"; // Usamos los colores definidos en nuestro theme.ts
+  color: "primary" | "success"; // We use the theme colors defined in theme.ts
   onClick?: () => void;
 }
 
@@ -21,12 +22,12 @@ export const CategoryButton = ({
       color={color}
       onClick={onClick}
       sx={{
-        width: { xs: 100, sm: 120 }, // Responsive: más pequeño en móviles
+        width: { xs: 100, sm: 120 }, // Responsive: more compact on smaller screens
         height: { xs: 100, sm: 120 },
         display: "flex",
         flexDirection: "column",
         gap: 1,
-        borderRadius: 3, // Bordes redondeados del diseño
+        borderRadius: 3, // Rounded corners for a softer look
         boxShadow: "0px 8px 24px rgba(0,0,0,0.12)",
         "&:hover": {
           transform: "translateY(-4px)",

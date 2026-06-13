@@ -1,4 +1,5 @@
 // src/routes/AppRouter.tsx
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./guards/ProtectedRoute"; // <-- Updated import path
 

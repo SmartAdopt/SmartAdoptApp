@@ -1,3 +1,5 @@
+// src/components/atoms/StatCard.tsx
+
 import { Paper, Typography, Box } from "@mui/material";
 
 interface StatCardProps {

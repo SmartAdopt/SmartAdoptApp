@@ -1,4 +1,5 @@
 // src/theme/theme.ts
+
 import { createTheme } from "@mui/material/styles";
 
 // Define the global theme based on SmartAdopt prototypes
