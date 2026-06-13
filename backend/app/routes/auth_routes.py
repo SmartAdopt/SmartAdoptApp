@@ -150,7 +150,7 @@ async def login_google(request: Request, role: str = "adopter"):
     #   role: Optional role for auto-registration (default: adopter)
     try:
         oauth = get_google_oauth()
-        # Note: Change url for production 
+        # Note: Change url for production
         redirect_uri = "http://localhost:8000/auth/google/callback"
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception:
@@ -218,7 +218,7 @@ async def google_callback(
         """
         return HTMLResponse(content=html_content)
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},
