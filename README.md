@@ -35,10 +35,11 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
 - **Backend:** FastAPI + Python 3.12
-- **Databases:** PostgreSQL + MongoDB
+- **Databases:** PostgreSQL + MongoDB + Redis
 - **ORM:** SQLAlchemy
-- **Authentication:** Bcrypt (password hashing)
+- **Authentication:** Bcrypt (password hashing) + JWT
 - **Validation:** Pydantic
+- **Cloud Storage:** Backblaze B2 (image upload)
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -56,6 +57,11 @@ SmartAdoptApp/
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
+│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
 │   │   ├── routes/          # API endpoints (auth, admin, adopter)
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -70,7 +76,8 @@ SmartAdoptApp/
 │   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
 │   │   ├── README_JWT.md    # Complete JWT documentation
-│   │   └── README_OAUTH.md  # Complete OAuth documentation
+│   │   ├── README_OAUTH.md  # Complete OAuth documentation
+│   │   └── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests

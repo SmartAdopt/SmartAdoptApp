@@ -5,6 +5,7 @@ from app.config import settings
 from app.routes.auth_routes import router as auth_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.adopter_routes import router as adopter_router
+from app.routes.backblaze_routes import router as backblaze_router
 
 app = FastAPI()
 
@@ -26,6 +27,8 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 # Include adopter routes
 app.include_router(adopter_router)
+# Include backblaze routes
+app.include_router(backblaze_router)
 
 
 @app.get("/")

@@ -32,10 +32,14 @@ python -m pytest backend/tests/test_adopter_routes.py -v
 
 # Run Google OAuth utils tests
 python -m pytest backend/tests/test_google_oauth_utils.py -v
+
+# Run Backblaze routes tests
+python -m pytest backend/tests/test_backblaze_routes.py -v
 ```
 
 
 ### Test Coverage
+The backend currently has 90% code coverage with 45 tests passing:
 The backend currently has 90% code coverage with 39 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
@@ -44,6 +48,7 @@ The backend currently has 90% code coverage with 39 tests passing:
 - 1 Google OAuth utils test
 - 1 main test
 - 13 additional auth tests (error handling, token validation)
+- 6 Backblaze B2 tests (image upload, authorization, validation)
 
 ---
 
@@ -517,6 +522,116 @@ Ensures that blacklisted tokens are rejected in protected endpoints.
 
 ---
 
+## 8. Backblaze B2 Routes Tests: `test_backblaze_routes.py`
+
+This file contains validation logic for Backblaze B2 cloud storage image upload, including authentication, authorization, file validation, and error handling.
+
+### a) Functional Test: Successful Image Upload
+```python
+def test_backblaze_upload_success(client, db_session):
+    # Create admin user and valid token
+    # Mock Backblaze service
+    # ...
+    response = client.post(
+        "/backblaze/upload",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        files={"file": ("test.jpg", image_file, "image/jpeg")}
+    )
+    
+    assert response.status_code == 201
+    assert data["image_url"] == "https://f002.backblazeb2.com/file/test-bucket/uuid.jpg"
+```
+**Purpose:** 
+Validates the Happy Path of image upload to Backblaze B2. It confirms that admin users can successfully upload images with valid tokens and mocked Backblaze service.
+* **HTTP 201 (Created):** Indicates successful image upload.
+
+### b) Negative Test: Unauthorized Role Upload
+```python
+def test_backblaze_upload_unauthorized_role(client, db_session):
+    # Create regular user with adopter role
+    # ...
+    response = client.post(
+        "/backblaze/upload",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        files={"file": ("test.jpg", image_file, "image/jpeg")}
+    )
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures that non-admin users cannot upload images.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+
+### c) Negative Test: Upload Without Token
+```python
+def test_backblaze_upload_no_token(client):
+    response = client.post(
+        "/backblaze/upload",
+        files={"file": ("test.jpg", image_file, "image/jpeg")}
+    )
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that upload requires authentication.
+* **HTTP 401 (Unauthorized):** Indicates missing or invalid token.
+
+### d) Negative Test: Invalid File Type
+```python
+def test_backblaze_upload_invalid_file_type(client, db_session):
+    # Create admin user and valid token
+    # ...
+    response = client.post(
+        "/backblaze/upload",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        files={"file": ("test.pdf", image_file, "application/pdf")}
+    )
+    
+    assert response.status_code == 400
+```
+**Purpose:** 
+Ensures that only image files are accepted.
+* **HTTP 400 (Bad Request):** Indicates invalid file type.
+
+### e) Negative Test: Bucket Not Found
+```python
+def test_backblaze_upload_bucket_not_found(client, db_session):
+    # Create admin user and valid token
+    # Mock bucket_exists to return False
+    # ...
+    response = client.post(
+        "/backblaze/upload",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        files={"file": ("test.jpg", image_file, "image/jpeg")}
+    )
+    
+    assert response.status_code == 503
+```
+**Purpose:** 
+Validates error handling when Backblaze bucket is not accessible.
+* **HTTP 503 (Service Unavailable):** Indicates bucket not found or not accessible.
+
+### f) Negative Test: Service Error
+```python
+def test_backblaze_upload_service_error(client, db_session):
+    # Create admin user and valid token
+    # Mock upload to raise exception
+    # ...
+    response = client.post(
+        "/backblaze/upload",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        files={"file": ("test.jpg", image_file, "image/jpeg")}
+    )
+    
+    assert response.status_code == 500
+```
+**Purpose:** 
+Validates error handling when Backblaze service fails.
+* **HTTP 500 (Internal Server Error):** Indicates upload service failure.
+
+---
+
+## 9. Redis Mock Implementation
 ## 8. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     REDIS_DB: int
     REDIS_PASSWORD: str
 
+    # Backblaze B2 variables
+    BACKBLAZE_KEY_ID: str
+    BACKBLAZE_APPLICATION_KEY: str
+    BACKBLAZE_BUCKET_NAME: str
+
     # Use .env if it exists (local), otherwise use os.environ (CI/CD)
     model_config = SettingsConfigDict(
         env_file=env_file if env_file_exists else None,

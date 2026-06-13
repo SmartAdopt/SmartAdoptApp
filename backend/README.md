@@ -31,6 +31,16 @@ backend/                 # FastAPI backend application
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints 
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
+│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
+│   │   ├── services/        # Business logic layer
+│   │   │   ├── auth_service.py    # Authentication services
+│   │   │   └── backblaze_service.py # Backblaze B2 service
 │   │   ├── routes/          # API endpoints (auth, admin, adopter)
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -45,6 +55,8 @@ backend/                 # FastAPI backend application
 │   │       │   └── google_oauth.py     # Google OAuth integration
 │   ├── docs/               # Documentation
 │   │   ├── README_JWT.md    # Complete JWT documentation
+│   │   ├── README_OAUTH.md  # Complete OAuth documentation
+│   │   └── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   └── README_OAUTH.md  # Complete OAuth documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
@@ -65,6 +77,8 @@ backend/                 # FastAPI backend application
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
 - **Authlib** - OAuth 2.0 integration for Google login
+- **Redis** - Token storage and management
+- **b2sdk** - Backblaze B2 cloud storage integration
 
 
 ### Run Locally
@@ -455,6 +469,31 @@ The application implements a token blacklist mechanism using Redis to immediatel
 - SECRET_KEY should be changed in production environments
 - Tokens are transmitted via HTTPS in production (recommended)
 - HTTP-Only cookies prevent XSS attacks on refresh tokens
+
+## Backblaze B2 Image Upload
+
+The application uses Backblaze B2 cloud storage for image upload:
+
+- **Admin-only access**: Only users with admin role can upload images
+- **UUID filenames**: Unique filenames prevent conflicts
+- **Automatic URL generation**: Public URLs are generated automatically
+- **Bucket validation**: Checks bucket existence before upload
+
+**Endpoint:**
+```http
+POST /backblaze/upload
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+file: <image_file>
+```
+
+**Configuration:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+For complete documentation, refer to `docs/README_BACKBLAZE.md`.
 
 ## License
 

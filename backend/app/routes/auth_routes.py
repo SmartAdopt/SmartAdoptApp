@@ -9,8 +9,10 @@ from fastapi import (
     Response,
     Security,
 )
+from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
+import json
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
@@ -148,7 +150,8 @@ async def login_google(request: Request, role: str = "adopter"):
     #   role: Optional role for auto-registration (default: adopter)
     try:
         oauth = get_google_oauth()
-        redirect_uri = request.url_for("google_callback")
+        # Note: Change url for production
+        redirect_uri = "http://localhost:8000/auth/google/callback"
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception:
         raise HTTPException(
@@ -169,7 +172,11 @@ async def google_callback(
     oauth = get_google_oauth()
     try:
         token = await oauth.google.authorize_access_token(request)
-        user_info = await oauth.google.parse_id_token(request, token)
+
+        # Extract user info from token
+        user_info = token.get("userinfo")
+        if not user_info:
+            user_info = await oauth.google.parse_id_token(request, token)
 
         # Call service layer to handle OAuth login or registration
         user_response = oauth_login_or_register(db, user_info, role)
@@ -181,34 +188,40 @@ async def google_callback(
                 key="refresh_token",
                 value=refresh_token,
                 httponly=True,
-                secure=True,  # HTTPS only
-                samesite="lax",  # CSRF protection
+                secure=True,
+                samesite="lax",
                 max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             )
 
-        return LoginResponse(
-            access_token=user_response["access_token"],
-            token_type=user_response["token_type"],
-            message=user_response["message"],
-            id=user_response["id"],
-            first_name=user_response["first_name"],
-            last_name=user_response["last_name"],
-            email=user_response["email"],
-            role=user_response["role"],
-            created_at=user_response["created_at"],
-        )
+        # Prepare JSON response data
+        response_data = {
+            "access_token": user_response.get("access_token"),
+            "refresh_token": refresh_token,
+            "id": user_response.get("id"),
+            "first_name": user_response.get("first_name"),
+            "last_name": user_response.get("last_name"),
+            "email": user_response.get("email"),
+            "role": user_response.get("role"),
+        }
 
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Google authentication failed"},
-        )
+        html_content = f"""
+        <html>
+            <body>
+                <script>
+                    // Enviamos la sesión al Frontend (localhost:8080)
+                    window.opener.postMessage({json.dumps(response_data)}, "http://localhost:8080");
+                    // Cerramos la ventana emergente mágicamente
+                    window.close();
+                </script>
+            </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Internal server error",
-            },
+            detail={"message": "Internal server error"},
         )
 
 
@@ -317,6 +330,29 @@ def logout(
                 if exp_timestamp:
                     exp_datetime = datetime.fromtimestamp(exp_timestamp)
                     add_token_to_blacklist(token, exp_datetime)
+            except HTTPException as e:
+                raise e
+            except jwt.ExpiredSignatureError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "message": "No active session found",
+                    },
+                )
+            except jwt.JWTError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "message": "No active session found",
+                    },
+                )
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "message": "Internal server error",
+                    },
+                )
             except Exception:
                 pass  # If token is invalid, just continue with logout
 

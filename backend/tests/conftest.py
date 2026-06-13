@@ -44,6 +44,12 @@ if not os.getenv("REDIS_PASSWORD"):
     os.environ["REDIS_PASSWORD"] = ""
 if not os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"):
     os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
+if not os.getenv("BACKBLAZE_KEY_ID"):
+    os.environ["BACKBLAZE_KEY_ID"] = "test_key_id"
+if not os.getenv("BACKBLAZE_APPLICATION_KEY"):
+    os.environ["BACKBLAZE_APPLICATION_KEY"] = "test_application_key"
+if not os.getenv("BACKBLAZE_BUCKET_NAME"):
+    os.environ["BACKBLAZE_BUCKET_NAME"] = "test-bucket"
 
 # Import the FastAPI app and the database components AFTER loading .env
 # ruff: noqa: E402
