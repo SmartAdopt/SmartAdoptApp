@@ -340,18 +340,20 @@ def test_register_validation_error(client):
     # Test register with validation error (Negative path)
     # This test covers lines 81-86 in auth_routes.py
     from unittest.mock import patch
-    from app.routes import auth_routes
 
     # Mock register_user to raise ValueError (not email related)
-    with patch.object(auth_routes, "register_user") as mock_register:
-        mock_register.side_effect = ValueError("Invalid phone number")
+    # Patch at BOTH service and routes level to ensure it works
+    with patch("app.services.auth_service.register_user") as mock_service, patch(
+        "app.routes.auth_routes.register_user", new=mock_service
+    ):
+        mock_service.side_effect = ValueError("Invalid phone number")
 
         user_data = {
             "first_name": "Test",
             "last_name": "User",
             "email": "validation.error@test.com",
-            "phone_number": "1234567890",
-            "password": "testpassword",
+            "phone_number": "0912345678",
+            "password": "Testpassword123",
             "requested_role": "adopter",
         }
 
@@ -365,18 +367,20 @@ def test_register_internal_error(client):
     # Test register with internal error (Negative path)
     # This test covers lines 88-94 in auth_routes.py
     from unittest.mock import patch
-    from app.routes import auth_routes
 
     # Mock register_user to raise generic Exception
-    with patch.object(auth_routes, "register_user") as mock_register:
-        mock_register.side_effect = Exception("Database connection failed")
+    # Patch at BOTH service and routes level to ensure it works
+    with patch("app.services.auth_service.register_user") as mock_service, patch(
+        "app.routes.auth_routes.register_user", new=mock_service
+    ):
+        mock_service.side_effect = Exception("Database connection failed")
 
         user_data = {
             "first_name": "Test",
             "last_name": "User",
             "email": "internal.error@test.com",
-            "phone_number": "1234567890",
-            "password": "testpassword",
+            "phone_number": "0912345678",
+            "password": "Testpassword123",
             "requested_role": "adopter",
         }
 
