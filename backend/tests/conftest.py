@@ -134,9 +134,9 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
 
     # Mock redis client in multiple locations
-    with patch("app.database.redis.redis_client", mock_redis), patch(
-        "app.services.auth_service.redis_client", mock_redis
-    ), patch("app.utils.jwt.jwt_utils.redis_client", mock_redis):
+    with patch("app.database.redis.get_redis_client", return_value=mock_redis), patch(
+        "app.services.auth_service.get_redis_client", return_value=mock_redis
+    ), patch("app.utils.jwt.jwt_utils.get_redis_client", return_value=mock_redis):
         # Create the test client
         with TestClient(app) as test_client:
             yield test_client

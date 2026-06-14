@@ -1,0 +1,18 @@
+2026-06-13 22:48:13 | ERROR    | app.routes.auth_routes:register:109 - Registration failed - Internal server error for email: internal.error@test.com, error: Database connection failed
+2026-06-13 22:48:13 | ERROR    | app.routes.auth_routes:login:167 - Login failed - Internal server error for email: test@test.com, error: Database connection failed
+2026-06-13 22:48:13 | ERROR    | app.routes.auth_routes:refresh:347 - Token refresh failed - Internal server error: Redis connection failed
+2026-06-13 22:48:13 | ERROR    | app.routes.auth_routes:logout:429 - Logout failed - Internal server error: Redis connection failed
+2026-06-13 22:48:13 | ERROR    | app.routes.backblaze_routes:upload_image:47 - Image upload failed - Backblaze bucket not found
+2026-06-13 22:48:13 | ERROR    | app.services.backblaze_service:upload_image_to_backblaze:91 - Failed to upload image to Backblaze: Upload failed
+2026-06-13 22:48:13 | ERROR    | app.routes.backblaze_routes:upload_image:81 - Image upload failed - error: Failed to upload image to Backblaze
+2026-06-13 22:48:14 | ERROR    | app.routes.auth_routes:google_callback:261 - OAuth callback failed - error: Google auth failed
+2026-06-13 22:48:14 | ERROR    | app.routes.auth_routes:login_google:190 - OAuth redirect failed - error: OAuth not available
+2026-06-13 22:49:13 | ERROR    | app.routes.auth_routes:register:109 - Registration failed - Internal server error for email: internal.error@test.com, error: Database connection failed
+2026-06-13 22:49:13 | ERROR    | app.routes.auth_routes:login:167 - Login failed - Internal server error for email: test@test.com, error: Database connection failed
+2026-06-13 22:49:13 | ERROR    | app.routes.auth_routes:refresh:347 - Token refresh failed - Internal server error: Redis connection failed
+2026-06-13 22:49:13 | ERROR    | app.routes.auth_routes:logout:429 - Logout failed - Internal server error: Redis connection failed
+2026-06-13 22:49:13 | ERROR    | app.routes.backblaze_routes:upload_image:47 - Image upload failed - Backblaze bucket not found
+2026-06-13 22:49:13 | ERROR    | app.services.backblaze_service:upload_image_to_backblaze:91 - Failed to upload image to Backblaze: Upload failed
+2026-06-13 22:49:13 | ERROR    | app.routes.backblaze_routes:upload_image:81 - Image upload failed - error: Failed to upload image to Backblaze
+2026-06-13 22:49:14 | ERROR    | app.routes.auth_routes:google_callback:261 - OAuth callback failed - error: Google auth failed
+2026-06-13 22:49:14 | ERROR    | app.routes.auth_routes:login_google:190 - OAuth redirect failed - error: OAuth not available

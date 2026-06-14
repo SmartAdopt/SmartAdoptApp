@@ -13,6 +13,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import json
+from datetime import datetime
+from jose import jwt
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
@@ -47,6 +49,9 @@ from app.utils.jwt.jwt_utils import (
     is_token_blacklisted,
 )
 
+# Logger import
+from app.utils.logger.logger_config import logger
+
 # Create router with prefix and tags
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -54,11 +59,15 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
     # Endpoint to register a new user (Adopter/Admin)
+    logger.info(
+        f"POST /auth/register - Registration request for email: {user_data.email}"
+    )
     try:
         # Call service to register the user
         new_user = register_user(db, user_data)
         # Conditional based on requested role
         if user_data.requested_role.lower() == "admin":
+            logger.info(f"Registration successful - Admin user ID: {new_user.user_id}")
             return RegisterResponse(
                 message="User registered successfully",
                 user_id=new_user.user_id,
@@ -66,6 +75,9 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
             )
 
         else:  # adopter
+            logger.info(
+                f"Registration successful - Adopter user ID: {new_user.user_id}"
+            )
             return RegisterResponse(
                 message="User registered successfully",
                 user_id=new_user.user_id,
@@ -74,12 +86,18 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
 
     except ValueError as e:
         if "Email already registered" in str(e):
+            logger.warning(
+                f"Registration failed - Email already registered: {user_data.email}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"message": "Email already registered"},
             )
 
         else:
+            logger.warning(
+                f"Registration failed - Validation error for email: {user_data.email}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
@@ -87,7 +105,10 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
                 },
             )
 
-    except Exception:
+    except Exception as e:
+        logger.error(
+            f"Registration failed - Internal server error for email: {user_data.email}, error: {str(e)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -99,6 +120,7 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(login_data: LoginRequest, response: Response, db: Session = Depends(get_db)):
     # Endpoint for traditional login with email/password
+    logger.info(f"POST /auth/login - Login request for email: {login_data.email}")
     try:
         # Call service to authenticate the user
         user_response = login_user(db, login_data)
@@ -115,6 +137,9 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
                 max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             )
 
+        logger.info(
+            f"Login successful for user ID: {user_response['id']}, email: {login_data.email}"
+        )
         # Return login response with all fields
         return LoginResponse(
             access_token=user_response["token"],
@@ -128,6 +153,9 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
             created_at=user_response["created_at"],
         )
     except ValueError:
+        logger.warning(
+            f"Login failed - Invalid credentials for email: {login_data.email}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -135,7 +163,10 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
             },
         )
 
-    except Exception:
+    except Exception as e:
+        logger.error(
+            f"Login failed - Internal server error for email: {login_data.email}, error: {str(e)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -148,12 +179,15 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
 async def login_google(request: Request, role: str = "adopter"):
     # Redirect to Google OAuth login
     #   role: Optional role for auto-registration (default: adopter)
+    logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
     try:
         oauth = get_google_oauth()
         # Note: Change url for production
         redirect_uri = "http://localhost:8000/auth/google/callback"
+        logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
-    except Exception:
+    except Exception as e:
+        logger.error(f"OAuth redirect failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_302_FOUND,
             detail={"message": "Redirect failed - Google OAuth not available"},
@@ -169,6 +203,7 @@ async def google_callback(
 ):
     # Handle Google OAuth callback
     #   role: Role for auto-registration (default: adopter)
+    logger.info("GET /auth/google/callback - OAuth callback received")
     oauth = get_google_oauth()
     try:
         token = await oauth.google.authorize_access_token(request)
@@ -178,6 +213,9 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
+        logger.info(
+            f"OAuth callback - User info received for email: {user_info.get('email')}"
+        )
         # Call service layer to handle OAuth login or registration
         user_response = oauth_login_or_register(db, user_info, role)
 
@@ -208,17 +246,19 @@ async def google_callback(
         <html>
             <body>
                 <script>
-                    // Enviamos la sesión al Frontend (localhost:8080)
+                    // Send the session to the Frontend (localhost:8080)
                     window.opener.postMessage({json.dumps(response_data)}, "http://localhost:8080");
-                    // Cerramos la ventana emergente mágicamente
+                    // Close the popup window
                     window.close();
                 </script>
             </body>
         </html>
         """
+        logger.info(f"OAuth callback successful for user ID: {user_response.get('id')}")
         return HTMLResponse(content=html_content)
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"OAuth callback failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},
@@ -226,8 +266,7 @@ async def google_callback(
 
 
 # Bearer scheme for access token validation
-_bearer = HTTPBearer(auto_error=True)
-_optional_bearer = HTTPBearer(auto_error=False)
+_bearer = HTTPBearer(auto_error=False)
 
 
 @router.post(
@@ -238,8 +277,17 @@ def refresh(
     response: Response,
     credentials: HTTPAuthorizationCredentials = Security(_bearer),
 ):
+    logger.info("POST /auth/refresh - Token refresh request")
+    # Check if credentials are provided
+    if credentials is None:
+        logger.warning("Token refresh failed - No credentials provided")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Not authenticated"},
+        )
     # Check if access token is blacklisted (revoked)
     if is_token_blacklisted(credentials.credentials):
+        logger.warning("Token refresh failed - Token has been revoked")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -250,6 +298,7 @@ def refresh(
     # Reject refresh if the current access token is still valid (not expired)
     token_status = decode_token_status(credentials.credentials)
     if token_status == "valid":
+        logger.warning("Token refresh rejected - Access token is still valid")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -260,6 +309,9 @@ def refresh(
     # Validate that the refresh token cookie exists
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
+        logger.warning(
+            "Token refresh failed - No active session found (no refresh token cookie)"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -278,18 +330,21 @@ def refresh(
             samesite="lax",  # CSRF protection
             max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         )
+        logger.info("Token refresh successful")
         return RefreshTokenResponse(
             access_token=tokens["access_token"],
             token_type="bearer",
         )
     except ValueError:
+        logger.warning("Token refresh failed - No active session found")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "No active session found",
             },
         )
-    except Exception:
+    except Exception as e:
+        logger.error(f"Token refresh failed - Internal server error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -302,12 +357,16 @@ def refresh(
 def logout(
     request: Request,
     response: Response,
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(_optional_bearer),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
 ):
+    logger.info("POST /auth/logout - Logout request")
     try:
         # Validate that there is an active session cookie before attempting logout
         refresh_token = request.cookies.get("refresh_token")
         if not refresh_token:
+            logger.warning(
+                "Logout failed - No active session found (no refresh token cookie)"
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
@@ -317,10 +376,6 @@ def logout(
 
         # Add access token to blacklist if provided
         if credentials:
-            from jose import jwt
-            from app.config import settings
-            from datetime import datetime
-
             try:
                 token = credentials.credentials
                 payload = jwt.decode(
@@ -330,9 +385,11 @@ def logout(
                 if exp_timestamp:
                     exp_datetime = datetime.fromtimestamp(exp_timestamp)
                     add_token_to_blacklist(token, exp_datetime)
+                    logger.info("Access token added to blacklist")
             except HTTPException as e:
                 raise e
             except jwt.ExpiredSignatureError:
+                logger.warning("Logout - Access token already expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail={
@@ -340,21 +397,21 @@ def logout(
                     },
                 )
             except jwt.JWTError:
+                logger.warning("Logout - Invalid access token")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail={
                         "message": "No active session found",
                     },
                 )
-            except Exception:
+            except Exception as e:
+                logger.error(f"Logout - Error processing access token: {str(e)}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail={
                         "message": "Internal server error",
                     },
                 )
-            except Exception:
-                pass  # If token is invalid, just continue with logout
 
         # Revoke the refresh token in Redis and clear the cookie
         logout_user(refresh_token)
@@ -364,10 +421,12 @@ def logout(
             samesite="lax",
             httponly=True,
         )
+        logger.info("Logout successful")
         return {"message": "Logged out successfully"}
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        logger.error(f"Logout failed - Internal server error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
