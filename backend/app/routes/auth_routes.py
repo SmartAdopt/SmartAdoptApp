@@ -409,3 +409,5 @@ def logout(
                 "message": "Internal server error",
             },
         )
+
+
