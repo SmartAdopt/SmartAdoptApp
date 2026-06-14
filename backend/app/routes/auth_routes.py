@@ -151,18 +151,23 @@ async def login_google(request: Request, role: str = "adopter"):
     #   role: Optional role for auto-registration (default: adopter)
     try:
         oauth = get_google_oauth()
-        # IMPORTANT: redirect_uri must use the same domain/host as the incoming request
-        # so that the session cookie (with the OAuth state) is sent back in the callback.
-        # The frontend opens the popup via VITE_API_URL=/api, which nginx proxies 
-        # to the back
-        # That is why the Host the browser sees is smartadoptlocal.programacionwebuce.net.
-        # If redirect_uri were localhost:8000 (a different domain), 
+        # IMPORTANT: redirect_uri must use the same domain/host as the
+        # incoming request
+        # so that the session cookie (with the OAuth state) is sent back
+        # in the callback.
+        # The frontend opens the popup via VITE_API_URL=/api, which nginx
+        # PROXIES to the back
+        # That is why the Host the browser sees is
+        # smartadoptlocal.programacionwebuce.net.
+        # If redirect_uri were localhost:8000 (a different domain),
         # the browser would not send
         # the session cookie -> CSRF state mismatch.
         # We detect the host of the incoming request and build the
         # redirect_uri dynamically.
         forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
-        host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host", "localhost:8000")
+        host = request.headers.get("X-Forwarded-Host") or request.headers.get(
+            "Host", "localhost:8000"
+        )
         redirect_uri = f"{forwarded_proto}://{host}/api/auth/google/callback"
         # Save the role in session to retrieve it in the callback
         request.session["oauth_role"] = role
@@ -172,7 +177,9 @@ async def login_google(request: Request, role: str = "adopter"):
         print(f"ERROR en login_google: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": f"Redirect failed - Google OAuth not available: {str(e)}"},
+            detail={
+                "message": f"Redirect failed - Google OAuth not available: {str(e)}"
+            },
         )
 
 
@@ -194,7 +201,7 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
-        # The role can come from the session (set in login_google) 
+        # The role can come from the session (set in login_google)
         # or from the query parameter (default to "adopter").
         # If not in session, use the query parameter or default
         role = request.session.pop("oauth_role", role)
@@ -413,5 +420,3 @@ def logout(
                 "message": "Internal server error",
             },
         )
-
-
