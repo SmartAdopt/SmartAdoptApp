@@ -153,11 +153,14 @@ async def login_google(request: Request, role: str = "adopter"):
         oauth = get_google_oauth()
         # IMPORTANT: redirect_uri must use the same domain/host as the incoming request
         # so that the session cookie (with the OAuth state) is sent back in the callback.
-        # The frontend opens the popup via VITE_API_URL=/api, which nginx proxies to the backend.
+        # The frontend opens the popup via VITE_API_URL=/api, which nginx proxies 
+        # to the back
         # That is why the Host the browser sees is smartadoptlocal.programacionwebuce.net.
-        # If redirect_uri were localhost:8000 (a different domain), the browser would not send
+        # If redirect_uri were localhost:8000 (a different domain), 
+        # the browser would not send
         # the session cookie -> CSRF state mismatch.
-        # We detect the host of the incoming request and build the redirect_uri dynamically.
+        # We detect the host of the incoming request and build the
+        # redirect_uri dynamically.
         forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
         host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host", "localhost:8000")
         redirect_uri = f"{forwarded_proto}://{host}/api/auth/google/callback"
@@ -191,7 +194,8 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
-        # The role can come from the session (set in login_google) or from the query parameter (default to "adopter").
+        # The role can come from the session (set in login_google) 
+        # or from the query parameter (default to "adopter").
         # If not in session, use the query parameter or default
         role = request.session.pop("oauth_role", role)
 
@@ -223,9 +227,9 @@ async def google_callback(
         }
 
         # IMPORTANT: The origin must match exactly where the frontend is running
-        # Local: http://smartadoptlocal.programacionwebuce.net (port 80, no explicit port)
-        # We use BroadcastChannel instead of window.opener.postMessage because Google
-        # sets Cross-Origin-Opener-Policy: same-origin, which breaks window.opener
+        # Local: http://smartadoptlocal.programacionwebuce.net (port 80)
+        # We use BroadcastChannel instead of window.opener.postMessage bC Google
+        # sets Cross-Origin-Opener-Policy:same-origin, which breaks window.opener
         # after the popup goes through Google's pages.
         html_content = f"""
         <html>
