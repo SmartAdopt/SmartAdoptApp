@@ -35,7 +35,7 @@ def test_google_oauth_callback_new_user(mock_get_google_oauth, client, db_sessio
 
     # Verify the response contains HTML with postMessage script
     assert "<html>" in html_content
-    assert "window.opener.postMessage" in html_content
+    assert "postMessage" in html_content
     assert "window.close()" in html_content
     assert MOCK_GOOGLE_USER_INFO["email"] in html_content
 
@@ -97,7 +97,7 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
 
     # Verify the response contains HTML with postMessage script
     assert "<html>" in html_content
-    assert "window.opener.postMessage" in html_content
+    assert "postMessage" in html_content
     assert "window.close()" in html_content
     assert existing_user_info["email"] in html_content
 
@@ -135,7 +135,7 @@ def test_google_oauth_callback_admin_role(mock_get_google_oauth, client, db_sess
 
     # Verify the response contains HTML with postMessage script
     assert "<html>" in html_content
-    assert "window.opener.postMessage" in html_content
+    assert "postMessage" in html_content
     assert "window.close()" in html_content
     assert admin_user_info["email"] in html_content
 

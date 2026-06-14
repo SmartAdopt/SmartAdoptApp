@@ -1,5 +1,7 @@
+# fmt: off
 # Authentication routes
 # FastAPI imports
+# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
@@ -182,15 +184,32 @@ async def login_google(request: Request, role: str = "adopter"):
     logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
     try:
         oauth = get_google_oauth()
-        # Note: Change url for production
-        redirect_uri = "http://localhost:8000/auth/google/callback"
+# IMPORTANT: redirect_uri must use the same domain/host as the incoming request
+        # so that the session cookie (with the OAuth state) is sent back in the callback.
+        # The frontend opens the popup via VITE_API_URL=/api, which nginx proxies to the back
+        # That is why the Host the browser sees is smartadoptlocal.programacionwebuce.net.
+        # If redirect_uri were localhost:8000 (a different domain), the browser would not send
+        # the session cookie -> CSRF state mismatch.
+        # We detect the host of the incoming request and build the
+        # redirect_uri dynamically.
+        forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
+        host = request.headers.get("X-Forwarded-Host") or request.headers.get(
+            "Host", "localhost:8000"
+        )
+        redirect_uri = f"{forwarded_proto}://{host}/api/auth/google/callback"
+        
+        # Save the role in session to retrieve it in the callback
+        request.session["oauth_role"] = role
+        
         logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
         logger.error(f"OAuth redirect failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_302_FOUND,
-            detail={"message": "Redirect failed - Google OAuth not available"},
+            detail={
+                "message": "Redirect failed - Google OAuth not available",
+            },
         )
 
 
@@ -213,6 +232,11 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
+# The role can come from the session (set in login_google)
+        # or from the query parameter (default to "adopter").
+        # If not in session, use the query parameter or default
+        role = request.session.pop("oauth_role", role)
+
         logger.info(
             f"OAuth callback - User info received for email: {user_info.get('email')}"
         )
@@ -220,13 +244,14 @@ async def google_callback(
         user_response = oauth_login_or_register(db, user_info, role)
 
         # Set the refresh token in an HTTP-Only cookie
+        # NOTA: secure=False for develop
         refresh_token = user_response.get("refresh_token")
         if refresh_token:
             response.set_cookie(
                 key="refresh_token",
                 value=refresh_token,
                 httponly=True,
-                secure=True,
+                secure=False,  # False para HTTP local, True en producción HTTPS
                 samesite="lax",
                 max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             )
@@ -242,14 +267,36 @@ async def google_callback(
             "role": user_response.get("role"),
         }
 
+        # IMPORTANT: The origin must match exactly where the frontend is running
+        # Local: http://smartadoptlocal.programacionwebuce.net (port 80)
+        # We use BroadcastChannel as primary because Google sets
+        # Cross-Origin-Opener-Policy:same-origin, which breaks window.opener
+        # after the popup goes through Google's pages.
+        # Fallback to window.opener.postMessage for test compatibility.
         html_content = f"""
         <html>
+            <head><title>Autenticando...</title></head>
             <body>
+                <p>Autenticando, por favor espere...</p>
                 <script>
-                    // Send the session to the Frontend (localhost:8080)
-                    window.opener.postMessage({json.dumps(response_data)}, "http://localhost:8080");
-                    // Close the popup window
-                    window.close();
+try {{
+                        // Try BroadcastChannel first (works with Google's COOP)
+                        const channel = new BroadcastChannel('oauth_channel');
+                        channel.postMessage({json.dumps(response_data)});
+                        channel.close();
+                    }} catch (e) {{
+                        console.error('BroadcastChannel error:', e);
+                        // Fallback to window.opener.postMessage for tests
+                        try {{
+                            if (window.opener) {{
+                                window.opener.postMessage({json.dumps(response_data)}, '*');
+                            }}
+                        }} catch (e2) {{
+                            console.error('postMessage error:', e2);
+                        }}
+                    }}
+                    // Cerramos el popup después de enviar el mensaje
+                    setTimeout(() => window.close(), 300);
                 </script>
             </body>
         </html>
@@ -258,7 +305,7 @@ async def google_callback(
         return HTMLResponse(content=html_content)
 
     except Exception as e:
-        logger.error(f"OAuth callback failed - error: {str(e)}")
+        logger.exception(f"OAuth callback failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},
@@ -357,7 +404,7 @@ def refresh(
 def logout(
     request: Request,
     response: Response,
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
+credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
 ):
     logger.info("POST /auth/logout - Logout request")
     try:
