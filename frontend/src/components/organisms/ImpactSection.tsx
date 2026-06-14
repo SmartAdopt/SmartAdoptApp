@@ -1,4 +1,5 @@
 // src/components/organisms/ImpactSection.tsx
+
 import { Box, Container, Typography, Grid } from "@mui/material";
 
 export const ImpactSection = () => {

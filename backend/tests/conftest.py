@@ -34,11 +34,28 @@ if not os.getenv("GOOGLE_CLIENT_ID"):
     os.environ["GOOGLE_CLIENT_ID"] = "test_client_id"
 if not os.getenv("GOOGLE_CLIENT_SECRET"):
     os.environ["GOOGLE_CLIENT_SECRET"] = "test_client_secret"
+if not os.getenv("REDIS_HOST"):
+    os.environ["REDIS_HOST"] = "localhost"
+if not os.getenv("REDIS_PORT"):
+    os.environ["REDIS_PORT"] = "6379"
+if not os.getenv("REDIS_DB"):
+    os.environ["REDIS_DB"] = "0"
+if not os.getenv("REDIS_PASSWORD"):
+    os.environ["REDIS_PASSWORD"] = ""
+if not os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"):
+    os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
+if not os.getenv("BACKBLAZE_KEY_ID"):
+    os.environ["BACKBLAZE_KEY_ID"] = "test_key_id"
+if not os.getenv("BACKBLAZE_APPLICATION_KEY"):
+    os.environ["BACKBLAZE_APPLICATION_KEY"] = "test_application_key"
+if not os.getenv("BACKBLAZE_BUCKET_NAME"):
+    os.environ["BACKBLAZE_BUCKET_NAME"] = "test-bucket"
 
 # Import the FastAPI app and the database components AFTER loading .env
 # ruff: noqa: E402
 from app.main import app
 from app.database.postgres.postgres_db import Base, get_db
+from unittest.mock import patch
 
 # Import models to ensure they are registered with Base before creating tables
 
@@ -90,12 +107,39 @@ def client(db_session):
         finally:
             pass
 
+    # Mock Redis client for testing with in-memory storage
+    class MockRedis:
+        def __init__(self):
+            self.storage = {}
+            self.blacklist = set()
+
+        def setex(self, key, ttl, value):
+            self.storage[key] = value
+
+        def get(self, key):
+            return self.storage.get(key)
+
+        def delete(self, key):
+            if key in self.storage:
+                del self.storage[key]
+            if key in self.blacklist:
+                self.blacklist.remove(key)
+
+        def exists(self, key):
+            return 1 if key in self.storage or key in self.blacklist else 0
+
+    mock_redis = MockRedis()
+
     # Override the dependency globally in the app
     app.dependency_overrides[get_db] = override_get_db
 
-    # Create the test client
-    with TestClient(app) as test_client:
-        yield test_client
+    # Mock redis client in multiple locations
+    with patch("app.database.redis.get_redis_client", return_value=mock_redis), patch(
+        "app.services.auth_service.get_redis_client", return_value=mock_redis
+    ), patch("app.utils.jwt.jwt_utils.get_redis_client", return_value=mock_redis):
+        # Create the test client
+        with TestClient(app) as test_client:
+            yield test_client
 
     # Clear overrides after the test
     app.dependency_overrides.clear()

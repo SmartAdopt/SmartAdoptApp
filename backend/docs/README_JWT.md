@@ -1,94 +1,3 @@
-# Implementación de Google OAuth 2.0 en SmartAdopt
-
-## ¿Qué es OAuth 2.0?
-
-OAuth 2.0 es un sistema de autenticación estándar que permite a los usuarios iniciar sesión en aplicaciones utilizando sus cuentas de Google existentes, sin necesidad de crear nuevas contraseñas. Es el mismo sistema que utilizan muchas aplicaciones populares como Spotify, Netflix y Airbnb.
-
-## ¿Por qué implementamos OAuth 2.0 en SmartAdopt?
-
-Implementamos Google OAuth para mejorar la experiencia de usuario en SmartAdopt:
-
-- **Registro más rápido**: Los usuarios pueden registrarse en segundos sin completar formularios largos
-- **Sin contraseñas que recordar**: Los usuarios utilizan su cuenta de Google, que ya conocen
-- **Mayor seguridad**: Google se encarga de validar la identidad del usuario
-- **Reduce fricción**: Menos barreras para que los usuarios adopten la plataforma
-- **Emails verificados**: Google garantiza que el email es real y válido
-
-## ¿Cómo funciona para el usuario final?
-
-### Flujo de inicio de sesión con Google OAuth 2.0
-
-1. **El usuario hace clic en "Iniciar sesión con Google"**
-   - Puede elegir registrarse como "Adoptante"
-
-2. **Redirección a Google**
-   - El usuario es redirigido a la página de inicio de sesión de Google
-   - Google muestra su cuenta y pide permiso para compartir información básica
-
-3. **Autorización**
-   - El usuario acepta compartir su nombre, email y foto de perfil con SmartAdopt
-   - Esta información es necesaria para crear su cuenta automáticamente
-
-4. **Registro automático**
-   - Si es la primera vez que el usuario accede, SmartAdopt crea su cuenta automáticamente
-   - Si ya tiene una cuenta, simplemente inicia sesión
-
-5. **Acceso a la plataforma**
-   - El usuario accede inmediatamente a SmartAdopt con su cuenta creada/iniciada
-
-## ¿Qué información compartimos con Google?
-
-Solo solicitamos la información básica necesaria para crear la cuenta:
-
-- **Email**: Para identificar al usuario de manera única
-- **Nombre**: Para personalizar la experiencia
-- **Apellido**: Para completar el perfil del usuario
-
-No solicitamos información sensible como datos financieros o información de contacto adicional.
-
-## ¿Qué pasa si el usuario ya tiene una cuenta?
-
-Si el usuario ya se registró anteriormente con Google OAuth:
-- El sistema reconoce su email
-- Inicia sesión automáticamente
-- No crea una cuenta duplicada
-
-Si el usuario se registró con email y contraseña tradicional:
-- Puede utilizar el mismo email con Google OAuth
-- El sistema lo reconocerá como el mismo usuario
-- Podrá acceder con ambos métodos
-
-## Seguridad de la implementación
-
-Nuestra implementación de OAuth sigue los estándares de seguridad más altos:
-
-- **Validación por Google**: Google verifica la identidad del usuario antes de autorizar
-- **Comunicación segura**: Toda la comunicación se realiza mediante HTTPS (encriptado)
-- **Sin exposición de datos sensibles**: Las credenciales de OAuth nunca se exponen en el frontend
-- **Tokens seguros**: Utilizamos tokens JWT para gestionar las sesiones de manera segura
-- **Protección contra ataques**: Implementamos medidas para prevenir ataques CSRF y otros vectores de ataque
-
-## Roles de usuario
-
-El sistema permite registrar usuarios con el rol de adoptante mediante OAuth:
-
-- **Adoptante**: Usuario que busca adoptar mascotas
-
-
-## Beneficios para el negocio
-
-- **Mayor tasa de conversión**: Menos usuarios abandonan el proceso de registro
-- **Datos de calidad**: Los emails proporcionados por Google están verificados
-- **Menos soporte**: Menos problemas de "olvidé mi contraseña"
-- **Experiencia moderna**: Alineada con las expectativas de los usuarios actuales
-
-## Consideraciones técnicas (resumen ejecutivo)
-
-- Utilizamos el protocolo OAuth 2.0 estándar de Google con OpenID Connect (OIDC)
-- La implementación se encuentra en el backend (Python/FastAPI)
-- Los usuarios se almacenan en PostgreSQL igual que los usuarios tradicionales
-- Los usuarios de OAuth reciben un token JWT para gestionar su sesión
-- El sistema es compatible con el registro tradicional (email/contraseña)
 # JWT Authentication Documentation
 
 
@@ -115,8 +24,6 @@ El sistema permite registrar usuarios con el rol de adoptante mediante OAuth:
 
 9. [Troubleshooting](#troubleshooting)
 
-10. [Future Enhancements](#future-enhancements)
-
 
 
 ## Overview
@@ -140,8 +47,6 @@ Current implementation includes:
 
 
 ## Architecture
-
-
 
 JWT authentication is implemented in the following structure:
 
@@ -758,21 +663,3 @@ docker-compose -f docker-compose-local.yml exec backend env
 python -c "from jose import jwt; print(jwt.decode('token', 'secret', algorithms=['HS256']))"
 
 ```
-
-
-
-## Future Enhancements
-
-
-
-The current implementation is designed to be extended with the following features:
-
-
-
-- Refresh token mechanism (requires PostgreSQL)
-
-- Token blacklist for logout (requires PostgreSQL)
-
-- Token rotation for enhanced security
-
-- Multi-factor authentication integration

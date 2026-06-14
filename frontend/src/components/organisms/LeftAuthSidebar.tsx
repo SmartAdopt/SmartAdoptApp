@@ -1,4 +1,5 @@
 // src/components/organisms/LeftAuthSidebar.tsx
+
 import { Box } from "@mui/material";
 import { Logo } from "../atoms/Logo";
 import { FeatureInfoCard } from "../molecules/FeatureInfoCard";

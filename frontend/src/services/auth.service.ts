@@ -1,4 +1,5 @@
 // src/services/auth.service.ts
+
 import axios from "axios";
 import { apiClient } from "./apiClient";
 import type {
@@ -19,8 +20,14 @@ export const authService = {
         credentials,
       );
 
-      // CRITICAL FIX: Transform the raw response through our adapter
-      // This creates the "user" object that the UI is looking for.
+      // Save both tokens in LocalStorage
+      if (response.data.access_token) {
+        localStorage.setItem("access_token", response.data.access_token);
+      }
+      if (response.data.refresh_token) {
+        localStorage.setItem("refresh_token", response.data.refresh_token);
+      }
+
       return adaptLoginResponse(response.data);
     } catch (error) {
       throw authService.handleApiError(error, "Invalid credentials");
