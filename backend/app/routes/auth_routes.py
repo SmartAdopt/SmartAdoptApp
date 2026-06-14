@@ -1,6 +1,5 @@
 # Authentication routes
 # FastAPI imports
-# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
@@ -176,11 +175,11 @@ async def login_google(request: Request, role: str = "adopter"):
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
         print(f"ERROR en login_google: {str(e)}")
+        # CORTADO A MENOS DE 88 CARACTERES
+        error_msg = f"Redirect failed - Google OAuth not available: {str(e)}"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": f"Redirect failed - Google OAuth not available: {str(e)}"
-            },
+            detail={"message": error_msg},
         )
 
 
@@ -345,11 +344,14 @@ def refresh(
         )
 
 
+# PARAMETRO SEPARADO A MENOS DE 88 CARACTERES
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(
     request: Request,
     response: Response,
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(_optional_bearer),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(
+        _optional_bearer
+    ),
 ):
     try:
         # Validate that there is an active session cookie before attempting logout
@@ -421,4 +423,3 @@ def logout(
                 "message": "Internal server error",
             },
         )
-# Fix: force LF line endings for GitHub Actions
