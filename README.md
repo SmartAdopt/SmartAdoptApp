@@ -62,22 +62,24 @@ SmartAdoptApp/
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
 │   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
-│   │   ├── routes/          # API endpoints (auth, admin, adopter)
-│   │   │   ├── auth_routes.py     # Authentication endpoints
-│   │   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   │   └── adopter_routes.py  # Adopter-protected endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
+│   │   │   ├── auth_schemas.py     # Authentication schemas
+│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   └── auth_service.py    # Authentication services
+│   │   │   ├── auth_service.py    # Authentication services
+│   │   │   └── backblaze_service.py # Backblaze B2 service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
-│   │       └── oauth/       # OAuth 2.0 utilities
+│   │       ├── oauth/       # OAuth 2.0 utilities
 │   │       │   └── google_oauth.py     # Google OAuth integration
+│   │       └── logger/      # Logging configuration
+│   │           └── logger_config.py    # Loguru logging configuration
 │   ├── docs/               # Documentation
 │   │   ├── README_JWT.md    # Complete JWT documentation
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
-│   │   └── README_BACKBLAZE.md # Complete Backblaze B2 documentation
+│   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
+│   │   └── README_LOGS.md   # Complete logging system documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
@@ -135,10 +137,23 @@ POSTGRES_HOST_PORT=host_port
 SECRET_KEY=secret_key_string
 ALGORITHM=algorithm_name
 ACCESS_TOKEN_EXPIRE_MINUTES=expiration_minutes
+REFRESH_TOKEN_EXPIRE_DAYS=refresh_token_expiration_days
+
+# Redis
+REDIS_HOST=redis_host
+REDIS_PORT=redis_port
+REDIS_DB=redis_db
+REDIS_PASSWORD=redis_password
+REDIS_EXTERNAL_PORT=redis_external_port
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Backblaze B2
+BACKBLAZE_KEY_ID=your_backblaze_key_id
+BACKBLAZE_APPLICATION_KEY=your_backblaze_application_key
+BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 
 # MongoDB
 MONGO_HOST=mongo_host
@@ -146,13 +161,17 @@ MONGO_PORT=mongo_port
 MONGO_DB=mongo_database_name
 MONGO_USER=mongo_user
 MONGO_PASSWORD=mongo_password
+MONGO_EXTERNAL_PORT=mongo_external_port
 
 # Docker & Ports
 BACKEND_INTERNAL_PORT=backend_internal_port
 BACKEND_EXTERNAL_PORT=backend_external_port
 FRONTEND_INTERNAL_PORT=frontend_internal_port
 FRONTEND_EXTERNAL_PORT=frontend_external_port
-MONGO_EXTERNAL_PORT=mongo_external_port
+
+# Dozzle
+DOZZLE_PORT=dozzle_port
+DOZZLE_EXTERNAL_PORT=dozzle_external_port
 
 # API URLs
 VITE_API_URL=api_url
@@ -333,7 +352,7 @@ All environments expect a `.env` file at the **repository root**. The `.env` fil
 
 ```env
 # ─── Docker Hub ───────────────────────────────────────
-DOCKER_USERNAME=tuusuario
+DOCKER_USERNAME=yourusername
 
 # ─── PostgreSQL ───────────────────────────────────────
 POSTGRES_HOST=postgres
@@ -352,7 +371,7 @@ MONGO_PASSWORD=change_me_qa
 MONGO_EXTERNAL_PORT=27017
 
 # ─── JWT (FastAPI) ─────────────────────────────────────
-SECRET_KEY=tu_secreto_jwt_qa
+SECRET_KEY=your_secret_jwt_qa
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10
 
@@ -373,7 +392,7 @@ VITE_API_URL=http://localhost:8000
 ### PRODUCTION (.env)
 ```
 # ─── Docker Hub ───────────────────────────────────────
-DOCKER_USERNAME=tuusuario
+DOCKER_USERNAME=yourusername
 
 # ─── PostgreSQL ───────────────────────────────────────
 POSTGRES_HOST=postgres
@@ -390,7 +409,7 @@ MONGO_USER=prod_mongo_user
 MONGO_PASSWORD=change_me_prod
 
 # ─── JWT (FastAPI) ─────────────────────────────────────
-SECRET_KEY=tu_secreto_jwt_prod_seguro
+SECRET_KEY=your_secret_jwt_prod_secure
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 

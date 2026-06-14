@@ -71,7 +71,7 @@ def test_admin_dashboard_unauthorized_role(client, db_session):
 
     # Should return 403 Forbidden
     assert response.status_code == 403
-    assert "Access denied" in response.json()["detail"]
+    assert "Access denied" in response.json()["detail"]["message"]
 
 
 def test_admin_dashboard_no_token(client):

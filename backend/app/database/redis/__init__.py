@@ -1,3 +1,3 @@
-from .redis_db import redis_client, get_redis
+from .redis_db import get_redis_client, get_redis
 
-__all__ = ["redis_client", "get_redis"]
+__all__ = ["get_redis_client", "get_redis"]
