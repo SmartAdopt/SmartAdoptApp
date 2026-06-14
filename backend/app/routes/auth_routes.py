@@ -1,5 +1,6 @@
 # Authentication routes
 # FastAPI imports
+# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
@@ -175,11 +176,14 @@ async def login_google(request: Request, role: str = "adopter"):
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
         print(f"ERROR en login_google: {str(e)}")
-        # CORTADO A MENOS DE 88 CARACTERES
-        error_msg = f"Redirect failed - Google OAuth not available: {str(e)}"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": error_msg},
+            detail={
+                "message": (
+                    f"Redirect failed - Google OAuth not available: "
+                    f"{str(e)}"
+                )
+            },
         )
 
 
@@ -344,7 +348,6 @@ def refresh(
         )
 
 
-# PARAMETRO SEPARADO A MENOS DE 88 CARACTERES
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(
     request: Request,
