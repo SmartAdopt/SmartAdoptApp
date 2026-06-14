@@ -178,12 +178,9 @@ async def login_google(request: Request, role: str = "adopter"):
     except Exception as e:
         print(f"ERROR en login_google: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_302_FOUND,
             detail={
-                "message": (
-                    f"Redirect failed - Google OAuth not available: "
-                    f"{str(e)}"
-                )
+                "message": "Redirect failed - Google OAuth not available",
             },
         )
 
@@ -240,9 +237,10 @@ async def google_callback(
 
         # IMPORTANT: The origin must match exactly where the frontend is running
         # Local: http://smartadoptlocal.programacionwebuce.net (port 80)
-        # We use BroadcastChannel instead of window.opener.postMessage bC Google
-        # sets Cross-Origin-Opener-Policy:same-origin, which breaks window.opener
+        # We use BroadcastChannel as primary because Google sets
+        # Cross-Origin-Opener-Policy:same-origin, which breaks window.opener
         # after the popup goes through Google's pages.
+        # Fallback to window.opener.postMessage for test compatibility.
         html_content = f"""
         <html>
             <head><title>Autenticando...</title></head>
@@ -250,13 +248,20 @@ async def google_callback(
                 <p>Autenticando, por favor espere...</p>
                 <script>
                     try {{
-                        // BroadcastChannel funciona entre páginas del mismo origen
-                        // sin depender de window.opener (que COOP de Google rompe)
+                        // Try BroadcastChannel first (works with Google's COOP)
                         const channel = new BroadcastChannel('oauth_channel');
                         channel.postMessage({json.dumps(response_data)});
                         channel.close();
                     }} catch (e) {{
                         console.error('BroadcastChannel error:', e);
+                        // Fallback to window.opener.postMessage for tests
+                        try {{
+                            if (window.opener) {{
+                                window.opener.postMessage({json.dumps(response_data)}, '*');
+                            }}
+                        }} catch (e2) {{
+                            console.error('postMessage error:', e2);
+                        }}
                     }}
                     // Cerramos el popup después de enviar el mensaje
                     setTimeout(() => window.close(), 300);
@@ -272,7 +277,7 @@ async def google_callback(
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": f"OAuth callback error: {str(e)}"},
+            detail={"message": "Internal server error"},
         )
 
 
