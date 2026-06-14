@@ -95,6 +95,18 @@ jobs:
             ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.PROD_ACCESS_TOKEN_EXPIRE_MINUTES }}
             GOOGLE_CLIENT_ID=${{ secrets.PROD_GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
+            REDIS_HOST=${{ secrets.PROD_REDIS_HOST }}
+            REDIS_PORT=${{ secrets.PROD_REDIS_PORT }}
+            REDIS_DB=${{ secrets.PROD_REDIS_DB }}
+            REDIS_PASSWORD=${{ secrets.PROD_REDIS_PASSWORD }}
+            REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.PROD_REFRESH_TOKEN_EXPIRE_DAYS }}
+            BACKBLAZE_KEY_ID=${{ secrets.PROD_BACKBLAZE_KEY_ID }}
+            BACKBLAZE_APPLICATION_KEY=${{ secrets.PROD_BACKBLAZE_APPLICATION_KEY }}
+            BACKBLAZE_BUCKET_NAME=${{ secrets.PROD_BACKBLAZE_BUCKET_NAME }}
+            DOZZLE_EXTERNAL_PORT=${{ secrets.PROD_DOZZLE_EXTERNAL_PORT }}
+            DOZZLE_PORT=${{ secrets.PROD_DOZZLE_PORT }}
+            DOZZLE_USERNAME=${{ secrets.PROD_DOZZLE_USERNAME }}
+            DOZZLE_PASSWORD=${{ secrets.PROD_DOZZLE_PASSWORD }}
             ENVEOF
             
             docker compose -f docker-compose-production.yml pull
