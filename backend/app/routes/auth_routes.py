@@ -1,5 +1,6 @@
 # Authentication routes
 # FastAPI imports
+# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
