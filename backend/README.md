@@ -13,6 +13,7 @@ SmartAdopt application backend, built with FastAPI, SQLAlchemy, and PostgreSQL.
 - [Development Notes](#development-notes)
 - [Security](#security)
 - [JWT Authentication](#jwt-authentication)
+- [Logging](#logging)
 
 ## Description
 
@@ -21,46 +22,46 @@ SmartAdopt is a platform for pet adoption management. This backend provides a RE
 ## Project Structure
 
 ```
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── config.py              # Application configuration using pydantic_settings
-│   ├── main.py                # FastAPI application entry point
-│   ├── database/              # Database configuration
-│   │   ├── __init__.py
-│   │   └── postgres/
-│   │       ├── __init__.py    # Created to enable imports
-│   │       ├── postgres_db.py # SQLAlchemy configuration (Base, Session)
-│   │       └── init_postgres.sql # Table initialization script
-│   ├── models/                # SQLAlchemy models
-│   │   ├── __init__.py        # Exports User, Admin, Adopter
-│   │   ├── user.py            # Base user model
-│   │   ├── admin.py           # Admin model (inherits from User)
-│   │   └── adopter.py         # Adopter model (inherits from User)
-│   ├── routes/                # API routes
-│   │   ├── __init__.py
-│   │   ├── auth_routes.py     # Authentication endpoints
-│   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   └── adopter_routes.py  # Adopter-protected endpoints
-│   ├── schemas/               # Pydantic schemas
-│   │   ├── __init__.py
-│   │   └── auth_schemas.py    # Request/response schemas for auth
-│   ├── services/              # Business logic
-│   │   ├── __init__.py
-│   │   └── auth_service.py    # Authentication services
-│   └── utils/                 # Utilities
-│       ├── __init__.py
-│       ├── jwt/               # JWT authentication utilities
-│       │   ├── __init__.py
-│       │   └── jwt_utils.py   # JWT token creation and verification
-│       └── oauth/             # OAuth 2.0 utilities
-│           ├── __init__.py
-│           └── google_oauth.py # Google OAuth integration
-├── docs/                      # Documentation
-│   └── README_JWT.md          # Complete JWT documentation
-├── tests/                     # Unit tests
-├── Dockerfile                 # Docker configuration
-└── requirements.txt           # Python dependencies
+backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── config.py        # Application configuration using pydantic_settings
+│   │   ├── main.py          # FastAPI application entry point
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
+│   │   │   ├── postgres/    # PostgreSQL configuration
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   └── redis/       # Redis configuration for token management
+│   │   │       └── redis_db.py    # Redis client configuration
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
+│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   │   ├── auth_schemas.py     # Authentication schemas
+│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
+│   │   ├── services/        # Business logic layer
+│   │   │   ├── auth_service.py    # Authentication services
+│   │   │   └── backblaze_service.py # Backblaze B2 service
+│   │   └── utils/           # Utility functions
+│   │       ├── jwt/         # JWT authentication utilities
+│   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
+│   │       ├── oauth/       # OAuth 2.0 utilities
+│   │       │   └── google_oauth.py     # Google OAuth integration
+│   │       └── logger/      # Logging configuration
+│   │           └── logger_config.py    # Loguru logging configuration
+│   ├── docs/               # Documentation
+│   │   ├── README_JWT.md    # Complete JWT documentation
+│   │   ├── README_OAUTH.md  # Complete OAuth documentation
+│   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
+│   │   └── README_LOGS.md   # Complete logging system documentation
+│   ├── tests/              # Backend tests
+│   │   ├── conftest.py      # Test configuration
+│   │   ├── test_auth.py     # Authentication tests
+│   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   └── test_main.py     # Main endpoint tests
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container configuration
 ```
 
 ## Technologies
@@ -73,6 +74,8 @@ backend/
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
 - **Authlib** - OAuth 2.0 integration for Google login
+- **Redis** - Token storage and management
+- **b2sdk** - Backblaze B2 cloud storage integration
 
 
 ### Run Locally
@@ -81,6 +84,58 @@ backend/
 - Python 3.12+
 - A PostgreSQL database running (can be started locally using the root orchestration: `docker compose -f docker-compose-local.yml up -d postgres`)
 - A `.env` file configured at the root repository directory (refer to `.env.example` for required variables)
+
+#### Environment Variables
+
+The backend requires the following environment variables (defined in `.env.example`):
+
+**Database Configuration:**
+- `POSTGRES_HOST`: PostgreSQL host address
+- `POSTGRES_PORT`: PostgreSQL port
+- `POSTGRES_DB`: PostgreSQL database name
+- `POSTGRES_USER`: PostgreSQL username
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_HOST_PORT`: PostgreSQL port exposed to host
+
+**JWT Configuration:**
+- `SECRET_KEY`: Secret key for JWT token signing
+- `ALGORITHM`: JWT algorithm (default: HS256)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Access token expiration time in minutes
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time in days
+
+**Redis Configuration:**
+- `REDIS_HOST`: Redis host address
+- `REDIS_PORT`: Redis port
+- `REDIS_DB`: Redis database number
+- `REDIS_PASSWORD`: Redis password
+- `REDIS_EXTERNAL_PORT`: Redis port exposed to host
+
+**Google OAuth:**
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+
+**Backblaze B2:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+**MongoDB:**
+- `MONGO_HOST`: MongoDB host address
+- `MONGO_PORT`: MongoDB port
+- `MONGO_DB`: MongoDB database name
+- `MONGO_USER`: MongoDB username
+- `MONGO_PASSWORD`: MongoDB password
+- `MONGO_EXTERNAL_PORT`: MongoDB port exposed to host
+
+**Docker & Ports:**
+- `BACKEND_INTERNAL_PORT`: Backend FastAPI port (internal, default: 9090)
+- `BACKEND_EXTERNAL_PORT`: Backend port exposed to host (default: 8000)
+- `FRONTEND_INTERNAL_PORT`: Frontend port (internal, default: 80)
+- `FRONTEND_EXTERNAL_PORT`: Frontend port exposed to host (default: 8080)
+
+**Dozzle:**
+- `DOZZLE_PORT`: Dozzle log viewer port (internal)
+- `DOZZLE_EXTERNAL_PORT`: Dozzle port exposed to host (default: 8080)
 
 #### Start the Server
 ```bash
@@ -119,7 +174,7 @@ python -m mypy backend/ --ignore-missing-imports
 When the PostgreSQL database is initialized using the provided script, a default admin user is automatically created with the following credentials:
 
 - **Email:** admin@smartadopt.com
-- **Password:** admin123
+- **Password:** Admin1234
 - **Role:** admin
 
 This user can be used to:
@@ -349,7 +404,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 The application implements industry-standard security practices to protect user data (Admins and Adopters):
 
-- **Input Validation:** Done automatically using Pydantic schemas.
+- **Input Validation:** Done automatically using Pydantic schemas with custom field validators:
+  - Names (first_name, last_name): Only letters allowed (including accented characters), 2-50 characters
+  - Phone number: Exactly 10 digits, numeric only
+  - Password: Minimum 8 characters, must contain at least one uppercase letter, one lowercase letter, and one number
+  - Role: Only accepts 'admin' or 'adopter'
+  - Email: Validated format using EmailStr
 - **CORS Configuration:** Strictly configured to allow requests only from trusted frontend origins.
 - **Password Protection:** Passwords are never stored in plain text.
 
@@ -382,9 +442,12 @@ The application implements JSON Web Token (JWT) authentication for protecting se
 ### Overview
 
 - Access tokens with 10-minute expiration
+- Refresh tokens with configurable expiration (default: 7 days)
 - Role-based authorization (admin, adopter)
-- Token type checking (access/refresh ready for future implementation)
+- Token type checking (access/refresh)
+- Token blacklist for immediate revocation
 - Protected endpoints with role verification
+- Redis-based token storage and management
 
 ### Configuration
 
@@ -393,6 +456,7 @@ JWT configuration is managed through environment variables. Refer to the `.env.e
 - `SECRET_KEY`: Secret key used to sign JWT tokens
 - `ALGORITHM`: Hashing algorithm (default: HS256)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 10)
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time in days (default: 7)
 
 ### Google OAuth Configuration
 
@@ -420,13 +484,116 @@ To obtain these credentials, refer to the complete Google OAuth documentation in
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
+3. **Refresh expired token:**
+   ```http
+   POST /auth/refresh
+   Authorization: Bearer <expired_access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+4. **Logout (revoke tokens):**
+   ```http
+   POST /auth/logout
+   Authorization: Bearer <access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+### Token Blacklist
+
+The application implements a token blacklist mechanism using Redis to immediately revoke access tokens:
+
+- When a user logs out, their access token is added to a blacklist in Redis
+- Blacklisted tokens are rejected even if they haven't expired
+- Blacklisted tokens automatically expire from Redis when the original token would have expired
+- All protected endpoints check the blacklist before accepting a token
+- This provides immediate security by allowing token revocation without waiting for natural expiration
+
 ### Security Considerations
 
 - Tokens expire after 10 minutes to limit exposure if compromised
+- Refresh tokens are stored in Redis with rotation on each refresh
+- Token blacklist allows immediate revocation of compromised tokens
 - Only admin and adopter roles receive tokens
 - Regular users cannot access protected endpoints
 - SECRET_KEY should be changed in production environments
 - Tokens are transmitted via HTTPS in production (recommended)
+- HTTP-Only cookies prevent XSS attacks on refresh tokens
+
+## Backblaze B2 Image Upload
+
+The application uses Backblaze B2 cloud storage for image upload:
+
+- **Admin-only access**: Only users with admin role can upload images
+- **UUID filenames**: Unique filenames prevent conflicts
+- **Automatic URL generation**: Public URLs are generated automatically
+- **Bucket validation**: Checks bucket existence before upload
+
+**Endpoint:**
+```http
+POST /backblaze/upload
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+file: <image_file>
+```
+
+**Configuration:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+For complete documentation, refer to `docs/README_BACKBLAZE.md`.
+
+## Logging
+
+The application uses **Loguru** for structured logging with color-coded console output and file-based persistent logging.
+
+### Logging Configuration
+
+The logging system is configured in `app/utils/logger/logger_config.py` with the following features:
+
+- **Color-coded console output**: Entire log lines are colored based on log level
+  - INFO: Green
+  - WARNING: Yellow
+  - ERROR: Red
+- **File-based logging**: Logs are written to files for persistent storage
+  - `logs/app.log`: All logs (INFO and above)
+  - `logs/error.log`: Error logs only (ERROR and above)
+- **Log rotation**: Files are rotated when they reach 500 MB
+- **Log retention**: Logs are retained for 10 days (app.log) or 30 days (error.log)
+
+### Log Format
+
+Console logs use the following format:
+```
+{timestamp} | {level} | {name}:{function}:{line} - {message}
+```
+
+Example:
+```
+2026-06-13 21:45:00 | INFO     | app.main:main:13 - Initializing FastAPI application
+```
+
+### Usage
+
+Import the logger in your Python files:
+```python
+from app.utils.logger.logger_config import logger
+
+# Log at different levels
+logger.info("User logged in successfully")
+logger.warning("Invalid credentials attempt")
+logger.error("Database connection failed")
+```
+
+### Documentation Access Logging
+
+The application includes a middleware that logs when users access the FastAPI documentation at `/docs`:
+```
+User accessing FastAPI documentation
+```
+
+For complete documentation on the logging system, refer to `docs/README_LOGS.md`.
 
 ## License
 

@@ -96,6 +96,17 @@ jobs:
             ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.QA_ACCESS_TOKEN_EXPIRE_MINUTES}}
             GOOGLE_CLIENT_ID=${{ secrets.QA_GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.QA_GOOGLE_CLIENT_SECRET }}
+            REDIS_HOST=${{ secrets.QA_REDIS_HOST }}
+            REDIS_PORT=${{ secrets.QA_REDIS_PORT }}
+            REDIS_DB=${{ secrets.QA_REDIS_DB }}
+            REDIS_PASSWORD=${{ secrets.QA_REDIS_PASSWORD }}
+            REDIS_EXTERNAL_PORT=${{ secrets.QA_REDIS_EXTERNAL_PORT }}
+            REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.QA_REFRESH_TOKEN_EXPIRE_DAYS }}
+            BACKBLAZE_KEY_ID=${{ secrets.QA_BACKBLAZE_KEY_ID }}
+            BACKBLAZE_APPLICATION_KEY=${{ secrets.QA_BACKBLAZE_APPLICATION_KEY }}
+            BACKBLAZE_BUCKET_NAME=${{ secrets.QA_BACKBLAZE_BUCKET_NAME }}
+            DOZZLE_EXTERNAL_PORT=${{ secrets.QA_DOZZLE_EXTERNAL_PORT }}
+            DOZZLE_PORT=${{ secrets.QA_DOZZLE_PORT }}
             EOF
             
             docker compose -f docker-compose-qa.yml pull

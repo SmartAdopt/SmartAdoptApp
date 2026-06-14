@@ -1,3 +1,5 @@
+// frontend/tests/setup.ts
+
 import { beforeAll } from 'vitest';
 
 beforeAll(() => {

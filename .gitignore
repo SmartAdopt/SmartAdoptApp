@@ -19,3 +19,20 @@ Thumbs.db
 
 # Otros
 tempCodeRunnerFile.py
+
+.venv/
+
+# Logs
+logs/
+*.log
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+test.db
+
+.coverage
+test.db

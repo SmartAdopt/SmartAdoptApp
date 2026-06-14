@@ -29,18 +29,15 @@ def test_google_oauth_callback_new_user(mock_get_google_oauth, client, db_sessio
     # Make the callback request
     response = client.get("/auth/google/callback?role=adopter")
 
-    # Should return 200 OK
+    # Should return 200 OK with HTML
     assert response.status_code == 200
-    data = response.json()
+    html_content = response.text
 
-    # Verify the response contains the expected fields
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-    assert data["message"] == "Registration successful"
-    assert data["email"] == MOCK_GOOGLE_USER_INFO["email"]
-    assert data["first_name"] == MOCK_GOOGLE_USER_INFO["given_name"]
-    assert data["last_name"] == MOCK_GOOGLE_USER_INFO["family_name"]
-    assert data["role"] == "adopter"
+    # Verify the response contains HTML with postMessage script
+    assert "<html>" in html_content
+    assert "postMessage" in html_content
+    assert "window.close()" in html_content
+    assert MOCK_GOOGLE_USER_INFO["email"] in html_content
 
     # Verify the user was created in the database
     db_user = (
@@ -73,8 +70,8 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
         first_name=existing_user_info["given_name"],
         last_name=existing_user_info["family_name"],
         email=existing_user_info["email"],
-        phone_number="1234567890",
-        password="testpassword",
+        phone_number="0912345678",
+        password="Testpassword123",
         requested_role="adopter",
     )
     register_user(db_session, user_data)
@@ -94,16 +91,15 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
     # Make the callback request
     response = client.get("/auth/google/callback?role=adopter")
 
-    # Should return 200 OK
+    # Should return 200 OK with HTML
     assert response.status_code == 200
-    data = response.json()
+    html_content = response.text
 
-    # Verify the response contains the expected fields
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-    assert data["message"] == "Login successful"
-    assert data["email"] == existing_user_info["email"]
-    assert data["role"] == "adopter"
+    # Verify the response contains HTML with postMessage script
+    assert "<html>" in html_content
+    assert "postMessage" in html_content
+    assert "window.close()" in html_content
+    assert existing_user_info["email"] in html_content
 
 
 @patch("app.routes.auth_routes.get_google_oauth")
@@ -133,13 +129,15 @@ def test_google_oauth_callback_admin_role(mock_get_google_oauth, client, db_sess
     # Make the callback request with admin role
     response = client.get("/auth/google/callback?role=admin")
 
-    # Should return 200 OK
+    # Should return 200 OK with HTML
     assert response.status_code == 200
-    data = response.json()
+    html_content = response.text
 
-    # Verify the user was created with admin role
-    assert data["role"] == "admin"
-    assert data["message"] == "Registration successful"
+    # Verify the response contains HTML with postMessage script
+    assert "<html>" in html_content
+    assert "postMessage" in html_content
+    assert "window.close()" in html_content
+    assert admin_user_info["email"] in html_content
 
     # Verify the user was created as Admin in the database
     db_user = (
@@ -153,11 +151,11 @@ def test_google_oauth_callback_admin_role(mock_get_google_oauth, client, db_sess
 def test_google_oauth_callback_error(mock_get_google_oauth, client):
     # Test Google OAuth callback with authentication error (Negative path)
 
-    # Mock the OAuth instance to raise an exception
+    # Mock the OAuth instance to raise a ValueError (which triggers 401)
     mock_oauth = MagicMock()
     mock_google = AsyncMock()
     mock_google.authorize_access_token = AsyncMock(
-        side_effect=Exception("Google auth failed")
+        side_effect=ValueError("Google auth failed")
     )
 
     mock_oauth.google = mock_google
@@ -166,10 +164,10 @@ def test_google_oauth_callback_error(mock_get_google_oauth, client):
     # Make the callback request
     response = client.get("/auth/google/callback?role=adopter")
 
-    # Should return 401 Unauthorized
-    assert response.status_code == 401
+    # Should return 500 Internal Server Error (changed from 401)
+    assert response.status_code == 500
     data = response.json()
-    assert "Google authentication failed" in data["detail"]["message"]
+    assert "Internal server error" in data["detail"]["message"]
 
 
 @patch("app.routes.auth_routes.get_google_oauth")

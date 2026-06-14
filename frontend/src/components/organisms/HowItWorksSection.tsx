@@ -1,4 +1,5 @@
 // src/components/organisms/HowItWorksSection.tsx
+
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import type { ReactNode } from "react";
 

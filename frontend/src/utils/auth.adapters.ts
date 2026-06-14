@@ -1,83 +1,17 @@
 // src/utils/auth.adapters.ts
-import type { AuthSession, Role } from "../types/auth.types";
 
-type LoginResponsePayload = {
-  data?: unknown;
-  access_token?: unknown;
-  accessToken?: unknown;
-  token?: unknown;
-  user?: Record<string, unknown>;
-  id?: unknown;
-  user_id?: unknown;
-  first_name?: unknown;
-  firstName?: unknown;
-  last_name?: unknown;
-  lastName?: unknown;
-  email?: unknown;
-  role?: unknown;
-  type?: unknown;
-  requested_role?: unknown;
-  created_at?: unknown;
-  createdAt?: unknown;
-};
+import type { LoginApiResponse, AuthSession } from "../types/auth.types";
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === "object" && value !== null;
-};
-
-const asString = (value: unknown, fallback = "") => {
-  return typeof value === "string" ? value : fallback;
-};
-
-const asNumber = (value: unknown, fallback = 0) => {
-  return typeof value === "number" ? value : fallback;
-};
-
-const asRole = (value: unknown): Role | undefined => {
-  if (value === "adopter" || value === "admin") {
-    return value;
-  }
-
-  return undefined;
-};
-
-export const adaptLoginResponse = (
-  response: LoginResponsePayload,
-): AuthSession => {
-  // 1. Extract the main payload
-  const payload = isRecord(response.data) ? response.data : response;
-
-  // 🚨 Log the raw backend JSON to inspect its actual structure
-  console.log("📦 RAW BACKEND PAYLOAD:", payload);
-
-  // 2. Extract the user object (it may come standalone or nested)
-  const userData = isRecord(payload.user) ? payload.user : payload;
-
+/**
+ * Adapts the raw response from the FastAPI backend into the clean
+ * AuthSession object expected by the React frontend Context.
+ * Tokens are handled separately by the service/interceptors.
+ */
+export const adaptLoginResponse = (response: LoginApiResponse): AuthSession => {
   return {
-    // Look for the token in all possible forms (snake_case, camelCase, etc)
-    accessToken:
-      asString(payload.access_token) ||
-      asString(payload.accessToken) ||
-      asString(payload.token),
-
-    user: {
-      id: asNumber(userData.id) || asNumber(userData.user_id),
-      firstName:
-        asString(userData.first_name) ||
-        asString(userData.firstName) ||
-        "Usuario",
-      lastName: asString(userData.last_name) || asString(userData.lastName),
-      email: asString(userData.email),
-      // Map the role (role, type, or requested_role)
-      role:
-        asRole(userData.role) ||
-        asRole(userData.type) ||
-        asRole(userData.requested_role) ||
-        "adopter",
-      createdAt:
-        asString(userData.created_at) ||
-        asString(userData.createdAt) ||
-        new Date().toISOString(),
-    },
+    id: response.id,
+    name: `${response.first_name} ${response.last_name}`.trim(),
+    email: response.email,
+    role: response.role,
   };
 };

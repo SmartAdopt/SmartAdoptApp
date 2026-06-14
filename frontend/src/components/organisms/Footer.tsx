@@ -8,6 +8,11 @@ import {
   Link,
   IconButton,
 } from "@mui/material";
+import {
+  Facebook as FacebookIcon,
+  WhatsApp as WhatsAppIcon,
+  Instagram as InstagramIcon,
+} from "@mui/icons-material";
 import { Logo } from "../atoms/Logo";
 
 export const Footer = () => {
@@ -17,7 +22,6 @@ export const Footer = () => {
         <Grid container spacing={4} sx={{ mb: 6 }}>
           {/* Column 1: Brand */}
           <Grid item xs={12} md={4}>
-            {/* Reusing Logo but forcing white text */}
             <Box sx={{ filter: "brightness(0) invert(1)", mb: 2 }}>
               <Logo />
             </Box>
@@ -76,7 +80,7 @@ export const Footer = () => {
             </Box>
           </Grid>
 
-          {/* Column 4: Contact */}
+          {/* Column 4: Contact & Social Networks */}
           <Grid item xs={12} sm={4} md={3}>
             <Typography
               variant="subtitle2"
@@ -95,24 +99,64 @@ export const Footer = () => {
             <Typography variant="body2" gutterBottom>
               📍 Quito, Ecuador
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+
+            {/* SOCIAL NETWORKS BLOCK WITH ENTERPRISE POLISH */}
+            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
               <IconButton
                 size="small"
-                sx={{ color: "grey.400", bgcolor: "rgba(255,255,255,0.05)" }}
+                aria-label="Facebook"
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: "grey.400",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(24, 119, 242, 0.2)", // Subtle official brand blue tint
+                    color: "#1877F2",
+                  },
+                }}
               >
-                <img src="/google.svg" width={16} />
+                <FacebookIcon fontSize="small" />
               </IconButton>
+
               <IconButton
                 size="small"
-                sx={{ color: "grey.400", bgcolor: "rgba(255,255,255,0.05)" }}
+                aria-label="WhatsApp"
+                href="https://wa.me/593991234567"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: "grey.400",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(37, 211, 102, 0.2)", // Subtle official brand green tint
+                    color: "#25D366",
+                  },
+                }}
               >
-                <img src="/apple_g.svg" width={16} />
+                <WhatsAppIcon fontSize="small" />
               </IconButton>
+
               <IconButton
                 size="small"
-                sx={{ color: "grey.400", bgcolor: "rgba(255,255,255,0.05)" }}
+                aria-label="Instagram"
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: "grey.400",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(228, 64, 95, 0.2)", // Subtle official brand pink tint
+                    color: "#E4405F",
+                  },
+                }}
               >
-                <img src="/facebook.svg" width={16} />
+                <InstagramIcon fontSize="small" />
               </IconButton>
             </Box>
           </Grid>

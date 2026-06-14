@@ -1,3 +1,5 @@
+// src/components/atoms/SocialButton.tsx
+
 import { Button } from "@mui/material";
 import type { ButtonProps } from "@mui/material";
 import type { ReactNode } from "react";

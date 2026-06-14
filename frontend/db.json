@@ -3,7 +3,7 @@
     {
       "id": 1,
       "email": "admin@smartadopt.com",
-      "password": "admin123",
+      "password": "Admin1234",
       "role": "admin",
       "first_name": "Javier",
       "last_name": "Saransig"

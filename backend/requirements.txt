@@ -17,3 +17,7 @@ email-validator
 python-jose
 authlib
 itsdangerous
+redis
+b2sdk
+redis
+loguru
