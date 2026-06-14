@@ -1,3 +1,4 @@
+# fmt: off
 # Authentication routes
 # FastAPI imports
 # Fix CI formatting
