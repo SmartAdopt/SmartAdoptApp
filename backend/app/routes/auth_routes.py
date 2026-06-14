@@ -421,3 +421,4 @@ def logout(
                 "message": "Internal server error",
             },
         )
+# Fix: force LF line endings for GitHub Actions
