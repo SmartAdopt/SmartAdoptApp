@@ -98,6 +98,15 @@ services:
       - redis_dev_data:/data
     restart: unless-stopped
 
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: smart-adopt-dozzle
+    ports:
+      - "${DOZZLE_EXTERNAL_PORT}:${DOZZLE_PORT}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
 volumes:
   postgres_dev_data:
   mongo_dev_data:
