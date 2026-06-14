@@ -27,36 +27,20 @@ export const SocialLoginGroup = () => {
     const top = window.screen.height / 2 - height / 2;
 
     // 3. Open the Popup
-    const popup = window.open(
+    window.open(
       url,
       "Google OAuth",
       `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`,
     );
-
-    // 4. Setup the interval to check if the popup was closed manually
-    const checkClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(checkClosed);
-      }
-    }, 1000);
   };
 
-  // 5. Listen for the message from the backend callback
+  // 4. Listen for the message from the backend callback using BroadcastChannel
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Security check: Ensure the message comes from our expected backend origin
-      // Note: In local dev, backend might be 8000. In production, it will be your domain.
-      // For now, we allow the same origin or localhost:8000
+    const channel = new BroadcastChannel("oauth_channel");
 
-      const isExpectedOrigin =
-        event.origin === window.location.origin ||
-        event.origin.includes("localhost") ||
-        event.origin.includes("127.0.0.1");
-
-      if (!isExpectedOrigin) return;
-
+    channel.onmessage = (event: MessageEvent) => {
       // Extract the payload (The JSON returned by /auth/google/callback)
-      // Fix 2: Securely parse the event data, as it often arrives as a stringified JSON
+      // Securely parse the event data, as it often arrives as a stringified JSON
       let data;
       try {
         data =
@@ -85,7 +69,7 @@ export const SocialLoginGroup = () => {
         // 3. Log the user in globally
         loginUser(sessionData);
 
-        // Fix 3: Explicit redirect guarantees the user is moved to the dashboard
+        // 4. Explicit redirect guarantees the user is moved to the dashboard
         const userRole = data.role.toLowerCase();
         if (userRole === "admin") {
           navigate("/admin/dashboard", { replace: true });
@@ -95,10 +79,8 @@ export const SocialLoginGroup = () => {
       }
     };
 
-    window.addEventListener("message", handleMessage);
-
     return () => {
-      window.removeEventListener("message", handleMessage);
+      channel.close();
     };
   }, [loginUser, navigate]);
 
