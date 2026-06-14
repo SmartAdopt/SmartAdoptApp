@@ -33,3 +33,6 @@ htmlcov/
 # Local databases
 *.db
 test.db
+
+.coverage
+test.db
