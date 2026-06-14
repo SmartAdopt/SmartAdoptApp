@@ -15,7 +15,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import json
-import traceback
 from datetime import datetime
 from jose import jwt
 
@@ -405,7 +404,7 @@ def refresh(
 def logout(
     request: Request,
     response: Response,
-credentials: Optional[HTTPAuthorizationCredentials] = Security(_optional_bearer),
+credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
 ):
     logger.info("POST /auth/logout - Logout request")
     try:
