@@ -39,10 +39,20 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
     depends_on:
       postgres:
         condition: service_healthy
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - smartadopt-prod
@@ -148,10 +158,59 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+        
+  redis:
+    image: redis:7-alpine
+    container_name: smart-adopt-redis-prod
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    expose:
+      - "${REDIS_PORT}"
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - smartadopt-prod
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: smart-adopt-dozzle-prod
+    ports:
+      - "${DOZZLE_EXTERNAL_PORT}:${DOZZLE_PORT}"
+    environment:
+      - DOZZLE_USERNAME=${DOZZLE_USERNAME}
+      - DOZZLE_PASSWORD=${DOZZLE_PASSWORD}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - smartadopt-prod
+    healthcheck:
+      test: [ "CMD", "/dozzle", "healthcheck" ]
+      interval: 3s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_prod_data:
   mongo_prod_data:
+  redis_prod_data:
 
 networks:
   smartadopt-prod:
