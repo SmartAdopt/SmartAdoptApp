@@ -184,23 +184,18 @@ async def login_google(request: Request, role: str = "adopter"):
     logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
     try:
         oauth = get_google_oauth()
-# IMPORTANT: redirect_uri must use the same domain/host as the incoming request
-        # so that the session cookie (with the OAuth state) is sent back in the callback.
-        # The frontend opens the popup via VITE_API_URL=/api, which nginx proxies to the back
-        # That is why the Host the browser sees is smartadoptlocal.programacionwebuce.net.
-        # If redirect_uri were localhost:8000 (a different domain), the browser would not send
-        # the session cookie -> CSRF state mismatch.
-        # We detect the host of the incoming request and build the
-        # redirect_uri dynamically.
-        forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
-        host = request.headers.get("X-Forwarded-Host") or request.headers.get(
-            "Host", "localhost:8000"
-        )
-        redirect_uri = f"{forwarded_proto}://{host}/api/auth/google/callback"
         
-        # Save the role in session to retrieve it in the callback
-        request.session["oauth_role"] = role
+        # Dynamically build the redirect URI based on environment
+        import os
+        env = os.environ.get("ENV", "development")
+        scheme = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
         
+        if env in ["qa", "production"]:
+            redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+        else:
+            redirect_uri = "http://smartadoptlocal.programacionwebuce.net/api/auth/google/callback"
+            
         logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
@@ -251,7 +246,7 @@ async def google_callback(
                 key="refresh_token",
                 value=refresh_token,
                 httponly=True,
-                secure=False,  # False para HTTP local, True en producción HTTPS
+                secure=True,
                 samesite="lax",
                 max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             )
@@ -267,36 +262,34 @@ async def google_callback(
             "role": user_response.get("role"),
         }
 
-        # IMPORTANT: The origin must match exactly where the frontend is running
-        # Local: http://smartadoptlocal.programacionwebuce.net (port 80)
-        # We use BroadcastChannel as primary because Google sets
-        # Cross-Origin-Opener-Policy:same-origin, which breaks window.opener
-        # after the popup goes through Google's pages.
-        # Fallback to window.opener.postMessage for test compatibility.
+        # Determine frontend origin dynamically for postMessage
+        import os
+        env = os.environ.get("ENV", "development")
+        scheme = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+
+        if env in ["qa", "production"]:
+            frontend_origin = f"{scheme}://{host}"
+        else:
+            frontend_origin = "http://smartadoptlocal.programacionwebuce.net"
+
         html_content = f"""
         <html>
             <head><title>Autenticando...</title></head>
             <body>
                 <p>Autenticando, por favor espere...</p>
                 <script>
-try {{
-                        // Try BroadcastChannel first (works with Google's COOP)
-                        const channel = new BroadcastChannel('oauth_channel');
-                        channel.postMessage({json.dumps(response_data)});
-                        channel.close();
-                    }} catch (e) {{
-                        console.error('BroadcastChannel error:', e);
-                        // Fallback to window.opener.postMessage for tests
-                        try {{
-                            if (window.opener) {{
-                                window.opener.postMessage({json.dumps(response_data)}, '*');
-                            }}
-                        }} catch (e2) {{
-                            console.error('postMessage error:', e2);
-                        }}
+                    const data = {json.dumps(response_data)};
+                    // Send the session to the Frontend using BroadcastChannel (What frontend expects)
+                    const channel = new BroadcastChannel("oauth_channel");
+                    channel.postMessage(data);
+                    
+                    // Also send via postMessage dynamically
+                    if (window.opener) {{
+                        window.opener.postMessage(data, "{frontend_origin}");
                     }}
-                    // Cerramos el popup después de enviar el mensaje
-                    setTimeout(() => window.close(), 300);
+                    // Close the popup window
+                    window.close();
                 </script>
             </body>
         </html>
@@ -404,7 +397,7 @@ def refresh(
 def logout(
     request: Request,
     response: Response,
-credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
 ):
     logger.info("POST /auth/logout - Logout request")
     try:
