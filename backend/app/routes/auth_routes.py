@@ -257,7 +257,7 @@ async def google_callback(
         env = os.environ.get("ENV", "development")
         scheme = request.headers.get("x-forwarded-proto", "http")
         host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
-        
+
         if env in ["qa", "production"]:
             frontend_origin = f"{scheme}://{host}"
         else:
@@ -265,10 +265,19 @@ async def google_callback(
 
         html_content = f"""
         <html>
+            <head><title>Autenticando...</title></head>
             <body>
+                <p>Autenticando, por favor espere...</p>
                 <script>
-                    // Send the session to the Frontend dynamically
-                    window.opener.postMessage({json.dumps(response_data)}, "{frontend_origin}");
+                    const data = {json.dumps(response_data)};
+                    // Send the session to the Frontend using BroadcastChannel (What frontend expects)
+                    const channel = new BroadcastChannel("oauth_channel");
+                    channel.postMessage(data);
+                    
+                    // Also send via postMessage dynamically
+                    if (window.opener) {{
+                        window.opener.postMessage(data, "{frontend_origin}");
+                    }}
                     // Close the popup window
                     window.close();
                 </script>
@@ -279,7 +288,7 @@ async def google_callback(
         return HTMLResponse(content=html_content)
 
     except Exception as e:
-        logger.error(f"OAuth callback failed - error: {str(e)}")
+        logger.exception(f"OAuth callback failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},
