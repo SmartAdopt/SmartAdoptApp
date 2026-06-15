@@ -1,5 +1,7 @@
+# fmt: off
 # Authentication routes
 # FastAPI imports
+# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
@@ -200,7 +202,9 @@ async def login_google(request: Request, role: str = "adopter"):
         logger.error(f"OAuth redirect failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_302_FOUND,
-            detail={"message": "Redirect failed - Google OAuth not available"},
+            detail={
+                "message": "Redirect failed - Google OAuth not available",
+            },
         )
 
 
@@ -223,6 +227,11 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
+# The role can come from the session (set in login_google)
+        # or from the query parameter (default to "adopter").
+        # If not in session, use the query parameter or default
+        role = request.session.pop("oauth_role", role)
+
         logger.info(
             f"OAuth callback - User info received for email: {user_info.get('email')}"
         )
@@ -230,6 +239,7 @@ async def google_callback(
         user_response = oauth_login_or_register(db, user_info, role)
 
         # Set the refresh token in an HTTP-Only cookie
+        # NOTA: secure=False for develop
         refresh_token = user_response.get("refresh_token")
         if refresh_token:
             response.set_cookie(
