@@ -182,8 +182,18 @@ async def login_google(request: Request, role: str = "adopter"):
     logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
     try:
         oauth = get_google_oauth()
-        # Note: Change url for production
-        redirect_uri = "http://localhost:8000/auth/google/callback"
+        
+        # Dynamically build the redirect URI based on environment
+        import os
+        env = os.environ.get("ENV", "development")
+        scheme = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+        
+        if env in ["qa", "production"]:
+            redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+        else:
+            redirect_uri = "http://smartadoptlocal.programacionwebuce.net/api/auth/google/callback"
+            
         logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
@@ -242,12 +252,23 @@ async def google_callback(
             "role": user_response.get("role"),
         }
 
+        # Determine frontend origin dynamically for postMessage
+        import os
+        env = os.environ.get("ENV", "development")
+        scheme = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+        
+        if env in ["qa", "production"]:
+            frontend_origin = f"{scheme}://{host}"
+        else:
+            frontend_origin = "http://smartadoptlocal.programacionwebuce.net"
+
         html_content = f"""
         <html>
             <body>
                 <script>
-                    // Send the session to the Frontend (localhost:8080)
-                    window.opener.postMessage({json.dumps(response_data)}, "http://localhost:8080");
+                    // Send the session to the Frontend dynamically
+                    window.opener.postMessage({json.dumps(response_data)}, "{frontend_origin}");
                     // Close the popup window
                     window.close();
                 </script>
