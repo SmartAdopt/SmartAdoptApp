@@ -1,4 +1,5 @@
 // src/components/atoms/Logo.tsx
+// New Logo component with improved design and accessibility
 
 import { Box, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
