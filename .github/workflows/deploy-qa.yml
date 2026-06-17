@@ -17,7 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -29,7 +30,9 @@ jobs:
 
       - name: Set short SHA
         id: vars
-        run: echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
       - name: Build & push backend image (QA)
         uses: docker/build-push-action@v5
@@ -38,6 +41,10 @@ jobs:
           push: true
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-qa:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-qa:buildcache,mode=max
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.vars.outputs.build_date }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
             ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa-${{ steps.vars.outputs.sha7 }}
@@ -51,6 +58,9 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
           build-args: |
             VITE_API_URL=/api
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.vars.outputs.build_date }}
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
             ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa-${{ steps.vars.outputs.sha7 }}
@@ -107,6 +117,8 @@ jobs:
             BACKBLAZE_BUCKET_NAME=${{ secrets.QA_BACKBLAZE_BUCKET_NAME }}
             DOZZLE_EXTERNAL_PORT=${{ secrets.QA_DOZZLE_EXTERNAL_PORT }}
             DOZZLE_PORT=${{ secrets.QA_DOZZLE_PORT }}
+            DOZZLE_USERNAME=${{ secrets.QA_DOZZLE_USERNAME }}
+            DOZZLE_PASSWORD=${{ secrets.QA_DOZZLE_PASSWORD }}
             EOF
             
             docker compose -f docker-compose-qa.yml pull
@@ -141,3 +153,11 @@ jobs:
             
             docker image prune -f
             echo "QA deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
+
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: qa
+          ref: ${{ github.sha }}
+          description: "QA deploy sha=${{ steps.vars.outputs.sha7 }}"
