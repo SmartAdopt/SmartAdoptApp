@@ -1,0 +1,146 @@
+name: Release Candidate
+on:
+  push:
+    branches:
+      - "release/v*"
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-candidate:
+      name: Create Release Candidate
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            token: ${{ secrets.GH_PAT }}
+
+        - name: Extract version from branch name
+          id: version
+          run: |
+            BRANCH="${GITHUB_REF#refs/heads/}"
+            SEMVER=$(echo "$BRANCH" | grep -oP 'v\d+\.\d+\.\d+')
+            if [ -z "$SEMVER" ]; then
+              echo "ERROR: Branch name must match release/vX.Y.Z"
+              exit 1
+            fi
+            echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
+            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+            echo "Detected version: $SEMVER"
+
+        - name: Compute next RC number
+          id: rc
+          run: |
+            SEMVER="${{ steps.version.outputs.semver }}"
+            # List existing RC tags for this version, take the highest N
+            LAST_RC=$(git tag --list "${SEMVER}-rc.*" \
+              | grep -oP 'rc\.\K\d+' | sort -n | tail -1)
+            NEXT_RC=$(( ${LAST_RC:-0} + 1 ))
+            RC_TAG="${SEMVER}-rc.${NEXT_RC}"
+            echo "rc_number=$NEXT_RC"    >> "$GITHUB_OUTPUT"
+            echo "rc_tag=$RC_TAG"        >> "$GITHUB_OUTPUT"
+            echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+            echo "Next RC tag: $RC_TAG"
+
+        - name: Generate changelog
+          id: changelog
+          run: |
+            SEMVER="${{ steps.version.outputs.semver }}"
+            PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
+              | grep -v '\-rc\.' | head -1)
+
+            if [ -z "$PREV_TAG" ]; then
+              RANGE="HEAD"
+            else
+              RANGE="${PREV_TAG}..HEAD"
+            fi
+
+            echo "Generating changelog from $PREV_TAG to HEAD..."
+
+            CHANGELOG=$(git log $RANGE \
+              --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
+              --no-merges \
+              | grep -v "^$" || echo "- Initial release")
+
+            # Escape multiline for GitHub Actions output
+            EOF_MARKER="EOF_CHANGELOG_$(date +%s)"
+            echo "changelog<<$EOF_MARKER" >> "$GITHUB_OUTPUT"
+            echo "## Changes in ${{ steps.rc.outputs.rc_tag }}" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "**Built from branch:** \`${{ steps.version.outputs.branch }}\`" >> "$GITHUB_OUTPUT"
+            echo "**Commit:** \`${{ steps.rc.outputs.sha7 }}\`" >> "$GITHUB_OUTPUT"
+            echo "**Date:** ${{ steps.rc.outputs.build_date }}" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "### Commits" >> "$GITHUB_OUTPUT"
+            echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "### Docker Images" >> "$GITHUB_OUTPUT"
+            echo "- \`${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.rc.outputs.rc_tag }}\`" >> "$GITHUB_OUTPUT"
+            echo "- \`${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.rc.outputs.rc_tag }}\`" >> "$GITHUB_OUTPUT"
+            echo "$EOF_MARKER" >> "$GITHUB_OUTPUT"
+        - name: Create RC tag
+          run: |
+            RC_TAG="${{ steps.rc.outputs.rc_tag }}"
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RC_TAG" -m "Release Candidate $RC_TAG"
+            git push origin "$RC_TAG"
+            echo "Tag $RC_TAG pushed ✓"
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Log in to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+
+        - name: Build & push backend RC image
+          uses: docker/build-push-action@v5
+          with:
+            context: ./backend
+            push: true
+            cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache
+            cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache,mode=max
+            labels: |
+              org.opencontainers.image.version=${{ steps.rc.outputs.rc_tag }}
+              org.opencontainers.image.revision=${{ github.sha }}
+              org.opencontainers.image.created=${{ steps.rc.outputs.build_date }}
+              org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            tags: |
+              ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.rc.outputs.rc_tag }}
+              ${{ secrets.DOCKER_USERNAME }}/backend:rc-latest  
+
+        - name: Build & push frontend RC image
+          uses: docker/build-push-action@v5
+          with:
+            context: ./frontend
+            push: true
+            cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache
+            cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache,mode=max
+            build-args: |
+              VITE_API_URL=/api
+            labels: |
+              org.opencontainers.image.version=${{ steps.rc.outputs.rc_tag }}
+              org.opencontainers.image.revision=${{ github.sha }}
+              org.opencontainers.image.created=${{ steps.rc.outputs.build_date }}
+            tags: |
+              ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.rc.outputs.rc_tag }}
+              ${{ secrets.DOCKER_USERNAME }}/frontend:rc-latest
+              
+        - name: Create GitHub Pre-release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: ${{ steps.rc.outputs.rc_tag }}
+            name: "Release Candidate ${{ steps.rc.outputs.rc_tag }}"
+            body: ${{ steps.changelog.outputs.changelog }}
+            prerelease: true
+            draft: false
+            token: ${{ secrets.GH_PAT }}

@@ -7,6 +7,7 @@ on:
 concurrency:
   group: deploy-production
   cancel-in-progress: false
+
 jobs:
   deploy:
     name: Build & Deploy to Production (EC2)
@@ -15,6 +16,89 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Resolve production version
+        id: version
+        run: |
+          # Try to find a release/* branch that was recently merged into main
+          RELEASE_BRANCH=$(git log --merges --pretty=format:"%s" -20 \
+            | grep -oP 'release/v\d+\.\d+\.\d+' | head -1 || true)
+
+          if [ -n "$RELEASE_BRANCH" ]; then
+            SEMVER=$(echo "$RELEASE_BRANCH" | grep -oP 'v\d+\.\d+\.\d+')
+            echo "Version from release branch: $SEMVER"
+          else
+            # Fallback: bump patch from last stable tag
+            LAST_TAG=$(git tag --list 'v*' --sort=-version:refname \
+              | grep -vP '\-rc\.' | head -1)
+            if [ -z "$LAST_TAG" ]; then
+              SEMVER="v1.0.0"
+            else
+              # Increment patch
+              BASE="${LAST_TAG#v}"
+              MAJOR=$(echo $BASE | cut -d. -f1)
+              MINOR=$(echo $BASE | cut -d. -f2)
+              PATCH=$(echo $BASE | cut -d. -f3)
+              SEMVER="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            fi
+            echo "Version from patch bump: $SEMVER"
+          fi
+
+          # Verify this tag doesn't already exist
+          if git rev-parse "$SEMVER" >/dev/null 2>&1; then
+            echo "ERROR: Tag $SEMVER already exists. Merge a new release/* branch."
+            exit 1
+          fi
+
+          echo "semver=$SEMVER"                >> "$GITHUB_OUTPUT"
+          echo "sha7=${GITHUB_SHA::7}"         >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          SEMVER="${{ steps.version.outputs.semver }}"
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
+            | grep -vP '\-rc\.' | head -1)
+          
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..HEAD"
+          fi
+          
+          CHANGELOG=$(git log $RANGE \
+            --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
+            --no-merges | grep -v "^$" || echo "- Initial release")
+          
+          EOF_MARKER="EOF_CHANGELOG_$(date +%s)"
+          echo "changelog<<$EOF_MARKER" >> "$GITHUB_OUTPUT"
+          echo "## Release $SEMVER" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "**Commit:** \`${{ steps.version.outputs.sha7 }}\`  " >> "$GITHUB_OUTPUT"
+          echo "**Date:** ${{ steps.version.outputs.build_date }}" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "### Changes" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "### Docker Images" >> "$GITHUB_OUTPUT"
+          echo "- \`${{ secrets.DOCKER_USERNAME }}/backend:$SEMVER\`" >> "$GITHUB_OUTPUT"
+          echo "- \`${{ secrets.DOCKER_USERNAME }}/backend:latest\`" >> "$GITHUB_OUTPUT"
+          echo "- \`${{ secrets.DOCKER_USERNAME }}/frontend:$SEMVER\`" >> "$GITHUB_OUTPUT"
+          echo "- \`${{ secrets.DOCKER_USERNAME }}/frontend:latest\`" >> "$GITHUB_OUTPUT"
+          echo "$EOF_MARKER" >> "$GITHUB_OUTPUT"
+
+      - name: Create production tag
+        run: |
+          SEMVER="${{ steps.version.outputs.semver }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$SEMVER" -m "Production release $SEMVER"
+          git push origin "$SEMVER"
+          echo "Tag $SEMVER pushed ✓"   
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -24,9 +108,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Set short SHA
-        id: vars
-        run: echo "sha7=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
@@ -34,9 +116,16 @@ jobs:
           push: true
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend:buildcache,mode=max
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.semver }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.version.outputs.build_date }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
           tags: |
               ${{ secrets.DOCKER_USERNAME }}/backend:latest
-              ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.sha7 }}
+              ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.version.outputs.semver }}
+              ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.version.outputs.sha7 }}
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
@@ -47,9 +136,13 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache,mode=max
           build-args: |
             VITE_API_URL=/api
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.semver }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.version.outputs.build_date }}
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.sha7 }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.version.outputs.semver }}
       - name: Transfer deployment files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -127,9 +220,37 @@ jobs:
                 echo "Backend is healthy ✓"
                 break
               fi
-              [ "$i" -eq 18 ] && { echo "Healthcheck failed — rolling back..."; exit 1; }
+              
+              if [ "$i" -eq 18 ]; then
+                echo "Healthcheck failed — rolling back..."
+                if [ -n "$PREV_BACKEND" ] && [ "$PREV_BACKEND" != "none" ]; then
+                  docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend:latest
+                  docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+                  docker compose -f docker-compose-production.yml up -d --force-recreate
+                fi
+                exit 1
+              fi
+              
               sleep 5
             done
             
             docker image prune -f
-            echo "Production deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
+            echo "Production deploy complete ✓ (sha: ${{ steps.version.outputs.sha7 }})"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.semver }}
+          name: "${{ steps.version.outputs.semver }}"
+          body: ${{ steps.changelog.outputs.changelog }}
+          prerelease: false
+          draft: false
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          ref: ${{ github.sha }}
+          description: "Production ${{ steps.version.outputs.semver }}"
