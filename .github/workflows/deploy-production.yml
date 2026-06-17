@@ -246,11 +246,3 @@ jobs:
           prerelease: false
           draft: false
           token: ${{ secrets.GH_PAT }}
-
-      - name: Create GitHub deployment
-        uses: chrnorm/deployment-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          environment: production
-          ref: ${{ github.sha }}
-          description: "Production ${{ steps.version.outputs.semver }}"

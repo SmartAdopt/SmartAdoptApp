@@ -153,11 +153,3 @@ jobs:
             
             docker image prune -f
             echo "QA deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
-
-      - name: Create GitHub deployment
-        uses: chrnorm/deployment-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          environment: qa
-          ref: ${{ github.sha }}
-          description: "QA deploy sha=${{ steps.vars.outputs.sha7 }}"
