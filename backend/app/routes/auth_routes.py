@@ -1,7 +1,3 @@
-# fmt: off
-# Authentication routes
-# FastAPI imports
-# Fix CI formatting
 from fastapi import (
     APIRouter,
     Depends,
@@ -15,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import json
+import os
 from datetime import datetime
 from jose import jwt
 
@@ -65,25 +62,29 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
         f"POST /auth/register - Registration request for email: {user_data.email}"
     )
     try:
+        # Convert Pydantic schema to dict before calling service
+        user_data_dict = user_data.model_dump()
         # Call service to register the user
-        new_user = register_user(db, user_data)
+        new_user = register_user(db, user_data_dict)
         # Conditional based on requested role
         if user_data.requested_role.lower() == "admin":
-            logger.info(f"Registration successful - Admin user ID: {new_user.user_id}")
+            logger.info(
+                f"Registration successful - Admin user ID: {new_user['user_id']}"
+            )
             return RegisterResponse(
                 message="User registered successfully",
-                user_id=new_user.user_id,
-                created_at=getattr(new_user, "created_at", None),
+                user_id=new_user["user_id"],
+                created_at=new_user.get("created_at"),
             )
 
         else:  # adopter
             logger.info(
-                f"Registration successful - Adopter user ID: {new_user.user_id}"
+                f"Registration successful - Adopter user ID: {new_user['user_id']}"
             )
             return RegisterResponse(
                 message="User registered successfully",
-                user_id=new_user.user_id,
-                created_at=getattr(new_user, "created_at", None),
+                user_id=new_user["user_id"],
+                created_at=new_user.get("created_at"),
             )
 
     except ValueError as e:
@@ -124,8 +125,10 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
     # Endpoint for traditional login with email/password
     logger.info(f"POST /auth/login - Login request for email: {login_data.email}")
     try:
+        # Convert Pydantic schema to dict before calling service
+        login_data_dict = login_data.model_dump()
         # Call service to authenticate the user
-        user_response = login_user(db, login_data)
+        user_response = login_user(db, login_data_dict)
 
         # Set the refresh token in an HTTP-Only cookie
         refresh_token = user_response.get("refresh_token")
@@ -184,18 +187,21 @@ async def login_google(request: Request, role: str = "adopter"):
     logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
     try:
         oauth = get_google_oauth()
-        
+
         # Dynamically build the redirect URI based on environment
-        import os
         env = os.environ.get("ENV", "development")
         scheme = request.headers.get("x-forwarded-proto", "http")
-        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
-        
+        host = request.headers.get(
+            "x-forwarded-host", request.headers.get("host", request.url.netloc)
+        )
+
         if env in ["qa", "production"]:
             redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
         else:
-            redirect_uri = "http://smartadoptlocal.programacionwebuce.net/api/auth/google/callback"
-            
+            redirect_uri = (
+                "http://smartadoptlocal.programacionwebuce.net/api/auth/google/callback"
+            )
+
         logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
@@ -227,7 +233,7 @@ async def google_callback(
         if not user_info:
             user_info = await oauth.google.parse_id_token(request, token)
 
-# The role can come from the session (set in login_google)
+        # The role can come from the session (set in login_google)
         # or from the query parameter (default to "adopter").
         # If not in session, use the query parameter or default
         role = request.session.pop("oauth_role", role)
@@ -263,10 +269,11 @@ async def google_callback(
         }
 
         # Determine frontend origin dynamically for postMessage
-        import os
         env = os.environ.get("ENV", "development")
         scheme = request.headers.get("x-forwarded-proto", "http")
-        host = request.headers.get("x-forwarded-host", request.headers.get("host", request.url.netloc))
+        host = request.headers.get(
+            "x-forwarded-host", request.headers.get("host", request.url.netloc)
+        )
 
         if env in ["qa", "production"]:
             frontend_origin = f"{scheme}://{host}"
@@ -275,9 +282,9 @@ async def google_callback(
 
         html_content = f"""
         <html>
-            <head><title>Autenticando...</title></head>
+            <head><title>Authenticating...</title></head>
             <body>
-                <p>Autenticando, por favor espere...</p>
+                <p>Authenticating, please wait...</p>
                 <script>
                     const data = {json.dumps(response_data)};
                     // Send the session to the Frontend using BroadcastChannel (What frontend expects)
@@ -428,7 +435,7 @@ def logout(
                     logger.info("Access token added to blacklist")
             except HTTPException as e:
                 raise e
-            except jwt.ExpiredSignatureError:
+            except jwt.ExpiredSignatureError:  # type: ignore
                 logger.warning("Logout - Access token already expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -436,7 +443,7 @@ def logout(
                         "message": "No active session found",
                     },
                 )
-            except jwt.JWTError:
+            except jwt.JWTError:  # type: ignore
                 logger.warning("Logout - Invalid access token")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,

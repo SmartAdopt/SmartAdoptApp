@@ -1,4 +1,4 @@
-from app.models.user import User
+from app.models.user.user import User
 from jose import jwt
 from app.config import settings
 from datetime import datetime, timedelta

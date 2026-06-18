@@ -8,7 +8,7 @@ from app.config import settings
 def test_backblaze_upload_success(client, db_session):
     # Test successful image upload with admin user (Happy path)
     # 1. Create an admin user
-    from app.models.admin import Admin
+    from app.models.user.admin import Admin
 
     admin_user = Admin(
         first_name="Admin",
@@ -66,7 +66,7 @@ def test_backblaze_upload_success(client, db_session):
 def test_backblaze_upload_unauthorized_role(client, db_session):
     # Test upload with non-admin user (Negative path)
     # 1. Create a regular user
-    from app.models.adopter import Adopter
+    from app.models.user.adopter import Adopter
 
     regular_user = Adopter(
         first_name="Regular",
@@ -123,7 +123,7 @@ def test_backblaze_upload_no_token(client):
 def test_backblaze_upload_invalid_file_type(client, db_session):
     # Test upload with non-image file (Negative path)
     # 1. Create an admin user
-    from app.models.admin import Admin
+    from app.models.user.admin import Admin
 
     admin_user = Admin(
         first_name="Admin",
@@ -167,7 +167,7 @@ def test_backblaze_upload_invalid_file_type(client, db_session):
 def test_backblaze_upload_bucket_not_found(client, db_session):
     # Test upload when bucket doesn't exist (Negative path)
     # 1. Create an admin user
-    from app.models.admin import Admin
+    from app.models.user.admin import Admin
 
     admin_user = Admin(
         first_name="Admin",
@@ -210,7 +210,7 @@ def test_backblaze_upload_bucket_not_found(client, db_session):
 def test_backblaze_upload_service_error(client, db_session):
     # Test upload when Backblaze service fails (Negative path)
     # 1. Create an admin user
-    from app.models.admin import Admin
+    from app.models.user.admin import Admin
 
     admin_user = Admin(
         first_name="Admin",
