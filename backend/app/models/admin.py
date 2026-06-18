@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from .user import User
+from .user import User  # type: ignore[attr-defined]
 
 
 class Admin(User):

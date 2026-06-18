@@ -174,7 +174,7 @@ def client(db_session):
             return self
 
         async def __anext__(self):
-            if not hasattr(self, '_iter_index'):
+            if not hasattr(self, "_iter_index"):
                 self._iter_index = 0
             if self._iter_index < len(self.documents):
                 result = self.documents[self._iter_index]

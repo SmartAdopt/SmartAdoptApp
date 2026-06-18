@@ -1,4 +1,4 @@
-from app.models.user.adopter import Adopter
+from app.models.adopter import Adopter
 from jose import jwt
 from app.config import settings
 
@@ -42,7 +42,7 @@ def test_adopter_home_success(client, db_session):
 def test_adopter_home_unauthorized_role(client, db_session):
     # Test adopter home with non-adopter user (Negative path)
     # 1. Create an admin user
-    from app.models.user.admin import Admin
+    from app.models.admin import Admin
 
     admin_user = Admin(
         first_name="Admin",
@@ -94,7 +94,7 @@ def test_adopter_home_invalid_token(client):
 
 def test_adopter_home_with_blacklisted_token(client, db_session):
     # Test adopter home with blacklisted token
-    from app.models.user.adopter import Adopter
+    from app.models.adopter import Adopter
 
     # 1. Create an adopter user
     adopter_user = Adopter(
