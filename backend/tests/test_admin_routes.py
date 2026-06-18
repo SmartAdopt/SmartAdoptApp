@@ -1,4 +1,4 @@
-from app.models.admin import Admin
+from app.models.user.admin import Admin
 from jose import jwt
 from app.config import settings
 
@@ -42,7 +42,7 @@ def test_admin_dashboard_success(client, db_session):
 def test_admin_dashboard_unauthorized_role(client, db_session):
     # Test admin dashboard with non-admin user (Negative path)
     # 1. Create a regular user
-    from app.models.adopter import Adopter
+    from app.models.user.adopter import Adopter
 
     regular_user = Adopter(
         first_name="Regular",
@@ -94,7 +94,7 @@ def test_admin_dashboard_invalid_token(client):
 
 def test_admin_dashboard_with_blacklisted_token(client, db_session):
     # Test admin dashboard with blacklisted token
-    from app.models.admin import Admin
+    from app.models.user.admin import Admin
 
     # 1. Create an admin user
     admin_user = Admin(
