@@ -1,3 +1,5 @@
+// src/components/molecules/FeatureInfoCard.tsx
+
 import { Paper, Box, Typography } from "@mui/material";
 import type { ReactNode } from "react";
 

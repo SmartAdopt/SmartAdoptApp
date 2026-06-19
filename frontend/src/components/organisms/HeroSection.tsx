@@ -1,4 +1,5 @@
 // src/components/organisms/HeroSection.tsx
+
 import { Box, Typography, Container } from "@mui/material";
 import { CategoryButton } from "../molecules/CategoryButton";
 

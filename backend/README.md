@@ -5,14 +5,15 @@ SmartAdopt application backend, built with FastAPI, SQLAlchemy, and PostgreSQL.
 ## Table of Contents
 - [Description](#description)
 - [Project Structure](#project-structure)
-- [Recent Changes](#recent-changes)
 - [Technologies](#technologies)
 - [Run Locally](#run-locally)
+- [Testing](#testing)
 - [Endpoints](#endpoints)
 - [Data Models](#data-models)
 - [Development Notes](#development-notes)
 - [Security](#security)
 - [JWT Authentication](#jwt-authentication)
+- [Logging](#logging)
 
 ## Description
 
@@ -21,81 +22,47 @@ SmartAdopt is a platform for pet adoption management. This backend provides a RE
 ## Project Structure
 
 ```
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                 # FastAPI application entry point
-│   ├── database/              # Database configuration
-│   │   ├── __init__.py
-│   │   └── postgres/
-│   │       ├── __init__.py    # Created to enable imports
-│   │       ├── config.py      # PostgreSQL connection configuration
-│   │       ├── postgres_db.py # SQLAlchemy configuration (Base, Session)
-│   │       └── init_postgres.sql # Table initialization script
-│   ├── models/                # SQLAlchemy models
-│   │   ├── __init__.py        # Exports User, Admin, Adopter
-│   │   ├── user.py            # Base user model
-│   │   ├── admin.py           # Admin model (inherits from User)
-│   │   └── adopter.py         # Adopter model (inherits from User)
-│   ├── routes/                # API routes
-│   │   ├── __init__.py
-│   │   └── auth_routes.py     # Authentication endpoints
-│   ├── schemas/               # Pydantic schemas
-│   │   ├── __init__.py
-│   │   └── auth_schemas.py    # Request/response schemas for auth
-│   ├── services/              # Business logic
-│   │   ├── __init__.py
-│   │   └── auth_service.py    # Authentication services
-│   └── utils/                 # Utilities
-│       ├── __init__.py
-│       └── jwt/               # JWT authentication utilities
-│           ├── __init__.py
-│           ├── jwt_config.py  # JWT configuration using pydantic_settings
-│           └── jwt_utils.py   # JWT token creation and verification
-├── docs/                      # Documentation
-├── tests/                     # Unit tests
-├── Dockerfile                 # Docker configuration
-└── requirements.txt           # Python dependencies
+backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── config.py        # Application configuration using pydantic_settings
+│   │   ├── main.py          # FastAPI application entry point
+│   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
+│   │   │   ├── postgres/    # PostgreSQL configuration
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   └── redis/       # Redis configuration for token management
+│   │   │       └── redis_db.py    # Redis client configuration
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── routes/          # API endpoints
+│   │   │   ├── auth_routes.py     # Authentication endpoints
+│   │   │   ├── admin_routes.py    # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
+│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   ├── schemas/         # Pydantic schemas for validation
+│   │   │   ├── auth_schemas.py     # Authentication schemas
+│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
+│   │   ├── services/        # Business logic layer
+│   │   │   ├── auth_service.py    # Authentication services
+│   │   │   └── backblaze_service.py # Backblaze B2 service
+│   │   └── utils/           # Utility functions
+│   │       ├── jwt/         # JWT authentication utilities
+│   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
+│   │       ├── oauth/       # OAuth 2.0 utilities
+│   │       │   └── google_oauth.py     # Google OAuth integration
+│   │       └── logger/      # Logging configuration
+│   │           └── logger_config.py    # Loguru logging configuration
+│   ├── docs/               # Documentation
+│   │   ├── README_JWT.md    # Complete JWT documentation
+│   │   ├── README_OAUTH.md  # Complete OAuth documentation
+│   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
+│   │   └── README_LOGS.md   # Complete logging system documentation
+│   ├── tests/              # Backend tests
+│   │   ├── conftest.py      # Test configuration
+│   │   ├── test_auth.py     # Authentication tests
+│   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   └── test_main.py     # Main endpoint tests
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container configuration
 ```
-
-## Recent Changes
-
-### JWT Authentication Implementation 
-
-**Changes:**
-1. **JWT Configuration** - Added `app/utils/jwt/` folder with:
-   - `jwt_config.py`: Configuration using pydantic_settings to read JWT environment variables
-   - `jwt_utils.py`: Token creation and verification functions
-2. **Token Generation** - Modified `login_user` in `auth_service.py` to generate JWT tokens for admin and adopter roles only
-3. **Protected Endpoint** - Reactivated `/auth/list` endpoint with JWT protection using `verify_token` dependency
-4. **Environment Variables** - Added JWT variables to `docker-compose-local.yml` for container configuration
-
-**Impact:**
-- Admin and Adopter users receive JWT tokens upon successful login
-- Regular users (role: user) receive empty tokens
-- Protected endpoints require valid JWT token in Authorization header
-- Tokens expire after 5 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
-
-### Import Fix
-
-**Problem:** The backend failed to start with the error:
-```
-ImportError: cannot import name 'User' from 'app.models'
-```
-
-**Solution:**
-1. **`app/models/__init__.py`** - Added model exports:
-   ```python
-   from .user import User
-   from .admin import Admin
-   from .adopter import Adopter
-
-   __all__ = ["User", "Admin", "Adopter"]
-   ```
-
-2. **`app/database/postgres/__init__.py`** - Created this missing file to enable relative imports from `postgres_db.py`
-
-**Impact:** The backend now starts correctly and can import SQLAlchemy models without errors.
 
 ## Technologies
 
@@ -106,6 +73,9 @@ ImportError: cannot import name 'User' from 'app.models'
 - **Uvicorn** - ASGI server to run FastAPI
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
+- **Authlib** - OAuth 2.0 integration for Google login
+- **Redis** - Token storage and management
+- **b2sdk** - Backblaze B2 cloud storage integration
 
 
 ### Run Locally
@@ -113,7 +83,59 @@ ImportError: cannot import name 'User' from 'app.models'
 #### Prerequisites
 - Python 3.12+
 - A PostgreSQL database running (can be started locally using the root orchestration: `docker compose -f docker-compose-local.yml up -d postgres`)
-- A `.env` file configured at the root repository directory (the backend configuration loads it automatically from `../../.env`).
+- A `.env` file configured at the root repository directory (refer to `.env.example` for required variables)
+
+#### Environment Variables
+
+The backend requires the following environment variables (defined in `.env.example`):
+
+**Database Configuration:**
+- `POSTGRES_HOST`: PostgreSQL host address
+- `POSTGRES_PORT`: PostgreSQL port
+- `POSTGRES_DB`: PostgreSQL database name
+- `POSTGRES_USER`: PostgreSQL username
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_HOST_PORT`: PostgreSQL port exposed to host
+
+**JWT Configuration:**
+- `SECRET_KEY`: Secret key for JWT token signing
+- `ALGORITHM`: JWT algorithm (default: HS256)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Access token expiration time in minutes
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time in days
+
+**Redis Configuration:**
+- `REDIS_HOST`: Redis host address
+- `REDIS_PORT`: Redis port
+- `REDIS_DB`: Redis database number
+- `REDIS_PASSWORD`: Redis password
+- `REDIS_EXTERNAL_PORT`: Redis port exposed to host
+
+**Google OAuth:**
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+
+**Backblaze B2:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+**MongoDB:**
+- `MONGO_HOST`: MongoDB host address
+- `MONGO_PORT`: MongoDB port
+- `MONGO_DB`: MongoDB database name
+- `MONGO_USER`: MongoDB username
+- `MONGO_PASSWORD`: MongoDB password
+- `MONGO_EXTERNAL_PORT`: MongoDB port exposed to host
+
+**Docker & Ports:**
+- `BACKEND_INTERNAL_PORT`: Backend FastAPI port (internal, default: 9090)
+- `BACKEND_EXTERNAL_PORT`: Backend port exposed to host (default: 8000)
+- `FRONTEND_INTERNAL_PORT`: Frontend port (internal, default: 80)
+- `FRONTEND_EXTERNAL_PORT`: Frontend port exposed to host (default: 8080)
+
+**Dozzle:**
+- `DOZZLE_PORT`: Dozzle log viewer port (internal)
+- `DOZZLE_EXTERNAL_PORT`: Dozzle port exposed to host (default: 8080)
 
 #### Start the Server
 ```bash
@@ -127,12 +149,32 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## Testing
+
+The backend uses Python 3.12 in the remote pipeline. Static analysis and code quality work includes a set of modern, high-speed toolsets:
+
+### Linter (ruff)
+```bash
+python -m ruff check backend/
+```
+
+### Format (black)
+```bash
+python -m black --check backend/
+```
+
+### Static Types (mypy)
+```bash
+python -m mypy backend/ --ignore-missing-imports
+```
+
+
 #### Default Admin User
 
 When the PostgreSQL database is initialized using the provided script, a default admin user is automatically created with the following credentials:
 
 - **Email:** admin@smartadopt.com
-- **Password:** admin123
+- **Password:** Admin1234
 - **Role:** admin
 
 This user can be used to:
@@ -208,45 +250,127 @@ Content-Type: application/json
 **Note:**
 - Admin and Adopter users receive a valid JWT token in `access_token`
 - Regular users (role: user) receive an empty `access_token` and `token_type`
-- The token expires after 5 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
+- The token expires after 10 minutes (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
 
 **Error Responses**
 - `401 Unauthorized`: Invalid email or password
 - `500 Internal Server Error`: Server error
 
-#### Get Users List (Protected)
+#### Google OAuth Login
 
 **Request**
 ```http
-GET /auth/list?user_id=123
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+GET /auth/login/google?role=adopter
 ```
 
-**Query Parameters**
-- `user_id`: Filter users by ID. If not provided, returns all users.
+**Query Parameters:**
+- `role` (optional): Role for auto-registration if user doesn't exist (default: "adopter")
+
+**Response:** Redirect to Google OAuth consent screen
+
+#### Google OAuth Callback
+
+**Request**
+```http
+GET /auth/google/callback?code=...&role=adopter
+```
+
+**Query Parameters:**
+- `code` (required): Authorization code from Google
+- `role` (optional): Role for auto-registration (default: "adopter")
+
+**Response (200 OK) - Existing User:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "message": "Login successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@gmail.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T12:00:00Z"
+}
+```
+
+**Response (200 OK) - New User (Auto-registered):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "message": "Registration successful",
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john.doe@gmail.com",
+  "role": "adopter",
+  "created_at": "2026-06-05T12:00:00Z"
+}
+```
+
+**Note:** Google OAuth automatically registers users if they don't exist in the system. The user's email, first name, and last name are obtained from Google. A default password is set for OAuth users.
+
+**Error Responses**
+- `302 Found`: Redirect failed - Google OAuth not available
+- `401 Unauthorized`: Google authentication failed
+
+### Protected Endpoints
+
+#### GET /admin/dashboard
+
+Admin-only endpoint protected by JWT and role-based authorization.
+
+**Request**
+```http
+GET /admin/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
 **Response (200 OK)**
 ```json
 {
-  "users": [
-    {
-      "id": 123,
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "user@example.com",
-      "role": "adopter",
-      "created_at": "2026-06-05T12:00:00Z"
-    }
-  ],
-  "total": 1
+  "message": "Welcome to Admin Dashboard",
+  "user_email": "admin@example.com",
+  "user_role": "admin",
+  "dashboard_data": {
+    "total_adoptions": 75,
+    "pending_requests": 12
+  }
 }
 ```
 
 **Error Responses**
-- `401 Unauthorized`: Missing or invalid JWT token
-- `500 Internal Server Error`: Server error
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "admin"
 
-**Note:** This endpoint requires a valid JWT token in the `Authorization` header. Only users with admin or adopter roles receive tokens upon login.
+#### GET /adopter/home
+
+Adopter-only endpoint protected by JWT and role-based authorization.
+
+**Request**
+```http
+GET /adopter/home
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Welcome to Adopter Home",
+  "user_email": "adopter@example.com",
+  "user_role": "adopter",
+  "home_data": {
+    "available_pets": 45,
+    "my_adoptions": 2,
+    "favorite_pets": 8
+  }
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
 
 ## Data Models
 
@@ -280,7 +404,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 The application implements industry-standard security practices to protect user data (Admins and Adopters):
 
-- **Input Validation:** Done automatically using Pydantic schemas.
+- **Input Validation:** Done automatically using Pydantic schemas with custom field validators:
+  - Names (first_name, last_name): Only letters allowed (including accented characters), 2-50 characters
+  - Phone number: Exactly 10 digits, numeric only
+  - Password: Minimum 8 characters, must contain at least one uppercase letter, one lowercase letter, and one number
+  - Role: Only accepts 'admin' or 'adopter'
+  - Email: Validated format using EmailStr
 - **CORS Configuration:** Strictly configured to allow requests only from trusted frontend origins.
 - **Password Protection:** Passwords are never stored in plain text.
 
@@ -308,80 +437,37 @@ We use **Bcrypt** to handle credentials securely through an adaptive, one-way ha
 
 ## JWT Authentication
 
-The application implements JSON Web Token (JWT) authentication for protecting sensitive endpoints.
+The application implements JSON Web Token (JWT) authentication for protecting sensitive endpoints. For complete documentation on JWT implementation, refer to `docs/README_JWT.md`.
 
-### Architecture
+### Overview
 
-JWT authentication is implemented in a modular way using the following structure:
-
-```
-app/utils/jwt/
-├── __init__.py
-├── jwt_config.py  # Configuration using pydantic_settings
-└── jwt_utils.py   # Token creation and verification
-```
+- Access tokens with 10-minute expiration
+- Refresh tokens with configurable expiration (default: 7 days)
+- Role-based authorization (admin, adopter)
+- Token type checking (access/refresh)
+- Token blacklist for immediate revocation
+- Protected endpoints with role verification
+- Redis-based token storage and management
 
 ### Configuration
 
-JWT configuration is managed through environment variables:
+JWT configuration is managed through environment variables. Refer to the `.env.example` file in the project root for the required variables:
 
 - `SECRET_KEY`: Secret key used to sign JWT tokens
 - `ALGORITHM`: Hashing algorithm (default: HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 5)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default: 10)
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time in days (default: 7)
 
-These variables are loaded using `pydantic_settings` from the system environment, which are passed via Docker Compose from the root `.env` file.
+### Google OAuth Configuration
 
-### Token Creation
+Google OAuth is configured through environment variables:
 
-The `create_access_token(email, role)` function in `jwt_utils.py`:
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 
-1. Receives user email and role as parameters
-2. Calculates expiration time (current time + configured minutes)
-3. Creates token payload with:
-   - `sub`: User email (subject)
-   - `role`: User role (admin/adopter)
-   - `exp`: Expiration timestamp
-   - `iat`: Issued at timestamp
-4. Encodes and signs the token using the SECRET_KEY and ALGORITHM
-5. Returns the encoded JWT string
+To obtain these credentials, refer to the complete Google OAuth documentation in `docs/README_OAUTH.md`.
 
-### Token Verification
-
-The `verify_token(credentials)` function in `jwt_utils.py`:
-
-1. Uses FastAPI's `Depends` to extract the token from the `Authorization` header
-2. Decodes and verifies the token signature
-3. Checks if the token has expired
-4. Returns the token payload if valid
-5. Raises `401 Unauthorized` if token is invalid, expired, or missing
-
-### Token Usage in Login
-
-In `auth_service.py`, the `login_user` function:
-
-1. Authenticates user credentials (email and password)
-2. Checks user role:
-   - If role is `admin` or `adopter`: Generates JWT token
-   - If role is `user`: Returns empty token
-3. Returns user data with token in the response
-
-### Protected Endpoints
-
-Endpoints can be protected by adding the `verify_token` dependency:
-
-```python
-@router.get("/protected-endpoint")
-def protected_route(token_payload: dict = Depends(verify_token)):
-    # token_payload contains the decoded JWT payload
-    return {"message": "Access granted", "user": token_payload}
-```
-
-The `/auth/list` endpoint is protected and requires:
-- Valid JWT token in `Authorization: Bearer <token>` header
-- Token must not be expired
-- Token must be signed with the correct SECRET_KEY
-
-### Using JWT Tokens
+### Token Usage
 
 1. **Login to get token:**
    ```http
@@ -394,17 +480,120 @@ The `/auth/list` endpoint is protected and requires:
 
 2. **Use token in protected requests:**
    ```http
-   GET /auth/list
+   GET /admin/dashboard
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
+3. **Refresh expired token:**
+   ```http
+   POST /auth/refresh
+   Authorization: Bearer <expired_access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+4. **Logout (revoke tokens):**
+   ```http
+   POST /auth/logout
+   Authorization: Bearer <access_token>
+   Cookie: refresh_token=<refresh_token>
+   ```
+
+### Token Blacklist
+
+The application implements a token blacklist mechanism using Redis to immediately revoke access tokens:
+
+- When a user logs out, their access token is added to a blacklist in Redis
+- Blacklisted tokens are rejected even if they haven't expired
+- Blacklisted tokens automatically expire from Redis when the original token would have expired
+- All protected endpoints check the blacklist before accepting a token
+- This provides immediate security by allowing token revocation without waiting for natural expiration
+
 ### Security Considerations
 
-- Tokens expire after 5 minutes to limit exposure if compromised
+- Tokens expire after 10 minutes to limit exposure if compromised
+- Refresh tokens are stored in Redis with rotation on each refresh
+- Token blacklist allows immediate revocation of compromised tokens
 - Only admin and adopter roles receive tokens
 - Regular users cannot access protected endpoints
 - SECRET_KEY should be changed in production environments
 - Tokens are transmitted via HTTPS in production (recommended)
+- HTTP-Only cookies prevent XSS attacks on refresh tokens
+
+## Backblaze B2 Image Upload
+
+The application uses Backblaze B2 cloud storage for image upload:
+
+- **Admin-only access**: Only users with admin role can upload images
+- **UUID filenames**: Unique filenames prevent conflicts
+- **Automatic URL generation**: Public URLs are generated automatically
+- **Bucket validation**: Checks bucket existence before upload
+
+**Endpoint:**
+```http
+POST /backblaze/upload
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+file: <image_file>
+```
+
+**Configuration:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+For complete documentation, refer to `docs/README_BACKBLAZE.md`.
+
+## Logging
+
+The application uses **Loguru** for structured logging with color-coded console output and file-based persistent logging.
+
+### Logging Configuration
+
+The logging system is configured in `app/utils/logger/logger_config.py` with the following features:
+
+- **Color-coded console output**: Entire log lines are colored based on log level
+  - INFO: Green
+  - WARNING: Yellow
+  - ERROR: Red
+- **File-based logging**: Logs are written to files for persistent storage
+  - `logs/app.log`: All logs (INFO and above)
+  - `logs/error.log`: Error logs only (ERROR and above)
+- **Log rotation**: Files are rotated when they reach 500 MB
+- **Log retention**: Logs are retained for 10 days (app.log) or 30 days (error.log)
+
+### Log Format
+
+Console logs use the following format:
+```
+{timestamp} | {level} | {name}:{function}:{line} - {message}
+```
+
+Example:
+```
+2026-06-13 21:45:00 | INFO     | app.main:main:13 - Initializing FastAPI application
+```
+
+### Usage
+
+Import the logger in your Python files:
+```python
+from app.utils.logger.logger_config import logger
+
+# Log at different levels
+logger.info("User logged in successfully")
+logger.warning("Invalid credentials attempt")
+logger.error("Database connection failed")
+```
+
+### Documentation Access Logging
+
+The application includes a middleware that logs when users access the FastAPI documentation at `/docs`:
+```
+User accessing FastAPI documentation
+```
+
+For complete documentation on the logging system, refer to `docs/README_LOGS.md`.
 
 ## License
 

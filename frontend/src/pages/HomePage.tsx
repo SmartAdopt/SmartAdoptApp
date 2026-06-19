@@ -1,4 +1,5 @@
 // src/pages/HomePage.tsx
+
 import { Box } from "@mui/material";
 import { Navbar } from "../components/organisms/Navbar";
 import { HeroSection } from "../components/organisms/HeroSection";
@@ -6,7 +7,7 @@ import { HowItWorksSection } from "../components/organisms/HowItWorksSection";
 import { ImpactSection } from "../components/organisms/ImpactSection";
 import { Footer } from "../components/organisms/Footer";
 
-const HomePage = () => {
+export const HomePage = () => {
   return (
     <Box
       sx={{
@@ -29,5 +30,3 @@ const HomePage = () => {
     </Box>
   );
 };
-
-export default HomePage;

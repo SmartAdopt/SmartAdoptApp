@@ -5,18 +5,29 @@ services:
       dockerfile: Dockerfile
     container_name: smart-adopt-backend-dev
     ports:
-      - "8000:9090"
+      - "${BACKEND_EXTERNAL_PORT}:${BACKEND_INTERNAL_PORT}"
     environment:
       - ENV=development
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - MONGO_URI=mongodb://mongo:27017/smartadopt_dev
+      - POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT}
+      - MONGO_URI=mongodb://${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}
       - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM:-HS256}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
     volumes:
       - ./backend:/app
     depends_on:
@@ -24,21 +35,26 @@ services:
         condition: service_healthy
       mongo:
         condition: service_started
+      redis:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
     container_name: smart-adopt-frontend-dev
     ports:
-      - "80:80"
+      - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_INTERNAL_PORT}"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=${VITE_API_URL}
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
     restart: unless-stopped
@@ -66,12 +82,32 @@ services:
     image: mongo:7
     container_name: smart-adopt-mongo-dev
     ports:
-      - "27017:27017"
+      - "${MONGO_EXTERNAL_PORT}:${MONGO_PORT}"
     environment:
-      - MONGO_INITDB_DATABASE=smartadopt_dev
+      - MONGO_INITDB_DATABASE=${MONGO_DB}
     volumes:
       - mongo_dev_data:/data/db
     restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: smart-adopt-redis-dev
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:${REDIS_PORT}"
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: smart-adopt-dozzle
+    ports:
+      - "${DOZZLE_EXTERNAL_PORT}:${DOZZLE_PORT}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
 volumes:
   postgres_dev_data:
   mongo_dev_data:
+  redis_dev_data:
