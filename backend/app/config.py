@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     BACKBLAZE_BUCKET_NAME: str  # Backblaze B2 bucket name
 
     # Hugging Face variables
-    HF_TOKEN: str  # Hugging Face API token
+    HF_TOKEN: str = ""  # Hugging Face API token
 
     # MongoDB variables
     MONGO_HOST: str  # MongoDB host address
