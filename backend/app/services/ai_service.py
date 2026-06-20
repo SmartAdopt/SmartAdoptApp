@@ -17,9 +17,11 @@ else:
 
 # Load AI models at startup
 logger.info("Loading BLIP models...")
-blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+blip_processor = BlipProcessor.from_pretrained(
+    "Salesforce/blip-image-captioning-base", revision="main"
+)
 blip_model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
+    "Salesforce/blip-image-captioning-base", revision="main"
 )
 logger.info("BLIP models loaded successfully")
 
