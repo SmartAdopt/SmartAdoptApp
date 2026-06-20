@@ -7,16 +7,23 @@ from app.config import settings
 
 def test_backblaze_upload_success(client, db_session):
     # Test successful image upload with admin user (Happy path)
-    # 1. Create an admin user
-    from app.models.admin import Admin
+    # 1. Create a user first
+    from app.models.user.user import User
+    from app.models.user.admin import Admin
 
-    admin_user = Admin(
+    user = User(
         first_name="Admin",
         last_name="User",
         email="backblaze.admin@test.com",
         phone_number="1234567890",
         password_hash="hashed_password",
+        type="admin",
     )
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Create admin user
+    admin_user = Admin(user_id=user.user_id)
     db_session.add(admin_user)
     db_session.commit()
 
@@ -66,15 +73,21 @@ def test_backblaze_upload_success(client, db_session):
 def test_backblaze_upload_unauthorized_role(client, db_session):
     # Test upload with non-admin user (Negative path)
     # 1. Create a regular user
-    from app.models.adopter import Adopter
+    from app.models.user.user import User
+    from app.models.user.adopter import Adopter
 
-    regular_user = Adopter(
+    user = User(
         first_name="Regular",
         last_name="User",
         email="backblaze.regular@test.com",
         phone_number="1234567890",
         password_hash="hashed_password",
+        type="adopter",
     )
+    db_session.add(user)
+    db_session.commit()
+
+    regular_user = Adopter(user_id=user.user_id)
     db_session.add(regular_user)
     db_session.commit()
 
@@ -122,16 +135,23 @@ def test_backblaze_upload_no_token(client):
 
 def test_backblaze_upload_invalid_file_type(client, db_session):
     # Test upload with non-image file (Negative path)
-    # 1. Create an admin user
-    from app.models.admin import Admin
+    # 1. Create a user first
+    from app.models.user.user import User
+    from app.models.user.admin import Admin
 
-    admin_user = Admin(
+    user = User(
         first_name="Admin",
         last_name="User",
         email="backblaze.admin2@test.com",
         phone_number="1234567890",
         password_hash="hashed_password",
+        type="admin",
     )
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Create admin user
+    admin_user = Admin(user_id=user.user_id)
     db_session.add(admin_user)
     db_session.commit()
 
@@ -166,16 +186,23 @@ def test_backblaze_upload_invalid_file_type(client, db_session):
 
 def test_backblaze_upload_bucket_not_found(client, db_session):
     # Test upload when bucket doesn't exist (Negative path)
-    # 1. Create an admin user
-    from app.models.admin import Admin
+    # 1. Create a user first
+    from app.models.user.user import User
+    from app.models.user.admin import Admin
 
-    admin_user = Admin(
+    user = User(
         first_name="Admin",
         last_name="User",
         email="backblaze.admin3@test.com",
         phone_number="1234567890",
         password_hash="hashed_password",
+        type="admin",
     )
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Create admin user
+    admin_user = Admin(user_id=user.user_id)
     db_session.add(admin_user)
     db_session.commit()
 
@@ -209,16 +236,23 @@ def test_backblaze_upload_bucket_not_found(client, db_session):
 
 def test_backblaze_upload_service_error(client, db_session):
     # Test upload when Backblaze service fails (Negative path)
-    # 1. Create an admin user
-    from app.models.admin import Admin
+    # 1. Create a user first
+    from app.models.user.user import User
+    from app.models.user.admin import Admin
 
-    admin_user = Admin(
+    user = User(
         first_name="Admin",
         last_name="User",
         email="backblaze.admin4@test.com",
         phone_number="1234567890",
         password_hash="hashed_password",
+        type="admin",
     )
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Create admin user
+    admin_user = Admin(user_id=user.user_id)
     db_session.add(admin_user)
     db_session.commit()
 
