@@ -5,6 +5,7 @@ mypy
 bandit
 pytest
 pytest-cov
+pytest-asyncio
 
 #Backend
 fastapi[standard]
