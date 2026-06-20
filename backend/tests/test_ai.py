@@ -40,6 +40,7 @@ async def test_describe_image_with_blip_non_https():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires real Hugging Face API and models")
 async def test_enrich_profile_with_llama():
     """Test Llama 3 8B profile enrichment with eager loading."""
     # Models are loaded eagerly at startup, so they should be available immediately
@@ -77,6 +78,7 @@ async def test_enrich_profile_with_llama():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires real Hugging Face API and models")
 async def test_enrich_profile_with_llama_missing_name():
     """Test Llama 3 8B enrichment with missing pet name."""
     pet_data = {
@@ -101,6 +103,7 @@ async def test_enrich_profile_with_llama_missing_name():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires real Hugging Face API and models")
 async def test_enrich_profile_with_llama_female_pet():
     """Test Llama 3 8B enrichment with female pet."""
     pet_data = {
@@ -126,6 +129,7 @@ async def test_enrich_profile_with_llama_female_pet():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires real Hugging Face API and models")
 async def test_enrich_profile_with_llama_special_conditions():
     """Test Llama 3 8B enrichment with special conditions."""
     pet_data = {
