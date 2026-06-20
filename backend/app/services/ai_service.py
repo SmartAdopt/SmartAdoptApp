@@ -1,12 +1,14 @@
-from typing import Dict, Any
-from app.utils.logger.logger_config import logger
-from app.config import settings
-import requests
 import json
+
+import requests
+from huggingface_hub import InferenceClient
 from PIL import Image
 from io import BytesIO
-from transformers import BlipProcessor, BlipForConditionalGeneration
-from huggingface_hub import InferenceClient
+from transformers import BlipForConditionalGeneration, BlipProcessor
+from typing import Dict, Any
+
+from app.config import settings
+from app.utils.logger.logger_config import logger
 
 # load huggingface token
 hf_token = settings.HF_TOKEN
@@ -18,10 +20,12 @@ else:
 # Load AI models at startup
 logger.info("Loading BLIP models...")
 blip_processor = BlipProcessor.from_pretrained(
-    "Salesforce/blip-image-captioning-base", revision="dbd1c8b3d69b02c4665611c8f2cb6ce4db7e9a7f"
+    "Salesforce/blip-image-captioning-base",
+    revision="dbd1c8b3d69b02c4665611c8f2cb6ce4db7e9a7f",
 )  # nosec B615
 blip_model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-image-captioning-base", revision="dbd1c8b3d69b02c4665611c8f2cb6ce4db7e9a7f"
+    "Salesforce/blip-image-captioning-base",
+    revision="dbd1c8b3d69b02c4665611c8f2cb6ce4db7e9a7f",
 )  # nosec B615
 logger.info("BLIP models loaded successfully")
 
@@ -100,7 +104,7 @@ async def enrich_profile_with_llama(
             Sterilized: {'Yes' if pet_data.get('is_sterilized') else 'No'}
             Dewormed: {'Yes' if pet_data.get('dewormed') else 'No'}
             Vaccines: {', '.join(pet_data.get('vaccines_up_to_date', []))}
-            Special Conditions: {', '.join(pet_data.get('special_conditions', [])) if pet_data.get('special_conditions') else 'None'}
+            Special Conditions: {', '.join(pet_data.get('special_conditions', []))if pet_data.get('special_conditions') else 'None'}
 
             CRITICAL: The IMAGE DESCRIPTION and BRIEF DESCRIPTION are your PRIMARY sources for creating variety and uniqueness. Use specific details from both descriptions (colors, expressions, setting, actions, mood, personality traits) to make each profile completely different from others. Even pets with similar basic data should have vastly different profiles based on their unique descriptions.
 
@@ -156,11 +160,7 @@ async def enrich_profile_with_llama(
 
         # Generate response using chat_completion
         messages = [{"role": "user", "content": prompt}]
-        result = llama_client.chat_completion(
-            messages,
-            max_tokens=500,
-            temperature=0.3,
-        )
+        result = llama_client.chat_completion(messages, max_tokens=500, temperature=0.3)
 
         # Access the content
         content = result.choices[0].message.content
