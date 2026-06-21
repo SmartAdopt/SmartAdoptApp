@@ -95,7 +95,9 @@ def test_register_pet_validation_error_invalid_animal_type(client):
 
     token = get_admin_token()
     response = client.post(
-        "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+        "/pets/register",
+        json=invalid_pet,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # Should return 422 Unprocessable Entity for validation error
@@ -111,7 +113,9 @@ def test_register_pet_validation_error_missing_url(client):
 
     token = get_admin_token()
     response = client.post(
-        "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+        "/pets/register",
+        json=invalid_pet,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # Should return 422 Unprocessable Entity for validation error
@@ -127,7 +131,9 @@ def test_register_pet_validation_error_invalid_url_format(client):
 
     token = get_admin_token()
     response = client.post(
-        "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+        "/pets/register",
+        json=invalid_pet,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # Should return 422 Unprocessable Entity for validation error
@@ -142,14 +148,16 @@ def test_register_pet_validation_error_age_out_of_range(client):
     invalid_pet["age"] = 21  # Exceeds maximum of 20 years
 
     token = get_admin_token()
-    
+
     # Mock Backblaze service to avoid 400 error before validation
     with patch(
         "app.services.pet_service.get_image_url",
         return_value="https://example.com/dog.jpg",
     ):
         response = client.post(
-            "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+            "/pets/register",
+            json=invalid_pet,
+            headers={"Authorization": f"Bearer {token}"},
         )
 
     # Should return 422 Unprocessable Entity for validation error
@@ -164,14 +172,16 @@ def test_register_pet_validation_error_weight_out_of_range(client):
     invalid_pet["weight_kg"] = 46.0  # Exceeds maximum of 45 kg
 
     token = get_admin_token()
-    
+
     # Mock Backblaze service to avoid 400 error before validation
     with patch(
         "app.services.pet_service.get_image_url",
         return_value="https://example.com/dog.jpg",
     ):
         response = client.post(
-            "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+            "/pets/register",
+            json=invalid_pet,
+            headers={"Authorization": f"Bearer {token}"},
         )
 
     # Should return 422 Unprocessable Entity for validation error
@@ -256,7 +266,9 @@ def test_update_pet_success(client):
 
     token = get_admin_token()
     response = client.put(
-        "/pets/P1", json=update_data, headers={"Authorization": f"Bearer {token}"}
+        "/pets/P1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # The pet might not exist, so we expect either 200 or 400
@@ -282,7 +294,9 @@ def test_update_pet_restricted_fields(client):
 
     token = get_admin_token()
     response = client.put(
-        "/pets/P1", json=update_data, headers={"Authorization": f"Bearer {token}"}
+        "/pets/P1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # The pet might not exist, so we expect either 200 or 400
@@ -437,7 +451,9 @@ def test_update_pet_with_ai_fields_success(client):
     }
 
     response = client.put(
-        "/pets/PR1", json=update_data, headers={"Authorization": f"Bearer {token}"}
+        "/pets/PR1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # Profile might not exist, so we accept 200, 400, or 404
@@ -455,7 +471,9 @@ def test_update_pet_partial_ai_fields(client):
     }
 
     response = client.put(
-        "/pets/PR1", json=update_data, headers={"Authorization": f"Bearer {token}"}
+        "/pets/PR1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     # Profile might not exist, so we accept 200, 400, or 404
