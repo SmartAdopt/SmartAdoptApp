@@ -262,8 +262,8 @@ export const RegisterForm = () => {
                 sx: {
                   color:
                     formData.password.length > 0 &&
-                      isPasswordSecure &&
-                      !fieldErrors.password
+                    isPasswordSecure &&
+                    !fieldErrors.password
                       ? "success.main"
                       : "inherit",
                   fontWeight: formData.password.length > 0 ? 600 : 400,
