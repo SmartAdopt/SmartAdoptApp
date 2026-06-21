@@ -9,6 +9,7 @@ import {
   Grid,
   Alert,
   CircularProgress,
+  Snackbar, // <-- IMPORTADO
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { AuthToggle } from "../molecules/AuthToggle";
@@ -33,6 +34,9 @@ export const RegisterForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // STATE FOR THE SUBTLE TOAST (SNACKBAR)
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Field-specific error states
   const [fieldErrors, setFieldErrors] = useState({
@@ -190,16 +194,19 @@ export const RegisterForm = () => {
       // Send the exact payload structure required by the backend adapter
       await authService.register(formData);
 
-      // On success, notify the user and redirect to login
-      alert("¡Cuenta creada con éxito! Ahora puedes iniciar sesión.");
-      navigate("/login", { replace: true });
+      // Activate the subtle toast instead of the annoying alert
+      setShowSuccessToast(true);
+
+      // Wait 1.5 seconds for the user to read it before going to the login
+      setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 1500);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("Hubo un error al registrar el usuario. Intenta de nuevo.");
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -352,6 +359,23 @@ export const RegisterForm = () => {
           ← Volver a inicio
         </Button>
       </Box>
+
+      {/* Component for the subtle toast */}
+      <Snackbar
+        open={showSuccessToast}
+        autoHideDuration={1500}
+        onClose={() => setShowSuccessToast(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }} // Position top right
+      >
+        <Alert
+          onClose={() => setShowSuccessToast(false)}
+          severity="success"
+          variant="filled" // We use "filled" variant to give it a solid background color
+          sx={{ width: "100%", borderRadius: 2 }}
+        >
+          ¡Registro exitoso! Redirigiendo...
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
