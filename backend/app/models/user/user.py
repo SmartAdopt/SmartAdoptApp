@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from ...database.postgres.postgres_db import Base
 
 
@@ -25,14 +26,10 @@ class User(Base):
     # User's password hash (cannot be null)
     password_hash = Column(String, nullable=False)
 
-    # Field to identify user type (polymorphism)
-    # This field allows SQLAlchemy to distinguish between different subclasses
-    type = Column(String(50))
+    # Field to identify user type (admin, adopter, user)
+    type = Column(String(50), nullable=False, default="user")
 
-    # Mapper configuration to enable polymorphism
-    __mapper_args__ = {
-        # Polymorphic identity for the base class
-        "polymorphic_identity": "user",
-        # Field used to determine the instance type
-        "polymorphic_on": type,
-    }
+    # Relationship to Adopter (one-to-one)
+    adopter = relationship(
+        "Adopter", backref="user", uselist=False, foreign_keys="Adopter.user_id"
+    )

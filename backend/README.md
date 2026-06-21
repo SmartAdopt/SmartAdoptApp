@@ -43,13 +43,15 @@ backend/                 # FastAPI backend application
 │   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
 │   │   │   └── pet_routes.py      # Pet management endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py     # Authentication schemas
-│   │   │   ├── backblaze_schemas.py # Backblaze B2 schemas
-│   │   │   └── pet_schemas.py      # Pet management schemas
+│   │   │   ├── auth_schemas.py         # Authentication schemas
+│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py          # Pet management schemas
+│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py    # Authentication services
 │   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   └── pet_service.py      # Pet management service
+│   │   │   ├── pet_service.py      # Pet management service
+│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -61,7 +63,8 @@ backend/                 # FastAPI backend application
 │   │   ├── README_JWT.md    # Complete JWT documentation
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
-│   │   └── README_LOGS.md   # Complete logging system documentation
+│   │   ├── README_LOGS.md   # Complete logging system documentation
+│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
@@ -387,9 +390,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Pet Management System
 
-The application includes a comprehensive pet management system for managing pet profiles and adoption information.
+The application includes a comprehensive pet management system with AI-powered profile generation using BLIP and Llama 3 8B models.
 
-### Pet Registration
+### Pet Registration with AI
 
 **Request**
 ```http
@@ -404,7 +407,7 @@ Content-Type: application/json
   "age": 3,
   "gender": "male",
   "is_sterilized": true,
-  "vaccines_up_to_date": ["rabies", "parvovirus",...],
+  "vaccines_up_to_date": ["rabies", "parvovirus", "distemper"],
   "dewormed": true,
   "weight_kg": 8.5,
   "special_conditions": [],
@@ -416,9 +419,34 @@ Content-Type: application/json
 ```json
 {
   "message": "Pet registered successfully",
-  "pet_id": "P1"
+  "profile": {
+    "id": "PR1",
+    "title": "Buddy: Your new best friend",
+    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "emotional_description": "Buddy is a special being looking for a loving home...",
+    "status": "available",
+    "creation_date": "2026-06-18T05:53:30.061000",
+    "pet": {
+      "name": "Buddy",
+      "pet_image_url": "https://example.com/dog.jpg",
+      "animal_breed": ["dog", "Golden Retriever"],
+      "age": 3,
+      "gender": "male",
+      "is_sterilized": true,
+      "vaccines_up_to_date": ["rabies", "parvovirus", "distemper"],
+      "dewormed": true,
+      "weight_kg": 8.5,
+      "special_conditions": [],
+      "brief_description": "Friendly dog looking for a home"
+    }
+  }
 }
 ```
+
+**AI Integration:**
+- BLIP model generates image description from pet photo
+- Llama 3 8B model enriches profile with engaging title, hashtags, and emotional description
+- All AI-generated content is stored in MongoDB `pet_profiles` collection
 
 **Validation Rules:**
 - Age: 0-15 years (realistic range for pets)
@@ -428,11 +456,11 @@ Content-Type: application/json
 - Gender: Must be "male" or "female"
 - Vaccines: Validated against animal type (dog vs cat vaccines)
 
-### Pet Update
+### Pet Update (Including AI Fields)
 
 **Request**
 ```http
-PUT /pets/{pet_id}
+PUT /pets/{profile_id}
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
@@ -441,32 +469,82 @@ Content-Type: application/json
   "is_sterilized": false,
   "weight_kg": 9.0,
   "special_conditions": ["Needs daily exercise"],
-  "brief_description": "Active dog looking for an active family"
+  "brief_description": "Active dog looking for an active family",
+  "title": "Buddy: Your active companion",
+  "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+  "emotional_description": "Buddy is an energetic dog looking for an active family..."
 }
 ```
 
 **Response (200 OK)**
 ```json
 {
-  "message": "Pet updated successfully",
-  "pet_id": "P0001"
+  "message": "Profile updated successfully",
+  "profile": {
+    "id": "PR1",
+    "title": "Buddy: Your active companion",
+    "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+    "emotional_description": "Buddy is an energetic dog looking for an active family...",
+    "status": "available",
+    "creation_date": "2026-06-18T05:53:30.061000",
+    "pet": {
+      "name": "Buddy",
+      "pet_image_url": "https://example.com/dog.jpg",
+      "animal_breed": ["dog", "Golden Retriever"],
+      "age": 4,
+      "gender": "male",
+      "is_sterilized": false,
+      "vaccines_up_to_date": ["rabies", "parvovirus", "distemper"],
+      "dewormed": true,
+      "weight_kg": 9.0,
+      "special_conditions": ["Needs daily exercise"],
+      "brief_description": "Active dog looking for an active family"
+    }
+  }
 }
 ```
 
-**Restricted Fields (cannot be modified):**
-- name
-- pet_image_url
-- animal_breed
-- gender
-
 **Allowed Fields for Update:**
-- age
-- is_sterilized
-- vaccines_up_to_date
-- dewormed
-- weight_kg
-- special_conditions
-- brief_description
+- Pet fields: age, is_sterilized, vaccines_up_to_date, dewormed, weight_kg, special_conditions, brief_description
+- AI fields: title, tags, emotional_description (optional, for manual editing)
+
+### Pet Regenerate AI Content
+
+**Request**
+```http
+POST /pets/{profile_id}/regenerate
+Authorization: Bearer <jwt_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Profile regenerated successfully",
+  "profile": {
+    "id": "PR1",
+    "title": "Buddy: Your new best friend",
+    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "emotional_description": "Buddy is a special being looking for a loving home...",
+    "status": "available",
+    "creation_date": "2026-06-18T05:53:30.061000",
+    "pet": {
+      "name": "Buddy",
+      "pet_image_url": "https://example.com/dog.jpg",
+      "animal_breed": ["dog", "Golden Retriever"],
+      "age": 4,
+      "gender": "male",
+      "is_sterilized": false,
+      "vaccines_up_to_date": ["rabies", "parvovirus", "distemper"],
+      "dewormed": true,
+      "weight_kg": 9.0,
+      "special_conditions": ["Needs daily exercise"],
+      "brief_description": "Active dog looking for an active family"
+    }
+  }
+}
+```
+
+**Note:** This endpoint regenerates only the AI-generated fields (title, tags, emotional_description) using BLIP and Llama 3 8B. Pet fields remain unchanged.
 
 ### Pet Listing
 
@@ -479,21 +557,27 @@ Authorization: Bearer <jwt_token>
 **Response (200 OK)**
 ```json
 {
-  "message": "Pets retrieved successfully",
   "pets": [
     {
-      "pet_id": "P0001",
-      "name": "Buddy",
-      "pet_image_url": "https://example.com/dog.jpg",
-      "animal_breed": ["dog", "Golden Retriever"],
-      "age": 3,
-      "gender": "male",
-      "is_sterilized": true,
-      "vaccines_up_to_date": ["rabies"],
-      "dewormed": true,
-      "weight_kg": 8.5,
-      "special_conditions": [],
-      "brief_description": "Friendly dog looking for a home"
+      "profile_id": "PR1",
+      "title": "Buddy: Your new best friend",
+      "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+      "emotional_description": "Buddy is a special being looking for a loving home...",
+      "status": "available",
+      "creation_date": "2026-06-18T05:53:30.061000",
+      "pet": {
+        "name": "Buddy",
+        "pet_image_url": "https://example.com/dog.jpg",
+        "animal_breed": ["dog", "Golden Retriever"],
+        "age": 3,
+        "gender": "male",
+        "is_sterilized": true,
+        "vaccines_up_to_date": ["rabies", "parvovirus", "distemper"],
+        "dewormed": true,
+        "weight_kg": 8.5,
+        "special_conditions": [],
+        "brief_description": "Friendly dog looking for a home"
+      }
     }
   ],
   "count": 1
@@ -515,19 +599,19 @@ Authorization: Bearer <jwt_token>
 - `email`: String (Unique)
 - `phone_number`: String (Optional)
 - `password_hash`: String
-- `type`: String (Polymorphism)
+- `type`: String (admin/adopter/user)
+- `adopter`: Relationship to Adopter (one-to-one)
 
 ### Admin
-- Inherits from User
-- `user_id`: Integer (Foreign Key to User)
+- `user_id`: Integer (Foreign Key to User, Primary Key)
+- Uses composition pattern with User table
 
 ### Adopter
-- Inherits from User
-- `user_id`: Integer (Foreign Key to User)
+- `user_id`: Integer (Foreign Key to User, Primary Key)
 - `created_at`: DateTime
+- Uses composition pattern with User table
 
 ### Pet
-- `pet_id`: String (Primary Key, auto-generated: P#### for dogs, G#### for cats)
 - `name`: String
 - `pet_image_url`: String (HTTP/HTTPS URL, mandatory)
 - `animal_breed`: List[String] (First element must be "dog" or "cat")
@@ -539,15 +623,27 @@ Authorization: Bearer <jwt_token>
 - `weight_kg`: Float (0-10 kg)
 - `special_conditions`: List[String]
 - `brief_description`: String
-- `created_at`: DateTime
+
+### PetProfile (MongoDB)
+- `id`: String (Primary Key, auto-generated: PR####)
+- `title`: String (AI-generated engaging title)
+- `tags`: List[String] (AI-generated hashtags)
+- `emotional_description`: String (AI-generated emotional description)
+- `status`: String ("available", "in_process", "adopted")
+- `creation_date`: DateTime
+- `pet`: Object (Pet basic information)
 
 
 ## Development Notes
 
-- Models use SQLAlchemy polymorphism to distinguish between Admin and Adopter
-- PostgreSQL connection is configured in `app/database/postgres/config.py`
+- Models use composition pattern instead of inheritance for Admin and Adopter
+- User table contains base user information with type field
+- Admin and Adopter tables reference User via foreign key with CASCADE delete
+- Adopter table includes `created_at` field for registration timestamp
+- PostgreSQL connection is configured in `app/database/postgres/postgres_db.py`
 - Endpoints use dependency injection to obtain the database session
 - All error responses follow a consistent format with `error_code`, `message`, and `details`
+- AI models (BLIP, Llama 3 8B) are loaded eagerly at startup (no lazy loading)
 
 ## Security
 
@@ -702,6 +798,7 @@ The application uses **Loguru** for structured logging with color-coded console 
 The logging system is configured in `app/utils/logger/logger_config.py` with the following features:
 
 - **Color-coded console output**: Entire log lines are colored based on log level
+  - DEBUG: Default terminal color
   - INFO: Green
   - WARNING: Yellow
   - ERROR: Red
@@ -710,6 +807,15 @@ The logging system is configured in `app/utils/logger/logger_config.py` with the
   - `logs/error.log`: Error logs only (ERROR and above)
 - **Log rotation**: Files are rotated when they reach 500 MB
 - **Log retention**: Logs are retained for 10 days (app.log) or 30 days (error.log)
+
+### Log Levels Usage
+
+We manage four levels in the backend to categorize events properly and avoid clutter:
+
+1. **DEBUG**: Detailed information, typically of interest only when diagnosing problems. Successful field/input validations (e.g., Pydantic schema validator outputs) are logged as `DEBUG` to keep the logs clean in production.
+2. **INFO**: General operational events showing application flow (e.g., successful user/pet registration, successful logins, OAuth callbacks).
+3. **WARNING**: Expected non-critical exceptions or bad requests from clients/users (e.g., schema validation failures, attempting to register an existing email, invalid login credentials).
+4. **ERROR**: System exceptions, server-side errors, or integration failures (e.g., MongoDB insertion failure, Google OAuth api redirect failed, database connection errors).
 
 ### Log Format
 
@@ -730,9 +836,10 @@ Import the logger in your Python files:
 from app.utils.logger.logger_config import logger
 
 # Log at different levels
-logger.info("User logged in successfully")
-logger.warning("Invalid credentials attempt")
-logger.error("Database connection failed")
+logger.debug("Validating name: John Doe")
+logger.info("User registered successfully")
+logger.warning("Registration failed - Email already registered")
+logger.error("Failed to insert profile into MongoDB")
 ```
 
 ### Documentation Access Logging

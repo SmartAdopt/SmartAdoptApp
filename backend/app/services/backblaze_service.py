@@ -1,7 +1,7 @@
 # Backblaze B2 service for image upload
 import uuid
 from typing import Optional
-from b2sdk.v1 import (  # type: ignore[import-untyped]
+from b2sdk.v1 import (  # type: ignore
     InMemoryAccountInfo,
     B2Api,
 )
@@ -59,7 +59,8 @@ def bucket_exists() -> bool:
 
 def upload_image_to_backblaze(file_data: bytes, file_name: Optional[str] = None) -> str:
     # Upload image to Backblaze B2 and return the public URL
-    logger.info(f"Uploading image to Backblaze: {file_name}")
+    # Note: file_name parameter is ignored for security - UUID is always generated
+    logger.info(f"Uploading image to Backblaze (original name: {file_name})")
     try:
         # Get B2 API instance
         b2_api = get_b2_api()
@@ -67,23 +68,23 @@ def upload_image_to_backblaze(file_data: bytes, file_name: Optional[str] = None)
         # Get the bucket
         bucket = b2_api.get_bucket_by_name(settings.BACKBLAZE_BUCKET_NAME)
 
-        # Generate unique filename using UUID
-        file_name = f"{uuid.uuid4()}.jpg"
+        # Generate unique filename using UUID for security and uniqueness
+        unique_filename = f"{uuid.uuid4()}.jpg"
 
         # Upload the file
         bucket.upload_bytes(
             file_data,
-            file_name,
+            unique_filename,
         )
 
         # Get the download URL from Backblaze
         # This returns the correct public URL format
         public_url = b2_api.get_download_url_for_file_name(
-            settings.BACKBLAZE_BUCKET_NAME, file_name
+            settings.BACKBLAZE_BUCKET_NAME, unique_filename
         )
 
         logger.info(
-            f"Image uploaded successfully to Backblaze: {file_name} -> {public_url}"
+            f"Image uploaded successfully to Backblaze: {unique_filename} -> {public_url}"
         )
         return public_url
 

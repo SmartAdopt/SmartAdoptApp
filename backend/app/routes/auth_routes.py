@@ -13,13 +13,14 @@ from typing import Optional
 import json
 import os
 from datetime import datetime
-from jose import jwt
+from jose import jwt, ExpiredSignatureError, JWTError
 
 # SQLAlchemy imports
 from sqlalchemy.orm import Session
 
 # Database imports
 from app.database.postgres.postgres_db import get_db
+from app.database.redis.redis_db import get_redis
 from app.config import settings
 
 # Schema imports
@@ -56,7 +57,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
+def register(
+    user_data: RegisterRequest,
+    db: Session = Depends(get_db),
+    redis_client=Depends(get_redis),
+):
     # Endpoint to register a new user (Adopter/Admin)
     logger.info(
         f"POST /auth/register - Registration request for email: {user_data.email}"
@@ -65,7 +70,7 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
         # Convert Pydantic schema to dict before calling service
         user_data_dict = user_data.model_dump()
         # Call service to register the user
-        new_user = register_user(db, user_data_dict)
+        new_user = register_user(db, redis_client, user_data_dict)
         # Conditional based on requested role
         if user_data.requested_role.lower() == "admin":
             logger.info(
@@ -121,14 +126,19 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-def login(login_data: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(
+    login_data: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    redis_client=Depends(get_redis),
+):
     # Endpoint for traditional login with email/password
     logger.info(f"POST /auth/login - Login request for email: {login_data.email}")
     try:
         # Convert Pydantic schema to dict before calling service
         login_data_dict = login_data.model_dump()
         # Call service to authenticate the user
-        user_response = login_user(db, login_data_dict)
+        user_response = login_user(db, redis_client, login_data_dict)
 
         # Set the refresh token in an HTTP-Only cookie
         refresh_token = user_response.get("refresh_token")
@@ -220,6 +230,7 @@ async def google_callback(
     response: Response,
     role: str = "adopter",
     db: Session = Depends(get_db),
+    redis_client=Depends(get_redis),
 ):
     # Handle Google OAuth callback
     #   role: Role for auto-registration (default: adopter)
@@ -242,10 +253,10 @@ async def google_callback(
             f"OAuth callback - User info received for email: {user_info.get('email')}"
         )
         # Call service layer to handle OAuth login or registration
-        user_response = oauth_login_or_register(db, user_info, role)
+        user_response = oauth_login_or_register(db, redis_client, user_info, role)
 
         # Set the refresh token in an HTTP-Only cookie
-        # NOTA: secure=False for develop
+        # Note: secure=True requires HTTPS. For local development without HTTPS, set secure=False
         refresh_token = user_response.get("refresh_token")
         if refresh_token:
             response.set_cookie(
@@ -305,7 +316,7 @@ async def google_callback(
         return HTMLResponse(content=html_content)
 
     except Exception as e:
-        logger.exception(f"OAuth callback failed - error: {str(e)}")
+        logger.error(f"OAuth callback failed - error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},
@@ -323,6 +334,7 @@ def refresh(
     request: Request,
     response: Response,
     credentials: HTTPAuthorizationCredentials = Security(_bearer),
+    redis_client=Depends(get_redis),
 ):
     logger.info("POST /auth/refresh - Token refresh request")
     # Check if credentials are provided
@@ -333,7 +345,7 @@ def refresh(
             detail={"message": "Not authenticated"},
         )
     # Check if access token is blacklisted (revoked)
-    if is_token_blacklisted(credentials.credentials):
+    if is_token_blacklisted(redis_client, credentials.credentials):
         logger.warning("Token refresh failed - Token has been revoked")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -367,7 +379,7 @@ def refresh(
         )
 
     try:
-        tokens = refresh_tokens(refresh_token)
+        tokens = refresh_tokens(redis_client, refresh_token)
         # Set the new rotated refresh token in the cookie
         response.set_cookie(
             key="refresh_token",
@@ -405,6 +417,7 @@ def logout(
     request: Request,
     response: Response,
     credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer),
+    redis_client=Depends(get_redis),
 ):
     logger.info("POST /auth/logout - Logout request")
     try:
@@ -431,11 +444,11 @@ def logout(
                 exp_timestamp = payload.get("exp")
                 if exp_timestamp:
                     exp_datetime = datetime.fromtimestamp(exp_timestamp)
-                    add_token_to_blacklist(token, exp_datetime)
+                    add_token_to_blacklist(redis_client, token, exp_datetime)
                     logger.info("Access token added to blacklist")
             except HTTPException as e:
                 raise e
-            except jwt.ExpiredSignatureError:  # type: ignore
+            except ExpiredSignatureError:
                 logger.warning("Logout - Access token already expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -443,7 +456,7 @@ def logout(
                         "message": "No active session found",
                     },
                 )
-            except jwt.JWTError:  # type: ignore
+            except JWTError:
                 logger.warning("Logout - Invalid access token")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -461,7 +474,7 @@ def logout(
                 )
 
         # Revoke the refresh token in Redis and clear the cookie
-        logout_user(refresh_token)
+        logout_user(redis_client, refresh_token)
         response.delete_cookie(
             key="refresh_token",
             secure=True,

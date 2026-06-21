@@ -17,6 +17,8 @@ services:
       - MONGO_URI=mongodb://${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}
       - MONGO_HOST=${MONGO_HOST}
       - MONGO_PORT=${MONGO_PORT}
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_USER=${MONGO_USER}
       - MONGO_PASSWORD=${MONGO_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
@@ -31,6 +33,7 @@ services:
       - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
       - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
       - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - HF_TOKEN=${HF_TOKEN}
     volumes:
       - ./backend:/app
     depends_on:

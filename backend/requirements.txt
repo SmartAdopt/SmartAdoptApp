@@ -5,6 +5,7 @@ mypy
 bandit
 pytest
 pytest-cov
+pytest-asyncio
 
 #Backend
 fastapi[standard]
@@ -16,9 +17,15 @@ uvicorn
 email-validator
 python-jose
 authlib
-itsdangerous
 redis
 b2sdk
-redis
 loguru
 motor
+itsdangerous
+
+#AI/ML
+transformers
+torch
+pillow
+requests
+huggingface-hub

@@ -4,7 +4,6 @@ from typing import List
 class Pet:
     def __init__(
         self,
-        id: str,
         name: str,
         pet_image_url: str,
         animal_breed: List[str],
@@ -17,7 +16,6 @@ class Pet:
         special_conditions: List[str],
         brief_description: str,
     ):
-        self.id = id
         self.name = name
         self.pet_image_url = pet_image_url
         self.animal_breed = animal_breed

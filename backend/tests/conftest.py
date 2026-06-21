@@ -167,20 +167,19 @@ def client(db_session):
                     return doc
             return None
 
-        async def find(self):
+        def find(self, query=None):
             return self
 
         def __aiter__(self):
             return self
 
         async def __anext__(self):
-            if not hasattr(self, "_iter_index"):
-                self._iter_index = 0
-            if self._iter_index < len(self.documents):
-                result = self.documents[self._iter_index]
-                self._iter_index += 1
-                return result
-            raise StopAsyncIteration
+            if not hasattr(self, "_iter"):
+                self._iter = iter(self.documents)
+            try:
+                return next(self._iter)
+            except StopIteration:
+                raise StopAsyncIteration
 
         async def insert_one(self, document):
             self.documents.append(document)
@@ -209,26 +208,22 @@ def client(db_session):
     mock_redis = MockRedis()
     mock_mongo = MockMongoClient()
 
-    # Mock Backblaze service
-    def mock_get_image_url(file_url):
-        return file_url
-
     # Override the dependency globally in the app
     app.dependency_overrides[get_db] = override_get_db
 
     # Mock redis client in multiple locations
     with patch(
         "app.database.redis.redis_db.get_redis_client", return_value=mock_redis
+    ), patch("app.database.mongo.mongo_db.get_client", return_value=mock_mongo), patch(
+        "app.routes.admin_routes.verify_token",
+        side_effect=lambda credentials: __import__(
+            "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
+        ).verify_token(credentials, mock_redis),
     ), patch(
-        "app.services.auth_service.get_redis_client", return_value=mock_redis
-    ), patch(
-        "app.utils.jwt.jwt_utils.get_redis_client", return_value=mock_redis
-    ), patch(
-        "app.database.mongo.mongo_db.get_client", return_value=mock_mongo
-    ), patch(
-        "app.services.pet_service.get_client", return_value=mock_mongo
-    ), patch(
-        "app.services.pet_service.get_image_url", side_effect=mock_get_image_url
+        "app.routes.adopter_routes.verify_token",
+        side_effect=lambda credentials: __import__(
+            "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
+        ).verify_token(credentials, mock_redis),
     ):
         # Create the test client
         with TestClient(app) as test_client:

@@ -1,29 +1,26 @@
 # Pet service
 
-# SQLAlchemy imports
-from sqlalchemy.orm import Session
-
 # Schema imports
 from typing import Dict, Any, List
 
 # Backblaze service import
 from app.services.backblaze_service import get_image_url
 
-# MongoDB imports
-from app.database.mongo.mongo_db import get_client
+# AI service import
+from app.services.ai_service import describe_image_with_blip, enrich_profile_with_llama
+
+# Model imports
+from app.models.pet.pet import Pet
+from app.models.pet.pet_profile import PetProfile
 
 # Logger import
 from app.utils.logger.logger_config import logger
 
 
-async def get_next_sequence(
-    db_name: str, collection_name: str, counter_name: str
-) -> int:
+async def get_next_sequence(db, collection_name: str, counter_name: str) -> int:
     # Get next sequential number from MongoDB counter
     logger.info(f"Getting next sequence for counter: {counter_name}")
     try:
-        client = get_client()
-        db = client[db_name]
         counters_collection = db[collection_name]
 
         # Find and increment the counter
@@ -46,110 +43,210 @@ async def get_next_sequence(
         raise Exception("Failed to get next sequence")
 
 
-async def register_pet(db: Session, pet_data: Dict[str, Any]) -> Dict[str, Any]:
-    # Register a new pet
+async def register_pet(db, pet_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Register a new pet with AI-generated profile
     logger.info(f"Pet registration attempt for name: {pet_data['name']}")
 
     # Validate that pet_image_url is provided
     if not pet_data.get("pet_image_url"):
-        logger.error("Pet registration failed - pet_image_url is required")
+        logger.warning("Pet registration failed - pet_image_url is required")
         raise ValueError("pet_image_url is required")
 
     # Get image URL from Backblaze
     try:
-        image_url = get_image_url(pet_data["pet_image_url"])
-        logger.info(f"Image URL obtained from Backblaze: {image_url}")
+        # Check if pet_image_url is already a complete Backblaze URL
+        if (
+            pet_data["pet_image_url"].startswith("https://")
+            and "backblazeb2.com" in pet_data["pet_image_url"]
+        ):
+            # URL is already complete, use it directly
+            image_url = pet_data["pet_image_url"]
+            logger.info(f"Image URL is already complete: {image_url}")
+        else:
+            # URL is just a filename, get full URL from Backblaze
+            image_url = get_image_url(pet_data["pet_image_url"])
+            logger.info(f"Image URL obtained from Backblaze: {image_url}")
     except Exception as e:
         logger.error(f"Failed to get image URL from Backblaze: {str(e)}")
         raise ValueError("Failed to get image URL from Backblaze")
 
-    # Determine animal type from animal_breed[0]
-    animal_type = (
-        pet_data["animal_breed"][0].lower() if pet_data.get("animal_breed") else ""
-    )
-
-    # Generate sequential pet ID with type prefix
-    # P{number} for dogs, G{number} for cats
-    from app.config import settings
+    # Generate profile ID
+    from datetime import datetime
 
     try:
-        if animal_type == "dog":
-            sequence = await get_next_sequence(
-                settings.MONGO_DB, "counters", "dog_pet_counter"
-            )
-            pet_id = f"P{sequence}"
-        elif animal_type == "cat":
-            sequence = await get_next_sequence(
-                settings.MONGO_DB, "counters", "cat_pet_counter"
-            )
-            pet_id = f"G{sequence}"
-        else:
-            logger.error(
-                f"Pet registration failed - invalid animal type: {animal_type}"
-            )
-            raise ValueError("Invalid animal type")
+        sequence = await get_next_sequence(db, "counters", "profile_counter")
+        profile_id = f"PR{sequence}"
     except Exception as e:
-        logger.error(f"Failed to generate pet ID: {str(e)}")
-        raise ValueError("Failed to generate pet ID")
+        logger.error(f"Failed to generate profile ID: {str(e)}")
+        raise ValueError("Failed to generate profile ID")
 
-    # Prepare pet data for MongoDB insertion
-    pet_document = {
-        "_id": pet_id,
-        "name": pet_data["name"],
-        "pet_image_url": image_url,
-        "animal_breed": pet_data["animal_breed"],
-        "age": pet_data["age"],
-        "gender": pet_data["gender"],
-        "is_sterilized": pet_data["is_sterilized"],
-        "vaccines_up_to_date": pet_data.get("vaccines_up_to_date", []),
-        "dewormed": pet_data["dewormed"],
-        "weight_kg": pet_data["weight_kg"],
-        "special_conditions": pet_data.get("special_conditions", []),
-        "brief_description": pet_data["brief_description"],
-        "created_at": None,  # Will be set by MongoDB
+    # Call BLIP to describe image
+    try:
+        blip_description = await describe_image_with_blip(image_url)
+        logger.info(f"BLIP description obtained: {blip_description}")
+    except Exception as e:
+        logger.error(f"Failed to get BLIP description: {str(e)}")
+        raise ValueError("Failed to generate image description")
+
+    # Call Llama 3 8B to enrich profile
+    try:
+        enriched_data = await enrich_profile_with_llama(pet_data, blip_description)
+        logger.info("Llama 3 8B enrichment completed")
+    except Exception as e:
+        logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
+        raise ValueError("Failed to enrich profile")
+
+    # Create Pet model instance
+    pet_model = Pet(
+        name=pet_data["name"],
+        pet_image_url=image_url,
+        animal_breed=pet_data["animal_breed"],
+        age=pet_data["age"],
+        gender=pet_data["gender"],
+        is_sterilized=pet_data["is_sterilized"],
+        vaccines_up_to_date=pet_data.get("vaccines_up_to_date", []),
+        dewormed=pet_data["dewormed"],
+        weight_kg=pet_data["weight_kg"],
+        special_conditions=pet_data.get("special_conditions", []),
+        brief_description=pet_data["brief_description"],
+    )
+
+    # Create PetProfile model instance
+    profile_model = PetProfile(
+        id=profile_id,
+        title=enriched_data["title"],
+        tags=enriched_data["tags"],
+        emotional_description=enriched_data["emotional_description"],
+        status="available",
+        creation_date=datetime.now(),
+        pet=pet_model,
+    )
+
+    # Convert model to dict for MongoDB
+    profile_document = {
+        "_id": profile_id,
+        "id": profile_model.id,
+        "title": profile_model.title,
+        "tags": profile_model.tags,
+        "emotional_description": profile_model.emotional_description,
+        "status": profile_model.status,
+        "creation_date": profile_model.creation_date,
+        "pet": {
+            "name": profile_model.pet.name,
+            "pet_image_url": profile_model.pet.pet_image_url,
+            "animal_breed": profile_model.pet.animal_breed,
+            "age": profile_model.pet.age,
+            "gender": profile_model.pet.gender,
+            "is_sterilized": profile_model.pet.is_sterilized,
+            "vaccines_up_to_date": profile_model.pet.vaccines_up_to_date,
+            "dewormed": profile_model.pet.dewormed,
+            "weight_kg": profile_model.pet.weight_kg,
+            "special_conditions": profile_model.pet.special_conditions,
+            "brief_description": profile_model.pet.brief_description,
+        },
     }
 
     # Insert into MongoDB
     try:
-        client = get_client()
-        mongo_db = client[settings.MONGO_DB]
-        pets_collection = mongo_db["pets"]
-
-        # Insert the pet document
-        await pets_collection.insert_one(pet_document)
-        logger.info(f"Pet registered successfully with ID: {pet_id}")
+        profiles_collection = db["pet_profiles"]
+        await profiles_collection.insert_one(profile_document)
+        logger.info(f"Profile registered successfully with ID: {profile_id}")
     except Exception as e:
-        logger.error(f"Failed to insert pet into MongoDB: {str(e)}")
-        raise ValueError("Failed to register pet in database")
+        logger.error(f"Failed to insert profile into MongoDB: {str(e)}")
+        raise ValueError("Failed to register profile in database")
 
     return {
-        "pet_id": pet_id,
-        "name": pet_data["name"],
-        "pet_image_url": image_url,
+        "profile_id": profile_id,
+        "title": profile_model.title,
+        "tags": profile_model.tags,
+        "emotional_description": profile_model.emotional_description,
+        "status": profile_model.status,
+        "creation_date": profile_model.creation_date,
+        "pet": profile_document["pet"],
     }
 
 
-async def update_pet(
-    db: Session, pet_id: str, pet_data: Dict[str, Any]
-) -> Dict[str, Any]:
-    # Update an existing pet
-    logger.info(f"Pet update attempt for ID: {pet_id}")
+async def regenerate_profile(db, profile_id: str) -> Dict[str, Any]:
+    # Regenerate profile with AI (BLIP + Llama 3 8B)
+    logger.info(f"Profile regeneration attempt for ID: {profile_id}")
 
     try:
-        client = get_client()
-        from app.config import settings
+        profiles_collection = db["pet_profiles"]
 
-        mongo_db = client[settings.MONGO_DB]
-        pets_collection = mongo_db["pets"]
+        # Check if profile exists
+        existing_profile = await profiles_collection.find_one({"_id": profile_id})
+        if not existing_profile:
+            logger.warning(f"Profile not found with ID: {profile_id}")
+            raise ValueError("Profile not found")
 
-        # Check if pet exists
-        existing_pet = await pets_collection.find_one({"_id": pet_id})
-        if not existing_pet:
-            logger.warning(f"Pet not found with ID: {pet_id}")
-            raise ValueError("Pet not found")
+        # Get pet data from existing profile
+        pet_data = existing_profile["pet"]
+        image_url = pet_data["pet_image_url"]
 
-        # Only allow updating specific fields (not name, pet_image_url, animal_breed, gender)
-        allowed_update_fields = {
+        # Ensure list fields are lists (not None)
+        pet_data["animal_breed"] = pet_data.get("animal_breed") or []
+        pet_data["vaccines_up_to_date"] = pet_data.get("vaccines_up_to_date") or []
+        pet_data["special_conditions"] = pet_data.get("special_conditions") or []
+
+        # Call BLIP to describe image
+        try:
+            blip_description = await describe_image_with_blip(image_url)
+            logger.info(f"BLIP description obtained: {blip_description}")
+        except Exception as e:
+            logger.error(f"Failed to get BLIP description: {str(e)}")
+            raise ValueError("Failed to generate image description")
+
+        # Call Llama 3 8B to enrich profile
+        try:
+            enriched_data = await enrich_profile_with_llama(pet_data, blip_description)
+            logger.info("Llama 3 8B enrichment completed")
+        except Exception as e:
+            logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
+            raise ValueError("Failed to enrich profile")
+
+        # Update profile in MongoDB
+        update_data = {
+            "title": enriched_data["title"],
+            "tags": enriched_data["tags"],
+            "emotional_description": enriched_data["emotional_description"],
+        }
+
+        await profiles_collection.update_one({"_id": profile_id}, {"$set": update_data})
+        logger.info(f"Profile regenerated successfully with ID: {profile_id}")
+
+        return {
+            "profile_id": profile_id,
+            "title": enriched_data["title"],
+            "tags": enriched_data["tags"],
+            "emotional_description": enriched_data["emotional_description"],
+            "status": existing_profile["status"],
+            "creation_date": existing_profile["creation_date"],
+            "pet": existing_profile["pet"],
+        }
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to regenerate profile: {str(e)}")
+        raise ValueError("Failed to regenerate profile")
+
+
+async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Update an existing profile (manual edit including AI fields)
+    logger.info(f"Profile update attempt for ID: {profile_id}")
+
+    try:
+        profiles_collection = db["pet_profiles"]
+
+        # Check if profile exists
+        existing_profile = await profiles_collection.find_one({"_id": profile_id})
+        if not existing_profile:
+            logger.warning(f"Profile not found with ID: {profile_id}")
+            raise ValueError("Profile not found")
+
+        # Prepare update data for pet fields
+        pet_update_data = {}
+        allowed_pet_fields = {
             "age",
             "is_sterilized",
             "vaccines_up_to_date",
@@ -159,68 +256,100 @@ async def update_pet(
             "brief_description",
         }
 
-        # Prepare update data with only allowed fields
-        update_data = {}
-        for field in allowed_update_fields:
+        # Prepare update data for AI fields
+        ai_update_data = {}
+        allowed_ai_fields = {
+            "title",
+            "tags",
+            "emotional_description",
+        }
+
+        # Validate that all fields in pet_data are allowed (ignore None values)
+        all_allowed_fields = allowed_pet_fields | allowed_ai_fields
+        invalid_fields = []
+        for field, value in pet_data.items():
+            if value is not None and field not in all_allowed_fields:
+                invalid_fields.append(field)
+
+        if invalid_fields:
+            logger.warning(
+                f"Update rejected for profile ID: {profile_id} - Invalid fields: {invalid_fields}"
+            )
+            raise ValueError(
+                f"Cannot update fields: {', '.join(invalid_fields)}. "
+                f"Allowed fields: {', '.join(sorted(all_allowed_fields))}"
+            )
+
+        for field in allowed_pet_fields:
             if field in pet_data:
-                update_data[field] = pet_data[field]
+                pet_update_data[field] = pet_data[field]
+
+        for field in allowed_ai_fields:
+            if field in pet_data:
+                ai_update_data[field] = pet_data[field]
+
+        # Combine all updates
+        update_data = {}
+        if pet_update_data:
+            update_data["pet"] = {**existing_profile["pet"], **pet_update_data}
+        if ai_update_data:
+            update_data.update(ai_update_data)
 
         if not update_data:
-            logger.warning(f"No valid fields to update for pet ID: {pet_id}")
+            logger.warning(f"No valid fields to update for profile ID: {profile_id}")
             raise ValueError("No valid fields to update")
 
-        # Update pet in MongoDB
-        await pets_collection.update_one({"_id": pet_id}, {"$set": update_data})
+        # Update profile in MongoDB
+        await profiles_collection.update_one({"_id": profile_id}, {"$set": update_data})
         logger.info(
-            f"Pet updated successfully with ID: {pet_id} (fields: {list(update_data.keys())})"
+            f"Profile updated successfully with ID: {profile_id} (fields: {list(update_data.keys())})"
         )
     except ValueError:
         raise
     except Exception as e:
-        logger.error(f"Failed to update pet in MongoDB: {str(e)}")
-        raise ValueError("Failed to update pet in database")
+        logger.error(f"Failed to update profile in MongoDB: {str(e)}")
+        raise ValueError("Failed to update profile in database")
 
+    # Return updated profile
+    updated_profile = await profiles_collection.find_one({"_id": profile_id})
     return {
-        "pet_id": pet_id,
-        "name": existing_pet["name"],
-        "message": "Pet updated successfully",
+        "profile_id": profile_id,
+        "title": updated_profile.get("title") or existing_profile.get("title"),
+        "tags": updated_profile.get("tags") or existing_profile.get("tags"),
+        "emotional_description": updated_profile.get("emotional_description")
+        or existing_profile.get("emotional_description"),
+        "status": updated_profile.get("status") or existing_profile.get("status"),
+        "creation_date": updated_profile.get("creation_date")
+        or existing_profile.get("creation_date"),
+        "pet": updated_profile.get("pet"),
     }
 
 
-async def list_pets(db: Session) -> List[Dict[str, Any]]:
-    # List all pets
-    logger.info("Listing all pets")
+async def list_pets(db) -> List[Dict[str, Any]]:
+    # List all profiles
+    logger.info("Listing all profiles")
 
     try:
-        client = get_client()
-        from app.config import settings
+        profiles_collection = db["pet_profiles"]
 
-        mongo_db = client[settings.MONGO_DB]
-        pets_collection = mongo_db["pets"]
-
-        # Query all pets from MongoDB
-        cursor = pets_collection.find()
-        pets = []
-        async for pet in cursor:
+        # Query all profiles from MongoDB
+        cursor = profiles_collection.find()
+        profiles = []
+        async for profile in cursor:
             # Convert MongoDB _id to string and remove it from response
-            pet_dict = {
-                "pet_id": pet["_id"],
-                "name": pet["name"],
-                "pet_image_url": pet["pet_image_url"],
-                "animal_breed": pet["animal_breed"],
-                "age": pet["age"],
-                "gender": pet["gender"],
-                "is_sterilized": pet["is_sterilized"],
-                "vaccines_up_to_date": pet["vaccines_up_to_date"],
-                "dewormed": pet["dewormed"],
-                "weight_kg": pet["weight_kg"],
-                "special_conditions": pet["special_conditions"],
-                "brief_description": pet["brief_description"],
+            profile_dict = {
+                "profile_id": profile["_id"],
+                "title": profile.get("title"),
+                "tags": profile.get("tags"),
+                "emotional_description": profile.get("emotional_description"),
+                "status": profile.get("status"),
+                "creation_date": profile.get("creation_date"),
+                "pet": profile.get("pet"),
             }
-            pets.append(pet_dict)
+            profiles.append(profile_dict)
 
-        logger.info(f"Retrieved {len(pets)} pets successfully")
-        return pets
+        logger.info(f"Retrieved {len(profiles)} profiles successfully")
+        return profiles
     except Exception as e:
-        logger.error(f"Failed to retrieve pets from MongoDB: {str(e)}")
-        raise ValueError("Failed to retrieve pets from database")
+        logger.error(f"Failed to retrieve profiles from MongoDB: {str(e)}")
+        raise ValueError("Failed to retrieve profiles from database")

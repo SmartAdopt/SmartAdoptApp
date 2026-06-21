@@ -73,7 +73,14 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
         "password": "Testpassword123",
         "requested_role": "adopter",
     }
-    register_user(db_session, user_data_dict)
+
+    # Create a mock redis client for register_user
+    class MockRedis:
+        def setex(self, key, ttl, value):
+            pass
+
+    mock_redis = MockRedis()
+    register_user(db_session, mock_redis, user_data_dict)
 
     # Mock the OAuth instance
     mock_oauth = MagicMock()
