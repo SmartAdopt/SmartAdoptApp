@@ -11,38 +11,73 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { AuthToggle } from "../molecules/AuthToggle";
 import { SocialLoginGroup } from "../molecules/SocialLoginGroup";
 import { authService } from "../../services/auth.service";
 import type { RegisterApiRequest } from "../../types/auth.types";
 
+// ==========================================
+// ZOD SCHEMA DEFINITION
+// ==========================================
+const registerSchema = z
+  .object({
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "Debe tener al menos 2 caracteres")
+      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios"),
+    last_name: z
+      .string()
+      .trim()
+      .min(2, "Debe tener al menos 2 caracteres")
+      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Este campo es requerido")
+      .email("Correo electrónico no válido"),
+    phone_number: z
+      .string()
+      .trim()
+      .regex(/^09\d{8}$/, "Debe tener 10 dígitos y empezar con 09"),
+    password: z
+      .string()
+      .min(8, "Mínimo 8 caracteres")
+      .max(16, "Máximo 16 caracteres")
+      .regex(/[A-Z]/, "Debe contener al menos 1 mayúscula")
+      .regex(/[^A-Za-z0-9]/, "Debe contener al menos 1 símbolo"),
+    confirmPassword: z.string().min(1, "Este campo es requerido"),
+    requested_role: z.enum(["adopter", "admin"]).default("adopter"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"], // Puts the error specifically on the confirmPassword field
+  });
+
+// Infer the TypeScript type from the Zod Schema
+type RegisterFormData = z.infer<typeof registerSchema>;
+
 export const RegisterForm = () => {
   const navigate = useNavigate();
 
-  // 1. Group API payload fields into a single state object
-  const [formData, setFormData] = useState<RegisterApiRequest>({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone_number: "",
-    password: "",
-    requested_role: "adopter", // Default role for public registration
-  });
-
-  // UI-only state
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Field-specific error states
-  const [fieldErrors, setFieldErrors] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     first_name: "",
     last_name: "",
     email: "",
     phone_number: "",
     password: "",
     confirmPassword: "",
+    requested_role: "adopter",
   });
+
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Field-specific error states
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof RegisterFormData, string>>
+  >({});
 
   // ==========================================
   // REAL-TIME PASSWORD SECURITY EVALUATION
@@ -55,6 +90,7 @@ export const RegisterForm = () => {
     isPasswordValidLength && hasPasswordUppercase && hasPasswordSymbol;
 
   const getPasswordHelperText = () => {
+    if (fieldErrors.password) return fieldErrors.password;
     if (!formData.password)
       return "Requerido: 8-16 caracteres, 1 mayúscula y 1 símbolo";
 
@@ -67,119 +103,38 @@ export const RegisterForm = () => {
     return `Falta: ${missingCriteria.join(", ")}`;
   };
 
-  // Validation functions
-  const validateName = (name: string): string => {
-    if (!name.trim()) return "Este campo es requerido";
-    if (name.trim().length < 2) return "Debe tener al menos 2 caracteres";
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name))
-      return "Solo se permiten letras y espacios";
-    return "";
-  };
-
-  const validateEmail = (email: string): string => {
-    if (!email.trim()) return "Este campo es requerido";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return "Correo electrónico no válido";
-    return "";
-  };
-
-  const validatePhone = (phone: string): string => {
-    if (!phone.trim()) return "Este campo es requerido";
-    // Remove spaces and special characters for validation
-    const cleanPhone = phone.replace(/\s/g, "");
-    // Must be exactly 10 digits and start with 09
-    if (!/^09\d{8}$/.test(cleanPhone))
-      return "Debe tener 10 dígitos y empezar con 09";
-    return "";
-  };
-
-  const validatePassword = (password: string): string => {
-    if (!password) return "Este campo es requerido";
-
-    const isValidLength = password.length >= 8 && password.length <= 16;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasSymbol = /[^A-Za-z0-9]/.test(password);
-
-    if (!isValidLength || !hasUppercase || !hasSymbol) {
-      return "La contraseña no cumple los requisitos de seguridad";
-    }
-    return "";
-  };
-
-  const validateConfirmPassword = (
-    password: string,
-    confirm: string,
-  ): string => {
-    if (!confirm) return "Este campo es requerido";
-    if (password !== confirm) return "Las contraseñas no coinciden";
-    return "";
-  };
-
-  // Generic handler for all text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (error) setError(""); // Clear error when user types
-
-    // Validate field on change
-    let errorMessage = "";
-    switch (name) {
-      case "first_name":
-      case "last_name":
-        errorMessage = validateName(value);
-        break;
-      case "email":
-        errorMessage = validateEmail(value);
-        break;
-      case "phone_number":
-        errorMessage = validatePhone(value);
-        break;
-      case "password":
-        errorMessage = validatePassword(value);
-        // Cross-validate confirm password if it already has a value
-        if (confirmPassword) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            confirmPassword: validateConfirmPassword(value, confirmPassword),
-          }));
-        }
-        break;
-    }
-    setFieldErrors((prev) => ({ ...prev, [name]: errorMessage }));
-  };
-
-  const handleConfirmPasswordChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value;
-    setConfirmPassword(value);
     if (error) setError("");
-    const errorMessage = validateConfirmPassword(formData.password, value);
-    setFieldErrors((prev) => ({ ...prev, confirmPassword: errorMessage }));
+
+    // Clear specific field error when typing
+    if (fieldErrors[name as keyof RegisterFormData]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
 
-    // Validate all fields
-    const errors = {
-      first_name: validateName(formData.first_name),
-      last_name: validateName(formData.last_name),
-      email: validateEmail(formData.email),
-      phone_number: validatePhone(formData.phone_number),
-      password: validatePassword(formData.password),
-      confirmPassword: validateConfirmPassword(
-        formData.password,
-        confirmPassword,
-      ),
-    };
+    // 1. Zod Validation
+    const validationResult = registerSchema.safeParse(formData);
 
-    setFieldErrors(errors);
+    if (!validationResult.success) {
+      // Map Zod errors to our fieldErrors state
+      const formattedErrors: Partial<Record<keyof RegisterFormData, string>> =
+        {};
+      validationResult.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as keyof RegisterFormData;
+        // Only set the first error for each field
+        if (!formattedErrors[fieldName]) {
+          formattedErrors[fieldName] = issue.message;
+        }
+      });
 
-    // Check if there are any errors
-    const hasErrors = Object.values(errors).some((error) => error !== "");
-    if (hasErrors) {
+      setFieldErrors(formattedErrors);
       setError("Por favor, corrige los errores antes de continuar.");
       return;
     }
@@ -187,12 +142,25 @@ export const RegisterForm = () => {
     setIsLoading(true);
 
     try {
-      // Send the exact payload structure required by the backend adapter
-      await authService.register(formData);
+      // 2. Prepare payload removing UI-only fields like confirmPassword
+      const apiPayload: RegisterApiRequest = {
+        first_name: validationResult.data.first_name,
+        last_name: validationResult.data.last_name,
+        email: validationResult.data.email,
+        phone_number: validationResult.data.phone_number,
+        password: validationResult.data.password,
+        requested_role: validationResult.data.requested_role,
+      };
 
-      // On success, notify the user and redirect to login
-      alert("¡Cuenta creada con éxito! Ahora puedes iniciar sesión.");
-      navigate("/login", { replace: true });
+      await authService.register(apiPayload);
+
+      navigate("/login", {
+        replace: true,
+        state: {
+          successMessage:
+            "¡Cuenta creada con éxito! Ahora puedes iniciar sesión.",
+        },
+      });
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -228,7 +196,6 @@ export const RegisterForm = () => {
               label="Nombre *"
               name="first_name"
               fullWidth
-              required
               value={formData.first_name}
               onChange={handleChange}
               error={!!fieldErrors.first_name}
@@ -241,7 +208,6 @@ export const RegisterForm = () => {
               label="Apellido *"
               name="last_name"
               fullWidth
-              required
               value={formData.last_name}
               onChange={handleChange}
               error={!!fieldErrors.last_name}
@@ -255,7 +221,6 @@ export const RegisterForm = () => {
               name="email"
               type="email"
               fullWidth
-              required
               value={formData.email}
               onChange={handleChange}
               error={!!fieldErrors.email}
@@ -268,7 +233,6 @@ export const RegisterForm = () => {
               label="Número de Teléfono *"
               name="phone_number"
               fullWidth
-              required
               value={formData.phone_number}
               onChange={handleChange}
               error={!!fieldErrors.phone_number}
@@ -277,26 +241,26 @@ export const RegisterForm = () => {
             />
           </Grid>
 
-          {/* ======================================= */}
           {/* DYNAMIC PASSWORD FIELD */}
-          {/* ======================================= */}
           <Grid item xs={12} sm={6}>
             <TextField
               label="Contraseña *"
               name="password"
               type="password"
               fullWidth
-              required
               value={formData.password}
               onChange={handleChange}
-              // Only mark as red error if they started typing and it's not secure yet
-              error={formData.password.length > 0 && !isPasswordSecure}
+              error={
+                !!fieldErrors.password ||
+                (formData.password.length > 0 && !isPasswordSecure)
+              }
               helperText={getPasswordHelperText()}
               FormHelperTextProps={{
                 sx: {
-                  // Make it green if secure, otherwise default color
                   color:
-                    formData.password.length > 0 && isPasswordSecure
+                    formData.password.length > 0 &&
+                    isPasswordSecure &&
+                    !fieldErrors.password
                       ? "success.main"
                       : "inherit",
                   fontWeight: formData.password.length > 0 ? 600 : 400,
@@ -308,11 +272,11 @@ export const RegisterForm = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               label="Confirmar Contraseña *"
+              name="confirmPassword"
               type="password"
               fullWidth
-              required
-              value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
+              value={formData.confirmPassword}
+              onChange={handleChange}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               InputProps={{ sx: { bgcolor: "grey.50" } }}
@@ -326,10 +290,7 @@ export const RegisterForm = () => {
           color="warning"
           size="large"
           fullWidth
-          // Disable button if loading OR if password is not completely secure
-          disabled={
-            isLoading || (formData.password.length > 0 && !isPasswordSecure)
-          }
+          disabled={isLoading}
           sx={{ py: 1.5, mt: 3 }}
         >
           {isLoading ? (
