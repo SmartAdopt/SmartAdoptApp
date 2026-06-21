@@ -139,33 +139,45 @@ def test_register_pet_validation_error_invalid_url_format(client):
 def test_register_pet_validation_error_age_out_of_range(client):
     """Test pet registration with age out of realistic range (Negative path)"""
     invalid_pet = TEST_PET_DOG.copy()
-    invalid_pet["age"] = 20  # Exceeds maximum of 15 years
+    invalid_pet["age"] = 21  # Exceeds maximum of 20 years
 
     token = get_admin_token()
-    response = client.post(
-        "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
-    )
+    
+    # Mock Backblaze service to avoid 400 error before validation
+    with patch(
+        "app.services.pet_service.get_image_url",
+        return_value="https://example.com/dog.jpg",
+    ):
+        response = client.post(
+            "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+        )
 
     # Should return 422 Unprocessable Entity for validation error
     assert response.status_code == 422
     data = response.json()
-    assert "Age cannot exceed 15 years" in str(data)
+    assert "Age cannot exceed 20 years" in str(data)
 
 
 def test_register_pet_validation_error_weight_out_of_range(client):
     """Test pet registration with weight out of realistic range (Negative path)"""
     invalid_pet = TEST_PET_DOG.copy()
-    invalid_pet["weight_kg"] = 15.0  # Exceeds maximum of 10 kg
+    invalid_pet["weight_kg"] = 46.0  # Exceeds maximum of 45 kg
 
     token = get_admin_token()
-    response = client.post(
-        "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
-    )
+    
+    # Mock Backblaze service to avoid 400 error before validation
+    with patch(
+        "app.services.pet_service.get_image_url",
+        return_value="https://example.com/dog.jpg",
+    ):
+        response = client.post(
+            "/pets/register", json=invalid_pet, headers={"Authorization": f"Bearer {token}"}
+        )
 
     # Should return 422 Unprocessable Entity for validation error
     assert response.status_code == 422
     data = response.json()
-    assert "Weight cannot exceed 10 kg" in str(data)
+    assert "Weight cannot exceed 45 kg" in str(data)
 
 
 def test_register_cat_pet_success(client):

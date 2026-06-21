@@ -40,8 +40,8 @@ class PetRegisterRequest(BaseModel):
             logger.warning(f"Age cannot be negative, got: {v}")
             raise ValueError("Age cannot be negative")
         if v > 20:
-            logger.warning(f"Age exceeds realistic maximum (15 years), got: {v}")
-            raise ValueError("Age cannot exceed 15 years")
+            logger.warning(f"Age exceeds realistic maximum (20 years), got: {v}")
+            raise ValueError("Age cannot exceed 20 years")
         logger.debug(f"Age validation passed: {v}")
         return v
 
@@ -54,8 +54,8 @@ class PetRegisterRequest(BaseModel):
             logger.warning(f"Weight must be positive, got: {v}")
             raise ValueError("Weight must be positive")
         if v > 45:
-            logger.warning(f"Weight exceeds realistic maximum (10 kg), got: {v}")
-            raise ValueError("Weight cannot exceed 10 kg")
+            logger.warning(f"Weight exceeds realistic maximum (45 kg), got: {v}")
+            raise ValueError("Weight cannot exceed 45 kg")
         logger.debug(f"Weight validation passed: {v} kg")
         return v
 
