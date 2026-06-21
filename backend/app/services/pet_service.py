@@ -256,10 +256,6 @@ async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str,
             "brief_description",
         }
 
-        for field in allowed_pet_fields:
-            if field in pet_data:
-                pet_update_data[field] = pet_data[field]
-
         # Prepare update data for AI fields
         ai_update_data = {}
         allowed_ai_fields = {
@@ -267,6 +263,26 @@ async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str,
             "tags",
             "emotional_description",
         }
+
+        # Validate that all fields in pet_data are allowed (ignore None values)
+        all_allowed_fields = allowed_pet_fields | allowed_ai_fields
+        invalid_fields = []
+        for field, value in pet_data.items():
+            if value is not None and field not in all_allowed_fields:
+                invalid_fields.append(field)
+
+        if invalid_fields:
+            logger.warning(
+                f"Update rejected for profile ID: {profile_id} - Invalid fields: {invalid_fields}"
+            )
+            raise ValueError(
+                f"Cannot update fields: {', '.join(invalid_fields)}. "
+                f"Allowed fields: {', '.join(sorted(all_allowed_fields))}"
+            )
+
+        for field in allowed_pet_fields:
+            if field in pet_data:
+                pet_update_data[field] = pet_data[field]
 
         for field in allowed_ai_fields:
             if field in pet_data:

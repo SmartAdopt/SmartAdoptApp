@@ -21,7 +21,7 @@ from app.utils.jwt.jwt_utils import verify_token
 # Logger import
 from app.utils.logger.logger_config import logger
 
-router = APIRouter(prefix="/pets", tags=["pets"])
+router = APIRouter(prefix="/pets", tags=["Pets"])
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
