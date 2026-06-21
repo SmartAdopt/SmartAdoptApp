@@ -21,3 +21,4 @@ redis
 b2sdk
 redis
 loguru
+motor

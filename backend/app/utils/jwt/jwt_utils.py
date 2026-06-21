@@ -6,7 +6,7 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt, ExpiredSignatureError
 from app.config import settings
-from app.database.redis import get_redis_client
+from app.database.redis.redis_db import get_redis_client
 
 # Logger import
 from app.utils.logger.logger_config import logger

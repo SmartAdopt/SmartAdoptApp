@@ -29,20 +29,27 @@ backend/                 # FastAPI backend application
 │   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
 │   │   │   ├── postgres/    # PostgreSQL configuration
 │   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   ├── mongo/       # MongoDB configuration
+│   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
+│   │   │   ├── user/       # User models (User, Admin, Adopter)
+│   │   │   └── pet/        # Pet models
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   │   └── pet_routes.py      # Pet management endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py     # Authentication schemas
-│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
+│   │   │   ├── backblaze_schemas.py # Backblaze B2 schemas
+│   │   │   └── pet_schemas.py      # Pet management schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py    # Authentication services
-│   │   │   └── backblaze_service.py # Backblaze B2 service
+│   │   │   ├── backblaze_service.py # Backblaze B2 service
+│   │   │   └── pet_service.py      # Pet management service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -59,6 +66,10 @@ backend/                 # FastAPI backend application
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
 │   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   ├── test_admin_routes.py   # Admin routes tests
+│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── test_backblaze_routes.py # Backblaze B2 tests
+│   │   ├── test_pet.py      # Pet management tests
 │   │   └── test_main.py     # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -69,6 +80,8 @@ backend/                 # FastAPI backend application
 - **FastAPI** - Modern, fast web framework for building APIs
 - **SQLAlchemy** - ORM for database interaction
 - **PostgreSQL** - Relational database
+- **MongoDB** - NoSQL database for pet profiles
+- **Motor** - Async MongoDB driver
 - **Pydantic** - Data validation using Python types
 - **Uvicorn** - ASGI server to run FastAPI
 - **python-jose** - JWT token creation and verification
@@ -372,6 +385,127 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `401 Unauthorized`: Missing or invalid token
 - `403 Forbidden`: User role is not "adopter"
 
+## Pet Management System
+
+The application includes a comprehensive pet management system for managing pet profiles and adoption information.
+
+### Pet Registration
+
+**Request**
+```http
+POST /pets/register
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "name": "Buddy",
+  "pet_image_url": "https://example.com/dog.jpg",
+  "animal_breed": ["dog", "cat"],
+  "age": 3,
+  "gender": "male",
+  "is_sterilized": true,
+  "vaccines_up_to_date": ["rabies", "parvovirus",...],
+  "dewormed": true,
+  "weight_kg": 8.5,
+  "special_conditions": [],
+  "brief_description": "Friendly dog looking for a home"
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Pet registered successfully",
+  "pet_id": "P1"
+}
+```
+
+**Validation Rules:**
+- Age: 0-15 years (realistic range for pets)
+- Weight: 0-10 kg (realistic range for pets)
+- Image URL: Must be valid HTTP/HTTPS URL and is mandatory
+- Animal Breed: First element must be "dog" or "cat"
+- Gender: Must be "male" or "female"
+- Vaccines: Validated against animal type (dog vs cat vaccines)
+
+### Pet Update
+
+**Request**
+```http
+PUT /pets/{pet_id}
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "age": 4,
+  "is_sterilized": false,
+  "weight_kg": 9.0,
+  "special_conditions": ["Needs daily exercise"],
+  "brief_description": "Active dog looking for an active family"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Pet updated successfully",
+  "pet_id": "P0001"
+}
+```
+
+**Restricted Fields (cannot be modified):**
+- name
+- pet_image_url
+- animal_breed
+- gender
+
+**Allowed Fields for Update:**
+- age
+- is_sterilized
+- vaccines_up_to_date
+- dewormed
+- weight_kg
+- special_conditions
+- brief_description
+
+### Pet Listing
+
+**Request**
+```http
+GET /pets/
+Authorization: Bearer <jwt_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Pets retrieved successfully",
+  "pets": [
+    {
+      "pet_id": "P0001",
+      "name": "Buddy",
+      "pet_image_url": "https://example.com/dog.jpg",
+      "animal_breed": ["dog", "Golden Retriever"],
+      "age": 3,
+      "gender": "male",
+      "is_sterilized": true,
+      "vaccines_up_to_date": ["rabies"],
+      "dewormed": true,
+      "weight_kg": 8.5,
+      "special_conditions": [],
+      "brief_description": "Friendly dog looking for a home"
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "admin"
+- `404 Not Found`: Pet not found
+- `422 Unprocessable Entity`: Validation error
+
 ## Data Models
 
 ### User (Base)
@@ -390,6 +524,21 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ### Adopter
 - Inherits from User
 - `user_id`: Integer (Foreign Key to User)
+- `created_at`: DateTime
+
+### Pet
+- `pet_id`: String (Primary Key, auto-generated: P#### for dogs, G#### for cats)
+- `name`: String
+- `pet_image_url`: String (HTTP/HTTPS URL, mandatory)
+- `animal_breed`: List[String] (First element must be "dog" or "cat")
+- `age`: Integer (0-15 years)
+- `gender`: String ("male" or "female")
+- `is_sterilized`: Boolean
+- `vaccines_up_to_date`: List[String]
+- `dewormed`: Boolean
+- `weight_kg`: Float (0-10 kg)
+- `special_conditions`: List[String]
+- `brief_description`: String
 - `created_at`: DateTime
 
 

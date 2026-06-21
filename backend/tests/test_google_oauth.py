@@ -1,4 +1,4 @@
-from app.models.user import User
+from app.models.user.user import User
 from unittest.mock import AsyncMock, patch, MagicMock
 
 # --- Mock Google OAuth user info ---
@@ -64,17 +64,16 @@ def test_google_oauth_callback_existing_user(mock_get_google_oauth, client, db_s
 
     # First, create a user in the database
     from app.services.auth_service import register_user
-    from app.schemas.auth_schemas import RegisterRequest
 
-    user_data = RegisterRequest(
-        first_name=existing_user_info["given_name"],
-        last_name=existing_user_info["family_name"],
-        email=existing_user_info["email"],
-        phone_number="0912345678",
-        password="Testpassword123",
-        requested_role="adopter",
-    )
-    register_user(db_session, user_data)
+    user_data_dict = {
+        "first_name": existing_user_info["given_name"],
+        "last_name": existing_user_info["family_name"],
+        "email": existing_user_info["email"],
+        "phone_number": "0912345678",
+        "password": "Testpassword123",
+        "requested_role": "adopter",
+    }
+    register_user(db_session, user_data_dict)
 
     # Mock the OAuth instance
     mock_oauth = MagicMock()

@@ -1,7 +1,7 @@
 # Backblaze B2 service for image upload
 import uuid
 from typing import Optional
-from b2sdk.v1 import (
+from b2sdk.v1 import (  # type: ignore[import-untyped]
     InMemoryAccountInfo,
     B2Api,
 )
@@ -91,3 +91,23 @@ def upload_image_to_backblaze(file_data: bytes, file_name: Optional[str] = None)
         logger.error(f"Failed to upload image to Backblaze: {str(e)}")
         # Raise exception if upload fails
         raise Exception("Failed to upload image to Backblaze")
+
+
+def get_image_url(file_name: str) -> str:
+    # Get public URL for an existing file in Backblaze B2
+    logger.info(f"Getting public URL for file: {file_name}")
+    try:
+        # Get B2 API instance
+        b2_api = get_b2_api()
+
+        # Get the download URL from Backblaze
+        public_url = b2_api.get_download_url_for_file_name(
+            settings.BACKBLAZE_BUCKET_NAME, file_name
+        )
+
+        logger.info(f"Public URL retrieved successfully: {public_url}")
+        return public_url
+
+    except Exception as e:
+        logger.error(f"Failed to get public URL for file: {str(e)}")
+        raise Exception("Failed to get public URL for file")

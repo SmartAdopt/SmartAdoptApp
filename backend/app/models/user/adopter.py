@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from datetime import datetime
-from .user import User  # type: ignore[attr-defined]
+from .user import User
 
 
 class Adopter(User):

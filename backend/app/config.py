@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     BACKBLAZE_APPLICATION_KEY: str
     BACKBLAZE_BUCKET_NAME: str
 
+    # MongoDB variables
+    MONGO_HOST: str
+    MONGO_PORT: int
+    MONGO_DB: str
+    MONGO_USER: str
+    MONGO_PASSWORD: str
+
     # Use .env if it exists (local), otherwise use os.environ (CI/CD)
     model_config = SettingsConfigDict(
         env_file=env_file if env_file_exists else None,
