@@ -9,6 +9,7 @@ import {
   Grid,
   Alert,
   CircularProgress,
+  Snackbar, // <-- IMPORTADO
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -73,6 +74,9 @@ export const RegisterForm = () => {
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // STATE FOR THE SUBTLE TOAST (SNACKBAR)
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Field-specific error states
   const [fieldErrors, setFieldErrors] = useState<
@@ -167,7 +171,6 @@ export const RegisterForm = () => {
       } else {
         setError("Hubo un error al registrar el usuario. Intenta de nuevo.");
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -313,6 +316,23 @@ export const RegisterForm = () => {
           ← Volver a inicio
         </Button>
       </Box>
+
+      {/* Component for the subtle toast */}
+      <Snackbar
+        open={showSuccessToast}
+        autoHideDuration={1500}
+        onClose={() => setShowSuccessToast(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }} // Position top right
+      >
+        <Alert
+          onClose={() => setShowSuccessToast(false)}
+          severity="success"
+          variant="filled" // We use "filled" variant to give it a solid background color
+          sx={{ width: "100%", borderRadius: 2 }}
+        >
+          ¡Registro exitoso! Redirigiendo...
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
