@@ -101,7 +101,7 @@ export const AdminDashboard = () => {
             description="Previsualiza tarjetas de mascotas"
             icon={<VisibilityOutlinedIcon fontSize="large" />}
             buttonColor="secondary"
-            onClick={() => console.log("Vista Interactiva")}
+            onClick={() => navigate("/admin/pets")}
           />
         </Grid>
       </Grid>

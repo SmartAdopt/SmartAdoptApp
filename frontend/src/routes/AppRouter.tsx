@@ -27,6 +27,7 @@ import { AdminDashboard } from "../pages/admin/AdminDashboard";
 import { PetProfilePage } from "../pages/adopter/PetProfilePage";
 import { InfoPage } from "../pages/InfoPage";
 import { AdminAddPetPage } from "../pages/admin/AdminAddPetPage";
+import { AdminPetListPage } from "../pages/admin/AdminPetListPage";
 
 export const AppRouter = () => {
   return (
@@ -44,7 +45,6 @@ export const AppRouter = () => {
         <Route path="/adopter/explore" element={<AdopterExplore />} />
         <Route path="/adopter/pet/:id" element={<PetProfilePage />} />
         <Route path="/adopter/requests" element={<AdopterRequests />} />
-        <Route path="/adopter/requests" element={<AdopterRequests />} />
         <Route path="/adopter/favorites" element={<AdopterFavorites />} />
         <Route path="/adopter/suitability" element={<AdopterSuitability />} />
         <Route path="/adopter/profile" element={<AdopterProfile />} />
@@ -55,6 +55,7 @@ export const AppRouter = () => {
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         {/* Future admin routes will go here */}
+        <Route path="/admin/pets" element={<AdminPetListPage />} />
         <Route path="/admin/pets/new" element={<AdminAddPetPage />} />
       </Route>
 
