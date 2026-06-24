@@ -11,33 +11,44 @@ import {
   Divider,
   CircularProgress,
   IconButton,
+  Chip,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
-  FavoriteBorder as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteFilledIcon,
   Share as ShareIcon,
   CheckCircle as CheckCircleIcon,
-  LocationOn as LocationIcon,
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { petsService } from "../../services/pets.service";
 import { usePetDatabase } from "../../context/PetContext";
+import type { AIProfileResponse } from "../../types/pets.types";
 
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { pets: contextPets } = usePetDatabase();
+  const { favoritePetIds, toggleFavorite } = usePetDatabase();
 
-  // Fetch individual pet data via TanStack Query
+  // Fetch all pets from the real backend API and find the one matching :id
   const {
     data: pet,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<AIProfileResponse | undefined>({
     queryKey: ["petDetail", id],
-    queryFn: () => petsService.getPetById(id || "", contextPets),
-    enabled: !!id, // Only run if ID exists
+    queryFn: async () => {
+      const allPets = await petsService.getRawPetsDatabase();
+      return allPets.find((p) => p.id === id);
+    },
+    enabled: !!id,
   });
+
+  const isFavorite = id ? favoritePetIds.includes(id) : false;
+
+  const handleToggleFavorite = () => {
+    if (id) toggleFavorite(id);
+  };
 
   if (isLoading) {
     return (
@@ -64,6 +75,28 @@ export const PetProfilePage = () => {
     );
   }
 
+  // Derive display values from the AIProfileResponse structure
+  const petName = pet.pet.name;
+  const petAge = pet.pet.age;
+  const petBreed =
+    pet.pet.animal_breed.length > 1
+      ? pet.pet.animal_breed[1]
+      : pet.pet.animal_breed[0];
+  const petAnimalType = pet.pet.animal_breed[0];
+  const petImage = pet.pet.pet_image_url;
+  const petGender = pet.pet.gender === "male" ? "Macho" : "Hembra";
+  const petWeight = pet.pet.weight_kg
+    ? `${pet.pet.weight_kg} kg`
+    : "No especificado";
+  const isSterilized = pet.pet.is_sterilized;
+  const isDewormed = pet.pet.dewormed;
+  const hasVaccines =
+    pet.pet.vaccines_up_to_date && pet.pet.vaccines_up_to_date.length > 0;
+  const description = pet.emotional_description;
+  const briefDescription = pet.pet.brief_description;
+  const specialConditions = pet.pet.special_conditions || [];
+  const tags = pet.tags || [];
+
   return (
     <AdopterLayout>
       {/* HEADER ACTIONS */}
@@ -83,8 +116,13 @@ export const PetProfilePage = () => {
           Volver
         </Button>
         <Box>
-          <IconButton size="small" sx={{ mr: 1 }}>
-            <FavoriteIcon />
+          <IconButton
+            size="small"
+            sx={{ mr: 1 }}
+            onClick={handleToggleFavorite}
+            color={isFavorite ? "error" : "default"}
+          >
+            {isFavorite ? <FavoriteFilledIcon /> : <FavoriteBorderIcon />}
           </IconButton>
           <IconButton size="small">
             <ShareIcon />
@@ -98,8 +136,8 @@ export const PetProfilePage = () => {
           {/* Main Image */}
           <Box
             component="img"
-            src={pet.imagen || "/dog.svg"}
-            alt={pet.nombre}
+            src={petImage || "/dog.svg"}
+            alt={petName}
             sx={{
               width: "100%",
               height: 400,
@@ -108,17 +146,29 @@ export const PetProfilePage = () => {
               mb: 4,
               bgcolor: "grey.100",
             }}
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              e.currentTarget.src = "/dog.svg";
+            }}
           />
 
           <Typography variant="h4" fontWeight={800} gutterBottom>
-            Acerca de {pet.nombre}
+            Acerca de {petName}
           </Typography>
-          <Typography
-            color="text.secondary"
-            sx={{ display: "flex", alignItems: "center", mb: 4 }}
-          >
-            <LocationIcon fontSize="small" sx={{ mr: 0.5 }} /> {pet.ubicacion}
-          </Typography>
+
+          {/* Tags row */}
+          {tags.length > 0 && (
+            <Box sx={{ display: "flex", gap: 1, mb: 3, flexWrap: "wrap" }}>
+              {tags.map((tag, idx) => (
+                <Chip
+                  key={idx}
+                  label={tag}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
+          )}
 
           {/* Quick Stats Grid */}
           <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -126,26 +176,34 @@ export const PetProfilePage = () => {
               <Typography variant="caption" color="text.secondary">
                 Raza
               </Typography>
-              <Typography fontWeight={600}>{pet.raza}</Typography>
+              <Typography fontWeight={600}>{petBreed}</Typography>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Typography variant="caption" color="text.secondary">
                 Edad
               </Typography>
-              <Typography fontWeight={600}>{pet.edad}</Typography>
+              <Typography fontWeight={600}>
+                {petAge} {petAge === 1 ? "año" : "años"}
+              </Typography>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Typography variant="caption" color="text.secondary">
                 Sexo
               </Typography>
-              <Typography fontWeight={600}>{pet.genero}</Typography>
+              <Typography fontWeight={600}>{petGender}</Typography>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Typography variant="caption" color="text.secondary">
                 Peso
               </Typography>
-              <Typography fontWeight={600}>
-                {pet.peso || "No especificado"}
+              <Typography fontWeight={600}>{petWeight}</Typography>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Typography variant="caption" color="text.secondary">
+                Tipo
+              </Typography>
+              <Typography fontWeight={600} sx={{ textTransform: "capitalize" }}>
+                {petAnimalType}
               </Typography>
             </Grid>
           </Grid>
@@ -154,28 +212,75 @@ export const PetProfilePage = () => {
           <Typography variant="h6" fontWeight={700} gutterBottom>
             Salud
           </Typography>
-          <Box sx={{ display: "flex", gap: 3, mb: 4 }}>
+          <Box sx={{ display: "flex", gap: 3, mb: 2, flexWrap: "wrap" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CheckCircleIcon
-                color={pet.esterilizado !== false ? "success" : "disabled"}
+                color={isSterilized ? "success" : "disabled"}
                 fontSize="small"
               />
               <Typography variant="body2">Esterilizado</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CheckCircleIcon
-                color={pet.vacunado !== false ? "success" : "disabled"}
+                color={hasVaccines ? "success" : "disabled"}
                 fontSize="small"
               />
               <Typography variant="body2">Vacunas al día</Typography>
             </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CheckCircleIcon
+                color={isDewormed ? "success" : "disabled"}
+                fontSize="small"
+              />
+              <Typography variant="body2">Desparasitado</Typography>
+            </Box>
           </Box>
+
+          {/* Vaccine details */}
+          {hasVaccines && (
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Vacunas aplicadas:
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {pet.pet.vaccines_up_to_date.map((vaccine, idx) => (
+                  <Chip
+                    key={idx}
+                    label={vaccine}
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Special conditions */}
+          {specialConditions.length > 0 && (
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Condiciones especiales:
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {specialConditions.map((condition, idx) => (
+                  <Chip
+                    key={idx}
+                    label={condition}
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
 
           <Divider sx={{ my: 4 }} />
 
-          {/* Biography */}
+          {/* AI-Generated Emotional Description */}
           <Typography variant="h6" fontWeight={700} gutterBottom>
-            Historia de {pet.nombre}
+            Historia de {petName}
           </Typography>
           <Typography
             variant="body1"
@@ -183,9 +288,36 @@ export const PetProfilePage = () => {
             paragraph
             sx={{ lineHeight: 1.8 }}
           >
-            {pet.biografia ||
-              `¡Hola! Soy ${pet.nombre}, un adorable ${pet.raza} que está buscando un hogar lleno de amor. Fui rescatado recientemente y estoy listo para darte toda mi lealtad. Soy muy cariñoso y me encanta jugar.`}
+            {description}
           </Typography>
+
+          {/* Original brief description from admin */}
+          {briefDescription && (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                gutterBottom
+                sx={{ mt: 2 }}
+              >
+                Descripción del rescatista
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                paragraph
+                sx={{
+                  lineHeight: 1.8,
+                  fontStyle: "italic",
+                  bgcolor: "grey.50",
+                  p: 2,
+                  borderRadius: 2,
+                }}
+              >
+                "{briefDescription}"
+              </Typography>
+            </>
+          )}
         </Grid>
 
         {/* RIGHT COLUMN: Sticky Actions Widget */}
@@ -208,7 +340,7 @@ export const PetProfilePage = () => {
                 gutterBottom
                 align="center"
               >
-                ¿Consideras a {pet.nombre}?
+                ¿Consideras a {petName}?
               </Typography>
               <Typography
                 variant="body2"
@@ -235,8 +367,18 @@ export const PetProfilePage = () => {
               >
                 Ver Tu Compatibilidad
               </Button>
-              <Button variant="text" fullWidth sx={{ color: "text.secondary" }}>
-                Guardar Favorito
+              <Button
+                variant="text"
+                fullWidth
+                sx={{
+                  color: isFavorite ? "error.main" : "text.secondary",
+                }}
+                onClick={handleToggleFavorite}
+                startIcon={
+                  isFavorite ? <FavoriteFilledIcon /> : <FavoriteBorderIcon />
+                }
+              >
+                {isFavorite ? "Guardado en Favoritos" : "Guardar Favorito"}
               </Button>
             </Paper>
 

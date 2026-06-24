@@ -1,11 +1,9 @@
 // src/pages/adopter/AdopterExplore.tsx
 
-import { useState, useMemo } from "react";
-// FIX 1: Added 'Button' to Material UI imports
+import { useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
-  Grid,
   CircularProgress,
   Alert,
   Button,
@@ -17,47 +15,67 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
-import { PetSearchFilter } from "../../components/molecules/PetSearchFilter";
-import { PetCard } from "../../components/molecules/PetCard";
+import { SwipeablePetCard } from "../../components/molecules/SwipeablePetCard";
 import { petsService } from "../../services/pets.service";
 import { usePetDatabase } from "../../context/PetContext";
-import type { Pet } from "../../types/dashboard.types";
+import { useImagePreloader } from "../../hooks/useImagePreloader";
+import type { AIProfileResponse } from "../../types/pets.types";
+
+// Number of images to preload ahead of the current card
+const IMAGE_LOOKAHEAD = 3;
 
 export const AdopterExplore = () => {
   const navigate = useNavigate();
-  const { pets: contextPets } = usePetDatabase();
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { toggleFavorite, favoritePetIds } = usePetDatabase();
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
 
-  // TanStack Query orchestration with explicit strict typing <Pet[]>
+  // Fetch pets from the real backend API (same endpoint as admin)
   const {
     data: pets = [],
     isLoading,
     isError,
-  } = useQuery<Pet[]>({
-    queryKey: ["allPets", contextPets],
-    queryFn: () => petsService.getAllPets(contextPets),
-    staleTime: 1000 * 60 * 5, // Cache entries for 5 minutes
+  } = useQuery<AIProfileResponse[]>({
+    queryKey: ["adopterExplorePets"],
+    queryFn: petsService.getRawPetsDatabase,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Performance-optimized search filtering logic using useMemo
-  const filteredPets = useMemo(() => {
-    if (!searchTerm) return pets;
+  // Filter only available pets for the adopter view
+  const availablePets = useMemo(
+    () => pets.filter((pet) => pet.status?.toLowerCase() !== "adopted"),
+    [pets],
+  );
 
-    const sanitizeText = (str: string) =>
-      str
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+  // Extract all image URLs for the batch preloader
+  const allImageUrls = useMemo(
+    () => availablePets.map((pet) => pet.pet.pet_image_url).filter(Boolean),
+    [availablePets],
+  );
 
-    const cleanSearch = sanitizeText(searchTerm);
+  // Batch preload images: current + next N cards
+  const { isImageReady } = useImagePreloader(
+    allImageUrls,
+    currentIndex,
+    IMAGE_LOOKAHEAD,
+  );
 
-    return pets.filter(
-      (pet: Pet) =>
-        sanitizeText(pet.nombre).includes(cleanSearch) ||
-        sanitizeText(pet.raza).includes(cleanSearch) ||
-        sanitizeText(pet.ubicacion).includes(cleanSearch),
-    );
-  }, [pets, searchTerm]);
+  // Handler for "Pass" — advance to the next card
+  const handlePass = useCallback(() => {
+    setCurrentIndex((prev) => prev + 1);
+  }, []);
+
+  // Handler for "Favorite" — toggle favorite and advance
+  const handleFavorite = useCallback(() => {
+    const currentPet = availablePets[currentIndex];
+    if (currentPet) {
+      toggleFavorite(currentPet.id);
+    }
+    setCurrentIndex((prev) => prev + 1);
+  }, [availablePets, currentIndex, toggleFavorite]);
+
+  // Determine the current pet to display
+  const currentPet: AIProfileResponse | undefined = availablePets[currentIndex];
+  const hasMorePets = currentIndex < availablePets.length;
 
   return (
     <AdopterLayout>
@@ -69,7 +87,7 @@ export const AdopterExplore = () => {
         Volver
       </Button>
 
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, textAlign: "center" }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>
           Explorar Mascotas
         </Typography>
@@ -79,16 +97,14 @@ export const AdopterExplore = () => {
         </Typography>
       </Box>
 
-      {/* RHF + Zod Search Filter Molecule */}
-      <PetSearchFilter onSearchChange={setSearchTerm} />
-
-      {/* Network State Handling Feedbacks */}
+      {/* Loading State */}
       {isLoading && (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
           <CircularProgress size={40} color="primary" />
         </Box>
       )}
 
+      {/* Error State */}
       {isError && (
         <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
           Hubo un error de conexión al cargar el catálogo de mascotas. Por
@@ -96,10 +112,27 @@ export const AdopterExplore = () => {
         </Alert>
       )}
 
-      {/* Render Grid Organism Flow */}
+      {/* Tinder Card or Empty State */}
       {!isLoading && !isError && (
         <>
-          {filteredPets.length === 0 ? (
+          {hasMorePets && currentPet ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                py: 2,
+              }}
+            >
+              <SwipeablePetCard
+                key={currentPet.id}
+                profile={currentPet}
+                isFavorite={favoritePetIds.includes(currentPet.id)}
+                isImagePreloaded={isImageReady(currentPet.pet.pet_image_url)}
+                onPass={handlePass}
+                onFavorite={handleFavorite}
+              />
+            </Box>
+          ) : (
             <Box
               sx={{
                 textAlign: "center",
@@ -112,30 +145,36 @@ export const AdopterExplore = () => {
             >
               <PetsIcon sx={{ fontSize: 64, color: "grey.300" }} />
               <Typography variant="h6" fontWeight={600} color="text.secondary">
-                No se encontraron mascotas
+                {availablePets.length === 0
+                  ? "No hay mascotas registradas todavía"
+                  : "¡Has visto todas las mascotas!"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Intenta ajustando el nombre, la raza o la ubicación de tu
-                búsqueda.
+                {availablePets.length === 0
+                  ? "Vuelve más tarde, pronto habrá nuevos rescataditos."
+                  : "Revisa tus favoritos o vuelve más tarde para ver nuevos perfiles."}
               </Typography>
+              {availablePets.length > 0 && (
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentIndex(0)}
+                  sx={{ mt: 2, borderRadius: 3 }}
+                >
+                  Volver a explorar
+                </Button>
+              )}
             </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {filteredPets.map((pet: Pet) => (
-                <Grid item xs={12} sm={6} lg={4} key={pet.id}>
-                  <PetCard
-                    // FIX 2: Added the required ID for the "View Profile" button to work
-                    id={pet.id}
-                    nombre={pet.nombre}
-                    raza={pet.raza}
-                    edad={pet.edad}
-                    genero={pet.genero}
-                    ubicacion={pet.ubicacion}
-                    imagen={pet.imagen}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+          )}
+
+          {/* Progress indicator */}
+          {hasMorePets && availablePets.length > 0 && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: "center", mt: 2 }}
+            >
+              {currentIndex + 1} / {availablePets.length}
+            </Typography>
           )}
         </>
       )}

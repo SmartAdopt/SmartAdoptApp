@@ -83,7 +83,12 @@ apiClient.interceptors.response.use(
         const refreshResponse = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {}, // Empty body because the backend reads the cookie
-          { withCredentials: true },
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          },
         );
 
         const newAccessToken = refreshResponse.data.access_token;

@@ -1,33 +1,139 @@
 // src/pages/adopter/AdopterFavorites.tsx
 
 import { useMemo } from "react";
-import { Box, Typography, CircularProgress, Alert } from "@mui/material";
-import { FavoriteBorder as FavoriteBorderIcon } from "@mui/icons-material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Grid,
+  Card,
+  CardMedia,
+  CardContent,
+  Chip,
+  Stack,
+  Button,
+  IconButton,
+} from "@mui/material";
+import {
+  FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteFilledIcon,
+} from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
-import { PetGrid } from "../../components/organisms/PetGrid";
 import { petsService } from "../../services/pets.service";
 import { usePetDatabase } from "../../context/PetContext";
-import type { Pet } from "../../types/dashboard.types";
+import type { AIProfileResponse } from "../../types/pets.types";
 
+// ==========================================
+// FAVORITE PET CARD — Compact card for the grid
+// ==========================================
+const FavoritePetCard = ({
+  profile,
+  onToggleFavorite,
+}: {
+  profile: AIProfileResponse;
+  onToggleFavorite: (id: string) => void;
+}) => {
+  const navigate = useNavigate();
+
+  const petName = profile.pet.name;
+  const petAge = profile.pet.age;
+  const petBreed =
+    profile.pet.animal_breed.length > 1
+      ? profile.pet.animal_breed[1]
+      : profile.pet.animal_breed[0];
+  const petImage = profile.pet.pet_image_url;
+  const petGender = profile.pet.gender === "male" ? "Macho" : "Hembra";
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "grey.200",
+        overflow: "hidden",
+        height: "100%",
+      }}
+    >
+      <CardMedia
+        component="img"
+        height="220"
+        image={petImage}
+        alt={petName}
+        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+          e.currentTarget.src = "/dog.svg";
+        }}
+      />
+
+      <CardContent>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 1 }}
+        >
+          <Typography variant="h6" fontWeight={700}>
+            {petName}
+          </Typography>
+
+          {/* Favorite toggle — always filled since this is the favorites page */}
+          <IconButton
+            onClick={() => onToggleFavorite(profile.id)}
+            color="error"
+            size="small"
+          >
+            <FavoriteFilledIcon />
+          </IconButton>
+        </Stack>
+
+        <Typography color="text.secondary" gutterBottom>
+          {petBreed}
+        </Typography>
+
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+          <Chip
+            label={`${petAge} ${petAge === 1 ? "año" : "años"}`}
+            size="small"
+          />
+          <Chip label={petGender} size="small" />
+        </Stack>
+
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => navigate(`/adopter/pet/${profile.id}`)}
+        >
+          Ver Perfil
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ==========================================
+// FAVORITES PAGE
+// ==========================================
 export const AdopterFavorites = () => {
-  const { pets: contextPets, favoritePetIds } = usePetDatabase();
+  const { favoritePetIds, toggleFavorite } = usePetDatabase();
 
-  // Fetch the catalog via TanStack Query
+  // Fetch from the real backend API (same as admin and explore)
   const {
-    data: pets = [],
+    data: allPets = [],
     isLoading,
     isError,
-  } = useQuery<Pet[]>({
-    queryKey: ["allPets", contextPets],
-    queryFn: () => petsService.getAllPets(contextPets),
+  } = useQuery<AIProfileResponse[]>({
+    queryKey: ["adopterFavoritePets"],
+    queryFn: petsService.getRawPetsDatabase,
     staleTime: 1000 * 60 * 5,
   });
 
-  // Filter ONLY pets whose IDs are in the favoritePetIds array
+  // Filter only pets whose IDs are in the favoritePetIds array
   const favoritedPets = useMemo(() => {
-    return pets.filter((pet: Pet) => favoritePetIds.includes(pet.id));
-  }, [pets, favoritePetIds]);
+    return allPets.filter((pet) => favoritePetIds.includes(pet.id));
+  }, [allPets, favoritePetIds]);
 
   return (
     <AdopterLayout>
@@ -77,7 +183,16 @@ export const AdopterFavorites = () => {
               </Typography>
             </Box>
           ) : (
-            <PetGrid pets={favoritedPets} />
+            <Grid container spacing={3}>
+              {favoritedPets.map((profile) => (
+                <Grid item xs={12} sm={6} lg={4} key={profile.id}>
+                  <FavoritePetCard
+                    profile={profile}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                </Grid>
+              ))}
+            </Grid>
           )}
         </>
       )}
