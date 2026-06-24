@@ -170,9 +170,11 @@ export const AdminAddPetPage = () => {
           errorMessage = detail;
         } else if (Array.isArray(detail)) {
           // Parse FastAPI Pydantic validation array (e.g. 422 Unprocessable Entity)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           errorMessage = detail
-            .map((err: any) => `${err.loc?.join(".")} - ${err.msg}`)
+            .map(
+              (err: { loc?: string[]; msg?: string }) =>
+                `${err.loc?.join(".")} - ${err.msg}`,
+            )
             .join(" | ");
         } else if (detail.message) {
           errorMessage = detail.message;

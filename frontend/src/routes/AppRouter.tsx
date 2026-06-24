@@ -19,6 +19,7 @@ import { AdopterExplore } from "../pages/adopter/AdopterExplore";
 import { AdopterRequests } from "../pages/adopter/AdopterRequests";
 import { AdopterFavorites } from "../pages/adopter/AdopterFavorites";
 import { AdopterSuitability } from "../pages/adopter/AdopterSuitability";
+import { ArticlePage } from "../pages/adopter/ArticlePage";
 
 // ==============================
 // PROTECTED PAGES (Admin)
@@ -44,6 +45,7 @@ export const AppRouter = () => {
         <Route path="/adopter/dashboard" element={<AdopterDashboard />} />
         <Route path="/adopter/explore" element={<AdopterExplore />} />
         <Route path="/adopter/pet/:id" element={<PetProfilePage />} />
+        <Route path="/adopter/article/:id" element={<ArticlePage />} />
         <Route path="/adopter/requests" element={<AdopterRequests />} />
         <Route path="/adopter/favorites" element={<AdopterFavorites />} />
         <Route path="/adopter/suitability" element={<AdopterSuitability />} />

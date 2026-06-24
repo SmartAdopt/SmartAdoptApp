@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import type { Pet } from "../types/dashboard.types";
 import { dashboardService } from "../services/dashboard.service";
+import { logger } from "../utils/logger";
 
 interface PetContextType {
   pets: Pet[];
@@ -35,7 +36,7 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
         setPets(initialData);
         setIsInitialized(true);
       } catch (error) {
-        console.error("Failed to load initial mock pets data", error);
+        logger.error("Failed to load initial mock pets data", error);
       }
     };
 
