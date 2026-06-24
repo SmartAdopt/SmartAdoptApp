@@ -51,82 +51,67 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Check if error is 401, it's not a retry yet, and we are not trying to refresh the token itself
+    // Check if error is 401, it's not a retry yet, and we are not trying to refresh or login
     if (
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      originalRequest.url !== "/auth/refresh"
+      originalRequest.url !== "/auth/refresh" &&
+      originalRequest.url !== "/auth/login" &&
+      originalRequest.url !== "/auth/register"
     ) {
-      // Check if the backend explicitly says the token expired
-      // Fix 2: Replaced 'any' with a safe TypeScript record type to satisfy ESLint
-      const errorDetail = (error.response.data as Record<string, unknown>)
-        ?.detail;
-      const isTokenExpired =
-        errorDetail === "Token expired" ||
-        errorDetail === "Could not validate credentials";
-
-      if (isTokenExpired) {
-        if (isRefreshing) {
-          // If already refreshing, queue this request until the refresh is done
-          return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
+      // Always assume a 401 on an authenticated route means we should attempt a refresh.
+      // The backend will reject the refresh if the refresh token cookie is invalid/expired.
+      if (isRefreshing) {
+        // If already refreshing, queue this request until the refresh is done
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
           })
-            .then((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              return apiClient(originalRequest);
-            })
-            .catch((err) => Promise.reject(err));
-        }
+          .catch((err) => Promise.reject(err));
+      }
 
-        originalRequest._retry = true;
-        isRefreshing = true;
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-        const refreshToken = localStorage.getItem("refresh_token");
-
-        if (!refreshToken) {
-          // No refresh token available, force logout
-          processQueue(new Error("No refresh token available"), null);
-          localStorage.clear();
-          window.location.href = "/login";
-          return Promise.reject(error);
-        }
-
-        try {
-          // Call the refresh endpoint (Based on the backend's "Refresh Token.md" plan)
-          const refreshResponse = await axios.post(
-            `${API_BASE_URL}/auth/refresh`,
-            {
-              refresh_token: refreshToken,
+      try {
+        // Call the refresh endpoint. Since the backend expects the refresh token
+        // in an HTTP-Only cookie, we MUST pass withCredentials: true.
+        const refreshResponse = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {}, // Empty body because the backend reads the cookie
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
-          );
+          },
+        );
 
-          const newAccessToken = refreshResponse.data.access_token;
-          const newRefreshToken = refreshResponse.data.refresh_token;
+        const newAccessToken = refreshResponse.data.access_token;
 
-          // Save the new tokens
-          localStorage.setItem("access_token", newAccessToken);
-          if (newRefreshToken) {
-            localStorage.setItem("refresh_token", newRefreshToken);
-          }
+        // Save the new tokens (only access_token is accessible to JS)
+        localStorage.setItem("access_token", newAccessToken);
 
-          apiClient.defaults.headers.common["Authorization"] =
-            `Bearer ${newAccessToken}`;
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        apiClient.defaults.headers.common["Authorization"] =
+          `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-          processQueue(null, newAccessToken);
+        processQueue(null, newAccessToken);
 
-          // Retry the original request
-          return apiClient(originalRequest);
-        } catch (refreshError) {
-          // If refresh fails (e.g., refresh token expired after 7 days)
-          processQueue(refreshError as Error, null);
-          localStorage.clear();
-          window.location.href = "/login";
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
-        }
+        // Retry the original request
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails (e.g., refresh token expired after 7 days)
+        processQueue(refreshError as Error, null);
+        localStorage.clear();
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

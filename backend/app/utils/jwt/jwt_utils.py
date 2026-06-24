@@ -6,19 +6,22 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt, ExpiredSignatureError
 from app.config import settings
-from app.database.redis import get_redis_client
 
 # Logger import
 from app.utils.logger.logger_config import logger
 
 # JWT Configuration
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
+SECRET_KEY = settings.SECRET_KEY  # Secret key for JWT signing
+ALGORITHM = settings.ALGORITHM  # JWT algorithm (HS256)
+ACCESS_TOKEN_EXPIRE_MINUTES = (
+    settings.ACCESS_TOKEN_EXPIRE_MINUTES
+)  # Access token expiration
+REFRESH_TOKEN_EXPIRE_DAYS = (
+    settings.REFRESH_TOKEN_EXPIRE_DAYS
+)  # Refresh token expiration
 
 # HTTP Bearer scheme for token extraction
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer(auto_error=False)  # Bearer token scheme
 
 
 def create_access_token(email: str, role: str) -> str:
@@ -29,11 +32,11 @@ def create_access_token(email: str, role: str) -> str:
 
     # Create token payload with user data and expiration
     to_encode = {
-        "sub": email,
-        "role": role,
-        "exp": expire,
-        "iat": datetime.utcnow(),
-        "type": "access",
+        "sub": email,  # Subject (user email)
+        "role": role,  # User role
+        "exp": expire,  # Expiration time
+        "iat": datetime.utcnow(),  # Issued at time
+        "type": "access",  # Token type
     }
 
     # Encode and sign the token
@@ -50,11 +53,11 @@ def create_refresh_token(email: str, role: str) -> str:
 
     # Create token payload with user data and expiration
     to_encode = {
-        "sub": email,
-        "role": role,
-        "exp": expire,
-        "iat": datetime.utcnow(),
-        "type": "refresh",
+        "sub": email,  # Subject (user email)
+        "role": role,  # User role
+        "exp": expire,  # Expiration time
+        "iat": datetime.utcnow(),  # Issued at time
+        "type": "refresh",  # Token type
     }
 
     # Encode and sign the token
@@ -65,6 +68,7 @@ def create_refresh_token(email: str, role: str) -> str:
 
 def verify_token(
     credentials: HTTPAuthorizationCredentials = Security(security),
+    redis_client=None,
 ) -> Dict[str, Any]:
     # FastAPI dependency to verify JWT token from Authorization header
     logger.debug("Verifying JWT token")
@@ -82,8 +86,8 @@ def verify_token(
         # Extract token from credentials
         token = credentials.credentials
 
-        # Check if token is blacklisted (revoked)
-        if is_token_blacklisted(token):
+        # Check if token is blacklisted (revoked) if redis_client is provided
+        if redis_client and is_token_blacklisted(redis_client, token):
             logger.warning("Token verification failed - Token is blacklisted")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -124,20 +128,24 @@ def decode_token_status(token: str) -> str:
         return "invalid"
 
 
-def add_token_to_blacklist(token: str, expires_at: datetime) -> None:
+def add_token_to_blacklist(redis_client, token: str, expires_at: datetime) -> None:
     # Add token to blacklist with expiration time
     logger.debug("Adding token to blacklist")
-    redis_client = get_redis_client()
-    ttl = int((expires_at - datetime.utcnow()).total_seconds())
+    ttl = int(
+        (expires_at - datetime.utcnow()).total_seconds()
+    )  # Time to live in seconds
     if ttl > 0:
-        redis_client.setex(f"blacklist:{token}", ttl, "1")
+        redis_client.setex(
+            f"blacklist:{token}", ttl, "1"
+        )  # Set token in Redis with TTL
         logger.debug("Token added to blacklist successfully")
 
 
-def is_token_blacklisted(token: str) -> bool:
+def is_token_blacklisted(redis_client, token: str) -> bool:
     # Check if token is in blacklist
-    redis_client = get_redis_client()
-    is_blacklisted = redis_client.exists(f"blacklist:{token}") > 0
+    is_blacklisted = (
+        redis_client.exists(f"blacklist:{token}") > 0
+    )  # Check if key exists
     if is_blacklisted:
         logger.debug("Token is blacklisted")
     return is_blacklisted

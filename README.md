@@ -36,10 +36,11 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - **Web server (frontend container):** Nginx
 - **Backend:** FastAPI + Python 3.12
 - **Databases:** PostgreSQL + MongoDB + Redis
-- **ORM:** SQLAlchemy
+- **ORM:** SQLAlchemy (composition pattern for user models)
 - **Authentication:** Bcrypt (password hashing) + JWT
 - **Validation:** Pydantic
 - **Cloud Storage:** Backblaze B2 (image upload)
+- **AI Integration:** BLIP + Llama 3 8B (eager loading at startup)
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -54,20 +55,29 @@ SmartAdoptApp/
 │   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
 │   │   │   ├── postgres/    # PostgreSQL configuration
 │   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
+│   │   │   ├── mongo/       # MongoDB configuration
+│   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter)
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
+│   │   │   ├── user/       # User models (composition pattern: User base, Admin/Adopter references)
+│   │   │   └── pet/        # Pet models (Python models for MongoDB)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   └── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
+│   │   │   └── pet_routes.py      # Pet management endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py     # Authentication schemas
-│   │   │   └── backblaze_schemas.py # Backblaze B2 schemas
+│   │   │   ├── auth_schemas.py         # Authentication schemas
+│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py          # Pet management schemas
+│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py    # Authentication services
-│   │   │   └── backblaze_service.py # Backblaze B2 service
+│   │   │   ├── backblaze_service.py # Backblaze B2 service
+│   │   │   ├── pet_service.py      # Pet management service
+│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -79,11 +89,16 @@ SmartAdoptApp/
 │   │   ├── README_JWT.md    # Complete JWT documentation
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
-│   │   └── README_LOGS.md   # Complete logging system documentation
+│   │   ├── README_LOGS.md   # Complete logging system documentation
+│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py      # Test configuration
 │   │   ├── test_auth.py     # Authentication tests
 │   │   ├── test_google_oauth.py  # Google OAuth tests
+│   │   ├── test_admin_routes.py   # Admin routes tests
+│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── test_backblaze_routes.py # Backblaze B2 tests
+│   │   ├── test_pet.py      # Pet management tests
 │   │   └── test_main.py     # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -370,14 +385,30 @@ MONGO_USER=qa_mongo_user
 MONGO_PASSWORD=change_me_qa
 MONGO_EXTERNAL_PORT=27017
 
+# ─── Redis ─────────────────────────────────────────────
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+REDIS_EXTERNAL_PORT=6379
+
 # ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=your_secret_jwt_qa
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10
+REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # ─── Google OAuth ─────────────────────────────────────
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Backblaze B2 ──────────────────────────────────────
+BACKBLAZE_KEY_ID=your_backblaze_key_id
+BACKBLAZE_APPLICATION_KEY=your_backblaze_application_key
+BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
+
+# ─── Hugging Face ──────────────────────────────────────
+HF_TOKEN=your_hugging_face_token
 
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
@@ -385,6 +416,9 @@ BACKEND_EXTERNAL_PORT=8000
 FRONTEND_INTERNAL_PORT=80
 FRONTEND_EXTERNAL_PORT=8080
 
+# ─── Dozzle ────────────────────────────────────────────
+DOZZLE_PORT=8080
+DOZZLE_EXTERNAL_PORT=8888
 
 # ─── API URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8000
@@ -400,6 +434,7 @@ POSTGRES_PORT=5432
 POSTGRES_DB=smartadopt_prod
 POSTGRES_USER=prod_db_user
 POSTGRES_PASSWORD=change_me_prod
+POSTGRES_HOST_PORT=5432
 
 # ─── MongoDB ──────────────────────────────────────────
 MONGO_HOST=mongo
@@ -407,15 +442,32 @@ MONGO_PORT=27017
 MONGO_DB=smartadopt_prod
 MONGO_USER=prod_mongo_user
 MONGO_PASSWORD=change_me_prod
+MONGO_EXTERNAL_PORT=27017
+
+# ─── Redis ─────────────────────────────────────────────
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+REDIS_EXTERNAL_PORT=6379
 
 # ─── JWT (FastAPI) ─────────────────────────────────────
 SECRET_KEY=your_secret_jwt_prod_secure
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # ─── Google OAuth ─────────────────────────────────────
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# ─── Backblaze B2 ──────────────────────────────────────
+BACKBLAZE_KEY_ID=your_backblaze_key_id
+BACKBLAZE_APPLICATION_KEY=your_backblaze_application_key
+BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
+
+# ─── Hugging Face ──────────────────────────────────────
+HF_TOKEN=your_hugging_face_token
 
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
@@ -423,6 +475,10 @@ BACKEND_EXTERNAL_PORT=8000
 FRONTEND_INTERNAL_PORT=80
 FRONTEND_EXTERNAL_PORT=8080
 MONGO_EXTERNAL_PORT=27017
+
+# ─── Dozzle ────────────────────────────────────────────
+DOZZLE_PORT=8080
+DOZZLE_EXTERNAL_PORT=8888
 
 # ─── API URLs ─────────────────────────────────────────
 VITE_API_URL=http://localhost:8000

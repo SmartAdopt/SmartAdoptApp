@@ -1,3 +1,5 @@
+// src/pages/admin/AdminDashboard.tsx
+
 import { Grid, Typography, Box, Paper } from "@mui/material";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { AdminWelcomeBanner } from "../../components/organisms/AdminWelcomeBanner";
@@ -13,8 +15,10 @@ import {
   AddCircleOutline as AddCircleOutlineIcon,
   VisibilityOutlined as VisibilityOutlinedIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 export const AdminDashboard = () => {
+  const navigate = useNavigate();
   return (
     <AdminLayout>
       <AdminWelcomeBanner />
@@ -79,7 +83,7 @@ export const AdminDashboard = () => {
             description="Sube nuevos animales rescatados"
             icon={<AddCircleOutlineIcon fontSize="large" />}
             buttonColor="success"
-            onClick={() => console.log("Añadir Mascota")}
+            onClick={() => navigate("/admin/pets/new")}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -97,7 +101,7 @@ export const AdminDashboard = () => {
             description="Previsualiza tarjetas de mascotas"
             icon={<VisibilityOutlinedIcon fontSize="large" />}
             buttonColor="secondary"
-            onClick={() => console.log("Vista Interactiva")}
+            onClick={() => navigate("/admin/pets")}
           />
         </Grid>
       </Grid>
@@ -115,7 +119,7 @@ export const AdminDashboard = () => {
           borderColor: "grey.200",
         }}
       >
-        {/* Placeholder para la lista de estados del sistema que vemos en tu prototipo */}
+        {/* Placeholder for the system status list seen in the prototype */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
           <Typography variant="body2" fontWeight={500}>
             ● Generador de Biografías IA
