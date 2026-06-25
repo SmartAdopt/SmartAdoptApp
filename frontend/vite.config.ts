@@ -1,10 +1,15 @@
 // vite.config.ts
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { playwright } from '@vitest/browser-playwright';
+const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
+// More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react()],
-  
   // 1. Vite Server Configuration (Proxy for Dockerized Backend)
   server: {
     port: 5173,
@@ -13,27 +18,49 @@ export default defineConfig({
       '/auth': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: false, // Set to false since local Docker doesn't use HTTPS
+        secure: false // Set to false since local Docker doesn't use HTTPS
       },
       // Proxy for general API endpoints (e.g., catalog, users)
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: false,
+        secure: false
       },
       // Proxy for WebSockets (Real-time notifications RF-05)
       '/ws': {
         target: 'ws://localhost:8000',
-        ws: true,
+        ws: true
       }
     }
   },
-
-  // 2. Vitest Configuration (Unchanged)
   test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './tests/setup.ts',
-    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
-  },
+    projects: [{
+      extends: true,
+      test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: './tests/setup.ts',
+        include: ['tests/**/*.{test,spec}.{ts,tsx}']
+      }
+    }, {
+      extends: true,
+      plugins: [
+      // The plugin will run tests for the stories defined in your Storybook config
+      // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      storybookTest({
+        configDir: path.join(dirname, '.storybook')
+      })],
+      test: {
+        name: 'storybook',
+        browser: {
+          enabled: true,
+          headless: true,
+          provider: playwright({}),
+          instances: [{
+            browser: 'chromium'
+          }]
+        }
+      }
+    }]
+  }
 });
