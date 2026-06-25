@@ -15,18 +15,19 @@ def get_client():
         logger.info(
             f"Creating MongoDB client for database: {settings.MONGO_DB} at {settings.MONGO_HOST}:{settings.MONGO_PORT}"
         )
-        # Build MongoDB connection string
         if settings.MONGO_USER and settings.MONGO_PASSWORD:
-            # With authentication
-            connection_string = (
-                f"mongodb://{settings.MONGO_USER}:{settings.MONGO_PASSWORD}@"
-                f"{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGO_DB}"
+            _client = AsyncIOMotorClient(
+                host=settings.MONGO_HOST,
+                port=settings.MONGO_PORT,
+                username=settings.MONGO_USER,
+                password=settings.MONGO_PASSWORD,
+                authSource="admin",
             )
         else:
-            # Without authentication
-            connection_string = f"mongodb://{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGO_DB}"
-
-        _client = AsyncIOMotorClient(connection_string)
+            _client = AsyncIOMotorClient(
+                host=settings.MONGO_HOST,
+                port=settings.MONGO_PORT,
+            )
         logger.info("MongoDB client created successfully")
     return _client
 
