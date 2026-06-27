@@ -1,0 +1,440 @@
+/* src/components/molecules/SwipeablePetCard.css */
+
+/* ==========================================
+   TINDER PET CARD — Swipeable Card Styles
+   ========================================== */
+
+/* Container that centers the card and holds perspective for 3D transforms */
+.tinder-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  perspective: 1000px;
+}
+
+/* The main card */
+.tinder-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  will-change: transform, opacity;
+}
+
+.tinder-card:hover {
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================
+   IMAGE SECTION
+   ========================================== */
+.tinder-card__image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.tinder-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.tinder-card__image--loading {
+  opacity: 0;
+}
+
+.tinder-card__image--loaded {
+  opacity: 1;
+}
+
+/* Skeleton shimmer placeholder while image loads */
+.tinder-card__image-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e2e8f0 50%,
+    #f1f5f9 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Subtle gradient overlay at bottom of image for text readability */
+.tinder-card__image-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.15), transparent);
+  pointer-events: none;
+}
+
+/* ==========================================
+   STATUS BADGE (Disponible / En proceso / Adoptado)
+   ========================================== */
+.tinder-card__status-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.tinder-card__status-badge--available {
+  background: rgba(34, 197, 94, 0.9);
+  color: #ffffff;
+}
+
+.tinder-card__status-badge--in_process {
+  background: rgba(245, 158, 11, 0.9);
+  color: #ffffff;
+}
+
+.tinder-card__status-badge--adopted {
+  background: rgba(99, 102, 241, 0.9);
+  color: #ffffff;
+}
+
+/* Upward navigation button (top-right) — navigates to pet profile */
+.tinder-card__swipe-up-hint {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.tinder-card__swipe-up-hint:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transform: scale(1.1);
+}
+
+.tinder-card__swipe-up-hint:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================
+   CONTENT SECTION
+   ========================================== */
+.tinder-card__content {
+  padding: 20px 24px 16px;
+}
+
+.tinder-card__name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.tinder-card__name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tinder-card__age {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #1e293b;
+  margin: 0;
+}
+
+.tinder-card__breed {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.tinder-card__description {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================
+   PERSONALITY TAGS
+   ========================================== */
+.tinder-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tinder-card__tag {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+/* ==========================================
+   ACTION BUTTONS (Pass / Favorite)
+   ========================================== */
+.tinder-card__actions {
+  display: flex;
+  gap: 12px;
+  padding: 12px 24px 20px;
+}
+
+.tinder-card__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 28px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.tinder-card__btn--pass {
+  background: #ffffff;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.tinder-card__btn--pass:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+  transform: scale(1.02);
+}
+
+.tinder-card__btn--pass:active {
+  transform: scale(0.98);
+}
+
+.tinder-card__btn--favorite {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #ffffff;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+.tinder-card__btn--favorite:hover {
+  background: linear-gradient(135deg, #eab308, #ea580c);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+  transform: scale(1.02);
+}
+
+.tinder-card__btn--favorite:active {
+  transform: scale(0.98);
+}
+
+/* Already-favorited state — green instead of orange */
+.tinder-card__btn--favorited {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+}
+
+.tinder-card__btn--favorited:hover {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
+}
+
+.tinder-card__btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ==========================================
+   FOOTER HINT TEXT
+   ========================================== */
+.tinder-card__footer-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 16px;
+  letter-spacing: 0.2px;
+}
+
+/* ==========================================
+   SWIPE ANIMATIONS
+   ========================================== */
+@keyframes swipeOutLeft {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-150%) rotate(-15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes swipeOutRight {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(150%) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(30px) scale(0.97);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.tinder-card--swiping-left {
+  animation: swipeOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+.tinder-card--swiping-right {
+  animation: swipeOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+.tinder-card--entering {
+  animation: fadeInUp 0.35s cubic-bezier(0.0, 0, 0.2, 1) forwards;
+}
+
+/* Swipe direction overlay stamps */
+.tinder-card__stamp {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.tinder-card__stamp--pass {
+  right: 24px;
+  border: 4px solid #ef4444;
+  color: #ef4444;
+  transform: translateY(-50%) rotate(12deg);
+}
+
+.tinder-card__stamp--fav {
+  left: 24px;
+  border: 4px solid #22c55e;
+  color: #22c55e;
+  transform: translateY(-50%) rotate(-12deg);
+}
+
+.tinder-card--swiping-left .tinder-card__stamp--pass {
+  opacity: 1;
+}
+
+.tinder-card--swiping-right .tinder-card__stamp--fav {
+  opacity: 1;
+}
+
+/* ==========================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================== */
+@media (max-width: 480px) {
+  .tinder-card-container {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+
+  .tinder-card {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .tinder-card__content {
+    padding: 16px 20px 12px;
+  }
+
+  .tinder-card__actions {
+    padding: 8px 20px 16px;
+  }
+
+  .tinder-card__name {
+    font-size: 1.3rem;
+  }
+
+  .tinder-card__age {
+    font-size: 1.3rem;
+  }
+}

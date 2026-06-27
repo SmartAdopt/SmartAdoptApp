@@ -5,7 +5,7 @@ import {
   Container,
   Grid,
   Typography,
-  Link,
+  Link as MuiLink,
   IconButton,
 } from "@mui/material";
 import {
@@ -13,9 +13,36 @@ import {
   WhatsApp as WhatsAppIcon,
   Instagram as InstagramIcon,
 } from "@mui/icons-material";
+// FIX: Imported 'useLocation' to inspect the current route
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { Logo } from "../atoms/Logo";
 
 export const Footer = () => {
+  const navigate = useNavigate();
+  const location = useLocation(); // <-- Detects the current browser URL
+  const { isAuthenticated } = useAuth();
+
+  // Conditional routing logic for "Explore Pets"
+  const handleExploreClick = () => {
+    if (isAuthenticated) {
+      navigate("/adopter/explore");
+    } else {
+      navigate("/login");
+    }
+  };
+
+  // =======================================================================
+  // OPTIMIZED HISTORY VALIDATION (Prevents accumulating back clicks)
+  // =======================================================================
+  const handleInfoNav = (hash: string) => {
+    // If the user is already on '/info', we use 'replace: true' to not saturate the history.
+    // If coming from another page (like Home), we do a normal push so they can go back.
+    const isAlreadyOnInfoPage = location.pathname === "/info";
+
+    navigate(`/info${hash}`, { replace: isAlreadyOnInfoPage });
+  };
+
   return (
     <Box sx={{ bgcolor: "#0F172A", color: "grey.400", pt: 8, pb: 4 }}>
       <Container maxWidth="lg">
@@ -41,16 +68,49 @@ export const Footer = () => {
             >
               Enlaces Rápidos
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                alignItems: "flex-start",
+              }}
+            >
+              <MuiLink
+                component={RouterLink}
+                to="/login"
+                color="inherit"
+                underline="hover"
+                variant="body2"
+              >
                 Iniciar Sesión
-              </Link>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+              </MuiLink>
+              <MuiLink
+                component={RouterLink}
+                to="/register"
+                color="inherit"
+                underline="hover"
+                variant="body2"
+              >
                 Registrarse
-              </Link>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+              </MuiLink>
+              <MuiLink
+                component="button"
+                onClick={handleExploreClick}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+                sx={{
+                  border: "none",
+                  background: "transparent",
+                  p: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                }}
+              >
                 Explorar Mascotas
-              </Link>
+              </MuiLink>
             </Box>
           </Grid>
 
@@ -64,19 +124,82 @@ export const Footer = () => {
             >
               Información
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                alignItems: "flex-start",
+              }}
+            >
+              <MuiLink
+                component="button"
+                onClick={() => handleInfoNav("#nosotros")}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+                sx={{
+                  border: "none",
+                  background: "transparent",
+                  p: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                }}
+              >
                 Acerca de Nosotros
-              </Link>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+              </MuiLink>
+              <MuiLink
+                component="button"
+                onClick={() => handleInfoNav("#proceso")}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+                sx={{
+                  border: "none",
+                  background: "transparent",
+                  p: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                }}
+              >
                 Proceso de Adopción
-              </Link>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+              </MuiLink>
+              <MuiLink
+                component="button"
+                onClick={() => handleInfoNav("#faq")}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+                sx={{
+                  border: "none",
+                  background: "transparent",
+                  p: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                }}
+              >
                 Preguntas Frecuentes
-              </Link>
-              <Link href="#" color="inherit" underline="hover" variant="body2">
+              </MuiLink>
+              <MuiLink
+                component="button"
+                onClick={() => handleInfoNav("#privacidad")}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+                sx={{
+                  border: "none",
+                  background: "transparent",
+                  p: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                }}
+              >
                 Política de Privacidad
-              </Link>
+              </MuiLink>
             </Box>
           </Grid>
 
@@ -100,7 +223,7 @@ export const Footer = () => {
               📍 Quito, Ecuador
             </Typography>
 
-            {/* SOCIAL NETWORKS BLOCK WITH ENTERPRISE POLISH */}
+            {/* SOCIAL NETWORKS BLOCK */}
             <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
               <IconButton
                 size="small"
@@ -113,7 +236,7 @@ export const Footer = () => {
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(24, 119, 242, 0.2)", // Subtle official brand blue tint
+                    bgcolor: "rgba(24, 119, 242, 0.2)",
                     color: "#1877F2",
                   },
                 }}
@@ -132,7 +255,7 @@ export const Footer = () => {
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(37, 211, 102, 0.2)", // Subtle official brand green tint
+                    bgcolor: "rgba(37, 211, 102, 0.2)",
                     color: "#25D366",
                   },
                 }}
@@ -151,7 +274,7 @@ export const Footer = () => {
                   bgcolor: "rgba(255,255,255,0.05)",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(228, 64, 95, 0.2)", // Subtle official brand pink tint
+                    bgcolor: "rgba(228, 64, 95, 0.2)",
                     color: "#E4405F",
                   },
                 }}

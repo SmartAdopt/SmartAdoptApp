@@ -18,7 +18,7 @@ export const Navbar = () => {
   // 1. Extract the session state
   const { isAuthenticated, role, user } = useAuth();
 
-  // 2. Lógica dinámica para el botón Home (Casita)
+  // 2. Dynamic logic for the Home button (House)
   const handleHomeClick = () => {
     if (isAuthenticated) {
       // If the user is authenticated, we check their role and navigate accordingly
@@ -59,7 +59,6 @@ export const Navbar = () => {
               <img src="/home.svg" width={24} alt="Home" />
             </IconButton>
 
-            {/* 3. Renderizado Condicional del Botón de Sesión */}
             {/* 3. Conditional Rendering of the Login Button */}
             {isAuthenticated && user ? (
               // If the user is authenticated: Show their Profile Menu so they can log out

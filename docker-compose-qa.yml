@@ -33,7 +33,12 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT}
-      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:${MONGO_PORT}/${MONGO_DB}?authSource=admin
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}?authSource=admin
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -47,6 +52,8 @@ services:
       - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
       - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
       - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_HOME=/root/.cache/huggingface
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,22 +61,24 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - hf_cache_qa:/root/.cache/huggingface
     networks:
       - smartadopt-qa
     restart: always
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: 512M
+          cpus: "2.0"
+          memory: 4G
         reservations:
-          memory: 256M
+          memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9090/health')\" || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 20s
+      timeout: 10s
+      retries: 60
+      start_period: 600s
     logging:
       driver: "json-file"
       options:
@@ -211,7 +220,8 @@ volumes:
   postgres_qa_data:
   mongo_qa_data:
   redis_qa_data:
-
+  hf_cache_qa:
 networks:
   smartadopt-qa:
+    name: smartadopt-qa
     driver: bridge

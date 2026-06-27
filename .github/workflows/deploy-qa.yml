@@ -101,6 +101,7 @@ jobs:
             MONGO_DB=${{ secrets.QA_MONGO_DB }}
             MONGO_PORT=${{ secrets.QA_MONGO_PORT }}
             MONGO_EXTERNAL_PORT=${{ secrets.QA_MONGO_EXTERNAL_PORT }}
+            MONGO_HOST=${{ secrets.QA_MONGO_HOST }}
             SECRET_KEY=${{secrets.QA_SECRET_KEY}}
             ALGORITHM=${{secrets.QA_ALGORITHM}}
             ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.QA_ACCESS_TOKEN_EXPIRE_MINUTES}}
@@ -115,6 +116,7 @@ jobs:
             BACKBLAZE_KEY_ID=${{ secrets.QA_BACKBLAZE_KEY_ID }}
             BACKBLAZE_APPLICATION_KEY=${{ secrets.QA_BACKBLAZE_APPLICATION_KEY }}
             BACKBLAZE_BUCKET_NAME=${{ secrets.QA_BACKBLAZE_BUCKET_NAME }}
+            HF_TOKEN=${{ secrets.QA_HF_TOKEN }}
             DOZZLE_EXTERNAL_PORT=${{ secrets.QA_DOZZLE_EXTERNAL_PORT }}
             DOZZLE_PORT=${{ secrets.QA_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.QA_DOZZLE_USERNAME }}
