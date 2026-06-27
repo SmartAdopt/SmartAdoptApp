@@ -1,0 +1,45 @@
+name: Deploy Monitoring Production
+
+on:
+  push:
+    branches: [main]
+    paths: ["monitoring/**"]
+
+concurrency:
+  group: deploy-monitoring-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Transfer monitoring files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          source: "monitoring/production"
+          target: "~/SmartAdoptApp"
+
+      - name: Deploy monitoring stack via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ~/SmartAdoptApp/monitoring/production
+            docker network inspect smartadopt-prod > /dev/null 2>&1 || {
+              echo "The smartadopt-prod network does not exist — deploy the app first."
+              exit 1
+            }
+            cat > .env << 'ENVEOF'
+            GRAFANA_ADMIN_USER=${{ secrets.PROD_GRAFANA_ADMIN_USER }}
+            GRAFANA_ADMIN_PASSWORD=${{ secrets.PROD_GRAFANA_ADMIN_PASSWORD }}
+            ENVEOF
+            docker compose -f docker-compose-monitoring-prod.yml pull
+            docker compose -f docker-compose-monitoring-prod.yml up -d --remove-orphans --force-recreate

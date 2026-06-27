@@ -1,0 +1,45 @@
+name: Deploy Monitoring QA
+
+on:
+  push:
+    branches: [qa]
+    paths: ["monitoring/**"]
+
+concurrency:
+  group: deploy-monitoring-qa
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Transfer monitoring files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.QA_EC2_HOST }}
+          username: ${{ secrets.QA_EC2_USER }}
+          key: ${{ secrets.QA_EC2_SSH_KEY }}
+          source: "monitoring/qa"
+          target: "~/SmartAdoptApp"
+
+      - name: Deploy monitoring stack via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.QA_EC2_HOST }}
+          username: ${{ secrets.QA_EC2_USER }}
+          key: ${{ secrets.QA_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ~/SmartAdoptApp/monitoring/qa
+            docker network inspect smartadopt-qa > /dev/null 2>&1 || {
+              echo "The smartadopt-qa network does not exist — deploy the app first."
+              exit 1
+            }
+            cat > .env << 'ENVEOF'
+            GRAFANA_ADMIN_USER=${{ secrets.QA_GRAFANA_ADMIN_USER }}
+            GRAFANA_ADMIN_PASSWORD=${{ secrets.QA_GRAFANA_ADMIN_PASSWORD }}
+            ENVEOF
+            docker compose -f docker-compose-monitoring-qa.yml pull
+            docker compose -f docker-compose-monitoring-qa.yml up -d --remove-orphans --force-recreate
