@@ -59,10 +59,17 @@ SmartAdoptApp/
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
+<<<<<<< HEAD
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
 │   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
+=======
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet, AdoptionForm)
+│   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   └── adoption_form/  # Adoption form models
+>>>>>>> a01143eb91f6d85050203bba21d4e5a43e622181
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -95,11 +102,11 @@ SmartAdoptApp/
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
-│   │   ├── conftest.py      # Test configuration
-│   │   ├── test_auth.py     # Authentication tests
-│   │   ├── test_google_oauth.py  # Google OAuth tests
-│   │   ├── test_admin_routes.py   # Admin routes tests
-│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── conftest.py              # Test configuration
+│   │   ├── test_auth.py             # Authentication tests
+│   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_admin_routes.py     # Admin routes tests
+│   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py      # Pet management tests
 │   │   └── test_main.py     # Main endpoint tests

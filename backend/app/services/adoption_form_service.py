@@ -99,6 +99,7 @@ async def register_adoption_form(db, form_data: Dict[str, Any]) -> Dict[str, Any
         # V. Final Motivation
         motivation=form_data["motivation"],
         submission_date=datetime.now(),
+        last_updated=datetime.now(),
     )
 
     # Convert model to dict for MongoDB
@@ -150,7 +151,7 @@ async def register_adoption_form(db, form_data: Dict[str, Any]) -> Dict[str, Any
 
     return {
         "form_id": form_id,
-        "submission_date": form_model.submission_date,
+        "submission_date": form_document["submission_date"],
     }
 
 
@@ -331,4 +332,6 @@ async def update_adoption_form(
 
     # Return updated form
     updated_form = await get_adoption_form_by_user(db, user_id)
+    if updated_form is None:
+        raise ValueError("Failed to retrieve updated form")
     return updated_form

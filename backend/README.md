@@ -33,10 +33,17 @@ backend/                 # FastAPI backend application
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
+<<<<<<< HEAD
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
+=======
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet, AdoptionForm)
+│   │   │   ├── user/            # User models (User, Admin, Adopter)
+│   │   │   ├── pet/             # Pet models
+│   │   │   └── adoption_form/  # Adoption form models
+>>>>>>> a01143eb91f6d85050203bba21d4e5a43e622181
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -69,11 +76,11 @@ backend/                 # FastAPI backend application
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
-│   │   ├── conftest.py      # Test configuration
-│   │   ├── test_auth.py     # Authentication tests
-│   │   ├── test_google_oauth.py  # Google OAuth tests
-│   │   ├── test_admin_routes.py   # Admin routes tests
-│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── conftest.py              # Test configuration
+│   │   ├── test_auth.py             # Authentication tests
+│   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_admin_routes.py     # Admin routes tests
+│   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py      # Pet management tests
 │   │   └── test_main.py     # Main endpoint tests
@@ -638,6 +645,35 @@ Authorization: Bearer <jwt_token>
 - `status`: String ("available", "in_process", "adopted")
 - `creation_date`: DateTime
 - `pet`: Object (Pet basic information)
+
+### AdoptionForm
+- `form_id`: String (Primary Key, auto-generated: AF####)
+- `user_id`: Integer (Foreign Key to User)
+- `submission_date`: DateTime
+- `neighborhood`: String
+- `address`: String
+- `employment_status`: String
+- `employment_status_other`: String (Optional)
+- `housing_type`: String
+- `housing_type_other`: String (Optional)
+- `has_natural_space`: Boolean
+- `has_pets`: Boolean
+- `current_pets_details`: String (Optional)
+- `household_energy`: String
+- `has_children`: Boolean
+- `children_ages`: List[int] (Optional)
+- `long_term_commitment`: Boolean
+- `preferred_species`: String
+- `preferred_gender`: String
+- `preferred_energy`: String
+- `daily_time_dedication`: Integer
+- `sleeping_location`: String
+- `sleeping_location_other`: String (Optional)
+- `behavior_approach`: String
+- `behavior_approach_other`: String (Optional)
+- `emergency_plan`: String
+- `emergency_plan_other`: String (Optional)
+- `motivation`: String
 
 
 ## Development Notes
