@@ -33,10 +33,17 @@ backend/                 # FastAPI backend application
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
+<<<<<<< HEAD
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
+│   │   │   ├── user/            # User models (User, Admin, Adopter)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
+=======
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet, AdoptionForm)
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models
 │   │   │   └── adoption_form/  # Adoption form models
+>>>>>>> a01143eb91f6d85050203bba21d4e5a43e622181
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -50,10 +57,11 @@ backend/                 # FastAPI backend application
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
 │   │   │   └── adoption_form_schemas.py   # Adoption form schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   ├── auth_service.py    # Authentication services
-│   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   ├── pet_service.py      # Pet management service
-│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── auth_service.py        # Authentication services
+│   │   │   ├── backblaze_service.py   # Backblaze B2 service
+│   │   │   ├── pet_service.py          # Pet management service
+│   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
+│   │   │   └── adoption_form_service.py # Adoption form service (MongoDB)
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
