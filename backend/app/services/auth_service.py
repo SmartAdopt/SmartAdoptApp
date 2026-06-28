@@ -213,6 +213,7 @@ def login_user(db: Session, redis_client, login_data: Dict[str, Any]) -> Dict[st
         "first_name": cast(str, user.first_name),  # User first name
         "last_name": cast(str, user.last_name),  # User last name
         "email": cast(str, user.email),  # User email
+        "phone_number": user.phone_number,  # User phone number
         "role": cast(str, user.type),  # User role (admin/adopter)
         "created_at": created_at,  # Account creation timestamp (only for adopter)
     }
@@ -294,6 +295,7 @@ def oauth_login_or_register(
             "first_name": existing_user.first_name,
             "last_name": existing_user.last_name,
             "email": existing_user.email,
+            "phone_number": existing_user.phone_number,
             "role": existing_user.type,
             "created_at": created_at,  # Account creation timestamp (only for adopter)
         }
