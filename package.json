@@ -4,5 +4,13 @@
     "@tanstack/react-query": "^5.101.0",
     "react-hook-form": "^7.79.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
+    "husky": "^9.1.7"
+  },
+  "scripts": {
+    "prepare": "husky"
   }
 }
