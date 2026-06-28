@@ -258,6 +258,7 @@ Content-Type: application/json
   "first_name": "John",
   "last_name": "Doe",
   "email": "user@example.com",
+  "phone_number": "+1234567890",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
@@ -305,6 +306,7 @@ GET /auth/google/callback?code=...&role=adopter
   "first_name": "John",
   "last_name": "Doe",
   "email": "john.doe@gmail.com",
+  "phone_number": "+1234567890",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
@@ -320,6 +322,7 @@ GET /auth/google/callback?code=...&role=adopter
   "first_name": "John",
   "last_name": "Doe",
   "email": "john.doe@gmail.com",
+  "phone_number": "",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
