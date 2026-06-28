@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
+
+coverage/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# Storybook
+storybook-static/
