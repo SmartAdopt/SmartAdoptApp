@@ -9,40 +9,85 @@ from app.utils.logger.logger_config import logger
 class AdoptionFormRequest(BaseModel):
     # Schema for adoption form submission - Clean architecture without personal data
     # User ID is obtained from JWT token, not from request body
-    
+
     # I. Candidate Information
-    neighborhood: str = Field(..., description="City or neighborhood where the user lives")
+    neighborhood: str = Field(
+        ..., description="City or neighborhood where the user lives"
+    )
     address: str = Field(..., description="Full address of the user")
-    employment_status: str = Field(..., description="Employment status: employed, independent, other")
-    employment_status_other: Optional[str] = Field(None, description="Other employment status specification")
-    housing_type: str = Field(..., description="Housing type: apartment, rented_house, own_house, other")
-    housing_type_other: Optional[str] = Field(None, description="Other housing type specification")
-    has_natural_space: bool = Field(..., description="Whether the user has natural space nearby")
-    
+    employment_status: str = Field(
+        ..., description="Employment status: employed, independent, other"
+    )
+    employment_status_other: Optional[str] = Field(
+        None, description="Other employment status specification"
+    )
+    housing_type: str = Field(
+        ..., description="Housing type: apartment, rented_house, own_house, other"
+    )
+    housing_type_other: Optional[str] = Field(
+        None, description="Other housing type specification"
+    )
+    has_natural_space: bool = Field(
+        ..., description="Whether the user has natural space nearby"
+    )
+
     # II. Coexistence and Experience
     has_pets: bool = Field(..., description="Whether the user currently has pets")
-    current_pets_details: Optional[str] = Field(None, description="Details about current pets")
-    household_energy: str = Field(..., description="Household energy level: very_active, moderate, quiet")
-    has_children: bool = Field(..., description="Whether there are children in the household")
-    children_ages: Optional[List[int]] = Field(None, description="Ages of children in the household")
-    long_term_commitment: bool = Field(..., description="Commitment to long-term care (15+ years)")
-    
+    current_pets_details: Optional[str] = Field(
+        None, description="Details about current pets"
+    )
+    household_energy: str = Field(
+        ..., description="Household energy level: very_active, moderate, quiet"
+    )
+    has_children: bool = Field(
+        ..., description="Whether there are children in the household"
+    )
+    children_ages: Optional[List[int]] = Field(
+        None, description="Ages of children in the household"
+    )
+    long_term_commitment: bool = Field(
+        ..., description="Commitment to long-term care (15+ years)"
+    )
+
     # III. Pet Preferences
-    preferred_species: str = Field(..., description="Preferred species: dog, cat, no_preference")
-    preferred_gender: str = Field(..., description="Preferred gender: male, female, no_preference")
-    preferred_energy: str = Field(..., description="Preferred energy level: low, medium, high")
-    
+    preferred_species: str = Field(
+        ..., description="Preferred species: dog, cat, no_preference"
+    )
+    preferred_gender: str = Field(
+        ..., description="Preferred gender: male, female, no_preference"
+    )
+    preferred_energy: str = Field(
+        ..., description="Preferred energy level: low, medium, high"
+    )
+
     # IV. Logistics and Education
-    daily_time_dedication: int = Field(..., description="Daily time dedication in hours (1-6)")
-    sleeping_location: str = Field(..., description="Where the pet will sleep: inside, patio, other")
-    sleeping_location_other: Optional[str] = Field(None, description="Other sleeping location specification")
-    behavior_approach: str = Field(..., description="Approach to behavior problems: positive_education, trainer, other")
-    behavior_approach_other: Optional[str] = Field(None, description="Other behavior approach specification")
-    emergency_plan: str = Field(..., description="Emergency plan: family_friend, kennel, take_with_me, other")
-    emergency_plan_other: Optional[str] = Field(None, description="Other emergency plan specification")
-    
+    daily_time_dedication: int = Field(
+        ..., description="Daily time dedication in hours (1-6)"
+    )
+    sleeping_location: str = Field(
+        ..., description="Where the pet will sleep: inside, patio, other"
+    )
+    sleeping_location_other: Optional[str] = Field(
+        None, description="Other sleeping location specification"
+    )
+    behavior_approach: str = Field(
+        ...,
+        description="Approach to behavior problems: positive_education, trainer, other",
+    )
+    behavior_approach_other: Optional[str] = Field(
+        None, description="Other behavior approach specification"
+    )
+    emergency_plan: str = Field(
+        ..., description="Emergency plan: family_friend, kennel, take_with_me, other"
+    )
+    emergency_plan_other: Optional[str] = Field(
+        None, description="Other emergency plan specification"
+    )
+
     # V. Final Motivation
-    motivation: str = Field(..., description="User's motivation for adoption and what they can offer")
+    motivation: str = Field(
+        ..., description="User's motivation for adoption and what they can offer"
+    )
 
     # Validators
     @field_validator("employment_status")
@@ -53,7 +98,9 @@ class AdoptionFormRequest(BaseModel):
         valid_statuses = ["employed", "independent"]
         if v not in valid_statuses:
             logger.warning(f"Employment status validation failed for: {v}")
-            raise ValueError(f"Employment status must be one of: {', '.join(valid_statuses)}")
+            raise ValueError(
+                f"Employment status must be one of: {', '.join(valid_statuses)}"
+            )
         logger.debug(f"Employment status validation passed for: {v}")
         return v
 
@@ -77,7 +124,9 @@ class AdoptionFormRequest(BaseModel):
         valid_energies = ["very_active", "moderate", "quiet"]
         if v not in valid_energies:
             logger.warning(f"Household energy validation failed for: {v}")
-            raise ValueError(f"Household energy must be one of: {', '.join(valid_energies)}")
+            raise ValueError(
+                f"Household energy must be one of: {', '.join(valid_energies)}"
+            )
         logger.debug(f"Household energy validation passed for: {v}")
         return v
 
@@ -89,7 +138,9 @@ class AdoptionFormRequest(BaseModel):
         valid_species = ["dog", "cat", "no_preference"]
         if v not in valid_species:
             logger.warning(f"Preferred species validation failed for: {v}")
-            raise ValueError(f"Preferred species must be one of: {', '.join(valid_species)}")
+            raise ValueError(
+                f"Preferred species must be one of: {', '.join(valid_species)}"
+            )
         logger.debug(f"Preferred species validation passed for: {v}")
         return v
 
@@ -101,7 +152,9 @@ class AdoptionFormRequest(BaseModel):
         valid_genders = ["male", "female", "no_preference"]
         if v not in valid_genders:
             logger.warning(f"Preferred gender validation failed for: {v}")
-            raise ValueError(f"Preferred gender must be one of: {', '.join(valid_genders)}")
+            raise ValueError(
+                f"Preferred gender must be one of: {', '.join(valid_genders)}"
+            )
         logger.debug(f"Preferred gender validation passed for: {v}")
         return v
 
@@ -113,7 +166,9 @@ class AdoptionFormRequest(BaseModel):
         valid_energies = ["low", "medium", "high"]
         if v not in valid_energies:
             logger.warning(f"Preferred energy validation failed for: {v}")
-            raise ValueError(f"Preferred energy must be one of: {', '.join(valid_energies)}")
+            raise ValueError(
+                f"Preferred energy must be one of: {', '.join(valid_energies)}"
+            )
         logger.debug(f"Preferred energy validation passed for: {v}")
         return v
 
@@ -137,7 +192,9 @@ class AdoptionFormRequest(BaseModel):
         valid_locations = ["inside", "patio", "other"]
         if v not in valid_locations:
             logger.warning(f"Sleeping location validation failed for: {v}")
-            raise ValueError(f"Sleeping location must be one of: {', '.join(valid_locations)}")
+            raise ValueError(
+                f"Sleeping location must be one of: {', '.join(valid_locations)}"
+            )
         logger.debug(f"Sleeping location validation passed for: {v}")
         return v
 
@@ -149,7 +206,9 @@ class AdoptionFormRequest(BaseModel):
         valid_approaches = ["positive_education", "trainer", "other"]
         if v not in valid_approaches:
             logger.warning(f"Behavior approach validation failed for: {v}")
-            raise ValueError(f"Behavior approach must be one of: {', '.join(valid_approaches)}")
+            raise ValueError(
+                f"Behavior approach must be one of: {', '.join(valid_approaches)}"
+            )
         logger.debug(f"Behavior approach validation passed for: {v}")
         return v
 
@@ -200,46 +259,97 @@ class AdoptionFormRequest(BaseModel):
 class AdoptionFormResponse(BaseModel):
     # Schema for adoption form registration response
     message: str = Field(..., description="Response message")
-    form_id: Optional[str] = Field(None, description="Unique identifier for the adoption form")
-    submission_date: Optional[datetime] = Field(None, description="Date and time of form submission")
+    form_id: Optional[str] = Field(
+        None, description="Unique identifier for the adoption form"
+    )
+    submission_date: Optional[datetime] = Field(
+        None, description="Date and time of form submission"
+    )
 
 
 class AdoptionFormUpdateRequest(BaseModel):
     # Schema for updating existing adoption form
-    
+
     # I. Candidate Information
-    neighborhood: Optional[str] = Field(None, description="City or neighborhood where the user lives")
+    neighborhood: Optional[str] = Field(
+        None, description="City or neighborhood where the user lives"
+    )
     address: Optional[str] = Field(None, description="Full address of the user")
-    employment_status: Optional[str] = Field(None, description="Employment status: employed, independent, other")
-    employment_status_other: Optional[str] = Field(None, description="Other employment status specification")
-    housing_type: Optional[str] = Field(None, description="Housing type: apartment, rented_house, own_house, other")
-    housing_type_other: Optional[str] = Field(None, description="Other housing type specification")
-    has_natural_space: Optional[bool] = Field(None, description="Whether the user has natural space nearby")
-    
+    employment_status: Optional[str] = Field(
+        None, description="Employment status: employed, independent, other"
+    )
+    employment_status_other: Optional[str] = Field(
+        None, description="Other employment status specification"
+    )
+    housing_type: Optional[str] = Field(
+        None, description="Housing type: apartment, rented_house, own_house, other"
+    )
+    housing_type_other: Optional[str] = Field(
+        None, description="Other housing type specification"
+    )
+    has_natural_space: Optional[bool] = Field(
+        None, description="Whether the user has natural space nearby"
+    )
+
     # II. Coexistence and Experience
-    has_pets: Optional[bool] = Field(None, description="Whether the user currently has pets")
-    current_pets_details: Optional[str] = Field(None, description="Details about current pets")
-    household_energy: Optional[str] = Field(None, description="Household energy level: very_active, moderate, quiet")
-    has_children: Optional[bool] = Field(None, description="Whether there are children in the household")
-    children_ages: Optional[List[int]] = Field(None, description="Ages of children in the household")
-    long_term_commitment: Optional[bool] = Field(None, description="Commitment to long-term care (15+ years)")
-    
+    has_pets: Optional[bool] = Field(
+        None, description="Whether the user currently has pets"
+    )
+    current_pets_details: Optional[str] = Field(
+        None, description="Details about current pets"
+    )
+    household_energy: Optional[str] = Field(
+        None, description="Household energy level: very_active, moderate, quiet"
+    )
+    has_children: Optional[bool] = Field(
+        None, description="Whether there are children in the household"
+    )
+    children_ages: Optional[List[int]] = Field(
+        None, description="Ages of children in the household"
+    )
+    long_term_commitment: Optional[bool] = Field(
+        None, description="Commitment to long-term care (15+ years)"
+    )
+
     # III. Pet Preferences
-    preferred_species: Optional[str] = Field(None, description="Preferred species: dog, cat, no_preference")
-    preferred_gender: Optional[str] = Field(None, description="Preferred gender: male, female, no_preference")
-    preferred_energy: Optional[str] = Field(None, description="Preferred energy level: low, medium, high")
-    
+    preferred_species: Optional[str] = Field(
+        None, description="Preferred species: dog, cat, no_preference"
+    )
+    preferred_gender: Optional[str] = Field(
+        None, description="Preferred gender: male, female, no_preference"
+    )
+    preferred_energy: Optional[str] = Field(
+        None, description="Preferred energy level: low, medium, high"
+    )
+
     # IV. Logistics and Education
-    daily_time_dedication: Optional[int] = Field(None, description="Daily time dedication in hours (1-6)")
-    sleeping_location: Optional[str] = Field(None, description="Where the pet will sleep: inside, patio, other")
-    sleeping_location_other: Optional[str] = Field(None, description="Other sleeping location specification")
-    behavior_approach: Optional[str] = Field(None, description="Approach to behavior problems: positive_education, trainer, other")
-    behavior_approach_other: Optional[str] = Field(None, description="Other behavior approach specification")
-    emergency_plan: Optional[str] = Field(None, description="Emergency plan: family_friend, kennel, take_with_me, other")
-    emergency_plan_other: Optional[str] = Field(None, description="Other emergency plan specification")
-    
+    daily_time_dedication: Optional[int] = Field(
+        None, description="Daily time dedication in hours (1-6)"
+    )
+    sleeping_location: Optional[str] = Field(
+        None, description="Where the pet will sleep: inside, patio, other"
+    )
+    sleeping_location_other: Optional[str] = Field(
+        None, description="Other sleeping location specification"
+    )
+    behavior_approach: Optional[str] = Field(
+        None,
+        description="Approach to behavior problems: positive_education, trainer, other",
+    )
+    behavior_approach_other: Optional[str] = Field(
+        None, description="Other behavior approach specification"
+    )
+    emergency_plan: Optional[str] = Field(
+        None, description="Emergency plan: family_friend, kennel, take_with_me, other"
+    )
+    emergency_plan_other: Optional[str] = Field(
+        None, description="Other emergency plan specification"
+    )
+
     # V. Final Motivation
-    motivation: Optional[str] = Field(None, description="User's motivation for adoption and what they can offer")
+    motivation: Optional[str] = Field(
+        None, description="User's motivation for adoption and what they can offer"
+    )
 
     # Validators (only validate if value is provided)
     @field_validator("employment_status")
@@ -252,7 +362,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_statuses = ["employed", "independent", "other"]
         if v not in valid_statuses:
             logger.warning(f"Employment status validation failed for: {v}")
-            raise ValueError(f"Employment status must be one of: {', '.join(valid_statuses)}")
+            raise ValueError(
+                f"Employment status must be one of: {', '.join(valid_statuses)}"
+            )
         logger.debug(f"Employment status validation passed for: {v}")
         return v
 
@@ -280,7 +392,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_energies = ["very_active", "moderate", "quiet"]
         if v not in valid_energies:
             logger.warning(f"Household energy validation failed for: {v}")
-            raise ValueError(f"Household energy must be one of: {', '.join(valid_energies)}")
+            raise ValueError(
+                f"Household energy must be one of: {', '.join(valid_energies)}"
+            )
         logger.debug(f"Household energy validation passed for: {v}")
         return v
 
@@ -294,7 +408,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_species = ["dog", "cat", "no_preference"]
         if v not in valid_species:
             logger.warning(f"Preferred species validation failed for: {v}")
-            raise ValueError(f"Preferred species must be one of: {', '.join(valid_species)}")
+            raise ValueError(
+                f"Preferred species must be one of: {', '.join(valid_species)}"
+            )
         logger.debug(f"Preferred species validation passed for: {v}")
         return v
 
@@ -308,7 +424,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_genders = ["male", "female", "no_preference"]
         if v not in valid_genders:
             logger.warning(f"Preferred gender validation failed for: {v}")
-            raise ValueError(f"Preferred gender must be one of: {', '.join(valid_genders)}")
+            raise ValueError(
+                f"Preferred gender must be one of: {', '.join(valid_genders)}"
+            )
         logger.debug(f"Preferred gender validation passed for: {v}")
         return v
 
@@ -322,7 +440,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_energies = ["low", "medium", "high"]
         if v not in valid_energies:
             logger.warning(f"Preferred energy validation failed for: {v}")
-            raise ValueError(f"Preferred energy must be one of: {', '.join(valid_energies)}")
+            raise ValueError(
+                f"Preferred energy must be one of: {', '.join(valid_energies)}"
+            )
         logger.debug(f"Preferred energy validation passed for: {v}")
         return v
 
@@ -350,7 +470,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_locations = ["inside", "patio", "other"]
         if v not in valid_locations:
             logger.warning(f"Sleeping location validation failed for: {v}")
-            raise ValueError(f"Sleeping location must be one of: {', '.join(valid_locations)}")
+            raise ValueError(
+                f"Sleeping location must be one of: {', '.join(valid_locations)}"
+            )
         logger.debug(f"Sleeping location validation passed for: {v}")
         return v
 
@@ -364,7 +486,9 @@ class AdoptionFormUpdateRequest(BaseModel):
         valid_approaches = ["positive_education", "trainer", "other"]
         if v not in valid_approaches:
             logger.warning(f"Behavior approach validation failed for: {v}")
-            raise ValueError(f"Behavior approach must be one of: {', '.join(valid_approaches)}")
+            raise ValueError(
+                f"Behavior approach must be one of: {', '.join(valid_approaches)}"
+            )
         logger.debug(f"Behavior approach validation passed for: {v}")
         return v
 
@@ -420,4 +544,3 @@ class AdoptionFormUpdateRequest(BaseModel):
             raise ValueError("Address must be at least 5 characters long")
         logger.debug(f"Address validation passed for: {v}")
         return v.strip()
-
