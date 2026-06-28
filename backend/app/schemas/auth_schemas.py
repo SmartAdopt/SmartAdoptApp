@@ -2,7 +2,6 @@
 
 # Pydantic imports
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 import re
 
 # Datetime imports
