@@ -24,15 +24,15 @@ REFRESH_TOKEN_EXPIRE_DAYS = (
 security = HTTPBearer(auto_error=False)  # Bearer token scheme
 
 
-def create_access_token(email: str, role: str) -> str:
+def create_access_token(user_id: int, role: str) -> str:
     # Create a JWT access token with user data and expiration
-    logger.debug(f"Creating access token for email: {email}, role: {role}")
+    logger.debug(f"Creating access token for user_id: {user_id}, role: {role}")
     # Calculate expiration time (current time + configured minutes)
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     # Create token payload with user data and expiration
     to_encode = {
-        "sub": email,  # Subject (user email)
+        "sub": str(user_id),  # Subject (user ID as string)
         "role": role,  # User role
         "exp": expire,  # Expiration time
         "iat": datetime.utcnow(),  # Issued at time
@@ -41,19 +41,19 @@ def create_access_token(email: str, role: str) -> str:
 
     # Encode and sign the token
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.debug(f"Access token created for email: {email}")
+    logger.debug(f"Access token created for user_id: {user_id}")
     return encoded_jwt
 
 
-def create_refresh_token(email: str, role: str) -> str:
+def create_refresh_token(user_id: int, role: str) -> str:
     # Create a JWT refresh token with user data and expiration
-    logger.debug(f"Creating refresh token for email: {email}, role: {role}")
+    logger.debug(f"Creating refresh token for user_id: {user_id}, role: {role}")
     # Calculate expiration time (current time + configured days)
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
     # Create token payload with user data and expiration
     to_encode = {
-        "sub": email,  # Subject (user email)
+        "sub": str(user_id),  # Subject (user ID as string)
         "role": role,  # User role
         "exp": expire,  # Expiration time
         "iat": datetime.utcnow(),  # Issued at time
@@ -62,7 +62,7 @@ def create_refresh_token(email: str, role: str) -> str:
 
     # Encode and sign the token
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.debug(f"Refresh token created for email: {email}")
+    logger.debug(f"Refresh token created for user_id: {user_id}")
     return encoded_jwt
 
 
@@ -97,7 +97,7 @@ def verify_token(
 
         # Decode and verify the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.debug(f"Token verified successfully for email: {payload.get('sub')}")
+        logger.debug(f"Token verified successfully for user_id: {payload.get('sub')}")
         return payload
 
     except ExpiredSignatureError:

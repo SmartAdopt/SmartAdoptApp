@@ -164,7 +164,6 @@ def login(
             first_name=user_response["first_name"],
             last_name=user_response["last_name"],
             email=user_response["email"],
-            phone_number=user_response["phone_number"],
             role=user_response["role"],
             created_at=user_response["created_at"],
         )
@@ -277,7 +276,6 @@ async def google_callback(
             "first_name": user_response.get("first_name"),
             "last_name": user_response.get("last_name"),
             "email": user_response.get("email"),
-            "phone_number": user_response.get("phone_number"),
             "role": user_response.get("role"),
         }
 
@@ -303,7 +301,7 @@ async def google_callback(
                     // Send the session to the Frontend using BroadcastChannel (What frontend expects)
                     const channel = new BroadcastChannel("oauth_channel");
                     channel.postMessage(data);
-                    
+
                     // Also send via postMessage dynamically
                     if (window.opener) {{
                         window.opener.postMessage(data, "{frontend_origin}");

@@ -157,7 +157,7 @@ The JWT token contains the following fields:
 
 {
 
-  "sub": "user@example.com",
+  "sub": "1",
 
   "role": "admin",
 
@@ -175,7 +175,7 @@ The JWT token contains the following fields:
 
 **Field Descriptions:**
 
-- `sub`: User email (subject)
+- `sub`: User ID (subject)
 
 - `role`: User role (admin or adopter)
 
@@ -191,7 +191,7 @@ The JWT token contains the following fields:
 
 
 
-### create_access_token(email, role)
+### create_access_token(user_id, role)
 
 
 
@@ -201,7 +201,7 @@ Creates a JWT access token with user data and expiration.
 
 ```python
 
-def create_access_token(email: str, role: str) -> str:
+def create_access_token(user_id: int, role: str) -> str:
 
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
@@ -209,7 +209,7 @@ def create_access_token(email: str, role: str) -> str:
 
     to_encode = {
 
-        "sub": email,
+        "sub": str(user_id),
 
         "role": role,
 
