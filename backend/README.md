@@ -33,9 +33,10 @@ backend/                 # FastAPI backend application
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
-│   │   │   ├── user/       # User models (User, Admin, Adopter)
-│   │   │   └── pet/        # Pet models
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
+│   │   │   ├── user/            # User models (User, Admin, Adopter)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints
@@ -43,15 +44,17 @@ backend/                 # FastAPI backend application
 │   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
 │   │   │   └── pet_routes.py      # Pet management endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py         # Authentication schemas
-│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
-│   │   │   ├── pet_schemas.py          # Pet management schemas
-│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
+│   │   │   ├── auth_schemas.py            # Authentication schemas
+│   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py             # Pet management schemas
+│   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
+│   │   │   └── adoption_form_schemas.py   # Adoption form schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   ├── auth_service.py    # Authentication services
-│   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   ├── pet_service.py      # Pet management service
-│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── auth_service.py        # Authentication services
+│   │   │   ├── backblaze_service.py   # Backblaze B2 service
+│   │   │   ├── pet_service.py          # Pet management service
+│   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
+│   │   │   └── adoption_form_service.py # Adoption form service (MongoDB)
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
