@@ -1,7 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-import re
 
 # Logger import
 from app.utils.logger.logger_config import logger
