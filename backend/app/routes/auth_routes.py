@@ -164,6 +164,7 @@ def login(
             first_name=user_response["first_name"],
             last_name=user_response["last_name"],
             email=user_response["email"],
+            phone_number=user_response["phone_number"],
             role=user_response["role"],
             created_at=user_response["created_at"],
         )
@@ -276,6 +277,7 @@ async def google_callback(
             "first_name": user_response.get("first_name"),
             "last_name": user_response.get("last_name"),
             "email": user_response.get("email"),
+            "phone_number": user_response.get("phone_number"),
             "role": user_response.get("role"),
         }
 
