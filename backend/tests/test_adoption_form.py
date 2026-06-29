@@ -1,6 +1,5 @@
 ﻿# Tests for adoption form endpoints
-import asyncio
-from unittest.mock import patch, MagicMock
+
 from app.config import settings
 
 

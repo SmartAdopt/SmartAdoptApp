@@ -26,7 +26,7 @@ async def submit_adoption_form_route(
 ):
     # Endpoint to submit an adoption form (requires adopter role)
     logger.info(
-        f"POST /adoption-forms/submit - Adoption form submission request"
+        "POST /adoption-forms/submit - Adoption form submission request"
     )
 
     # Verify user role is adopter
@@ -75,7 +75,7 @@ async def get_my_adoption_form_route(
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to get the authenticated user's adoption form (requires adopter role)
-    logger.info(f"GET /adoption-forms/me - Get adoption form request")
+    logger.info("GET /adoption-forms/me - Get adoption form request")
 
     # Verify user role is adopter
     user_role = token_payload.get("role", "").lower()
@@ -118,7 +118,7 @@ async def update_my_adoption_form_route(
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to update the authenticated user's adoption form (requires adopter role)
-    logger.info(f"PUT /adoption-forms/me - Update adoption form request")
+    logger.info("PUT /adoption-forms/me - Update adoption form request")
 
     # Verify user role is adopter
     user_role = token_payload.get("role", "").lower()
