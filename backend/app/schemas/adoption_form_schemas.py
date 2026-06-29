@@ -61,8 +61,8 @@ class AdoptionFormRequest(BaseModel):
     )
 
     # IV. Logistics and Education
-    daily_time_dedication: int = Field(
-        ..., description="Daily time dedication in hours (1-6)"
+    daily_time_dedication: str = Field(
+        ..., description="Daily time dedication: low (>2h), medium (2-6h), high (6+h)"
     )
     sleeping_location: str = Field(
         ..., description="Where the pet will sleep: inside, patio, other"
@@ -174,13 +174,18 @@ class AdoptionFormRequest(BaseModel):
 
     @field_validator("daily_time_dedication")
     @classmethod
-    def validate_daily_time_dedication(cls, v: int) -> int:
-        # Validate daily time dedication (hours) against allowed range
+    def validate_daily_time_dedication(cls, v: str) -> str:
+        # Validate daily time dedication categories:
+        # - low: >2 hours
+        # - medium: 2-6 hours
+        # - high: 6+ hours
         logger.debug(f"Validating daily time dedication: {v}")
-        valid_times = [1, 2, 3, 4, 5, 6]
+        valid_times = [">2", "2-6", "6+"]
         if v not in valid_times:
             logger.warning(f"Daily time dedication validation failed for: {v}")
-            raise ValueError("Daily time dedication must be between 1 and 6 hours")
+            raise ValueError(
+                "Daily time dedication must be: >2 (low), 2-6 (medium), or 6+ (high)"
+            )
         logger.debug(f"Daily time dedication validation passed for: {v}")
         return v
 
@@ -323,8 +328,8 @@ class AdoptionFormUpdateRequest(BaseModel):
     )
 
     # IV. Logistics and Education
-    daily_time_dedication: Optional[int] = Field(
-        None, description="Daily time dedication in hours (1-6)"
+    daily_time_dedication: Optional[str] = Field(
+        None, description="Daily time dedication: low (>2h), medium (2-6h), high (6+h)"
     )
     sleeping_location: Optional[str] = Field(
         None, description="Where the pet will sleep: inside, patio, other"
@@ -448,15 +453,20 @@ class AdoptionFormUpdateRequest(BaseModel):
 
     @field_validator("daily_time_dedication")
     @classmethod
-    def validate_daily_time_dedication(cls, v: Optional[int]) -> Optional[int]:
-        # Validate daily time dedication (hours) against allowed range
+    def validate_daily_time_dedication(cls, v: Optional[str]) -> Optional[str]:
+        # Validate daily time dedication categories:
+        # - low: >2 hours
+        # - medium: 2-6 hours
+        # - high: 6+ hours
         if v is None:
             return v
         logger.debug(f"Validating daily time dedication: {v}")
-        valid_times = [1, 2, 3, 4, 5, 6]
+        valid_times = [">2", "2-6", "6+"]
         if v not in valid_times:
             logger.warning(f"Daily time dedication validation failed for: {v}")
-            raise ValueError("Daily time dedication must be between 1 and 6 hours")
+            raise ValueError(
+                "Daily time dedication must be: >2 (low), 2-6 (medium), or 6+ (high)"
+            )
         logger.debug(f"Daily time dedication validation passed for: {v}")
         return v
 
