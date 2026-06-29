@@ -59,17 +59,10 @@ SmartAdoptApp/
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-<<<<<<< HEAD
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
 │   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
-=======
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet, AdoptionForm)
-│   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
-│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
-│   │   │   └── adoption_form/  # Adoption form models
->>>>>>> a01143eb91f6d85050203bba21d4e5a43e622181
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py     # Authentication endpoints
 │   │   │   ├── admin_routes.py    # Admin-protected endpoints

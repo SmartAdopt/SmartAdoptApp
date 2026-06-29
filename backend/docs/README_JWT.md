@@ -59,17 +59,11 @@ backend/app/
 ├── config.py              # Centralized application configuration using pydantic_settings
 ├── utils/jwt/
 │   └── jwt_utils.py     # Token creation and verification
-
 ├── routes/
-
 │   ├── auth_routes.py   # Register and login endpoints
-
 │   ├── admin_routes.py  # Admin-protected endpoints
-
 │   └── adopter_routes.py # Adopter-protected endpoints
-
 └── services/
-
     └── auth_service.py  # Authentication logic
 
 ```
@@ -419,7 +413,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
   "message": "Welcome to Admin Dashboard",
 
-  "user_email": "admin@example.com",
+  "user_id": "1",
 
   "user_role": "admin",
 
@@ -473,7 +467,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
   "message": "Welcome to Adopter Home",
 
-  "user_email": "adopter@example.com",
+  "user_id": "1",
 
   "user_role": "adopter",
 

@@ -40,7 +40,7 @@ def admin_dashboard(token_payload: dict = Depends(verify_token)):
         # Return admin dashboard data
         return {
             "message": "Welcome to Admin Dashboard",  # Welcome message
-            "user_email": token_payload.get("sub"),  # User email from token
+            "user_id": token_payload.get("sub"),  # User ID from token
             "user_role": token_payload.get("role"),  # User role from token
             "dashboard_data": {
                 "total_adoptions": 75,  # Total adoptions count

@@ -27,7 +27,7 @@ def test_adopter_home_success(client, db_session):
 
     # 2. Create a valid adopter token
     token_payload = {
-        "sub": "adopter@test.com",
+        "sub": "1",
         "role": "adopter",
         "exp": 9999999999,  # Far future
     }
@@ -43,7 +43,7 @@ def test_adopter_home_success(client, db_session):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Welcome to Adopter Home"
-    assert data["user_email"] == "adopter@test.com"
+    assert data["user_id"] == "1"
     assert data["user_role"] == "adopter"
     assert "home_data" in data
 
@@ -71,7 +71,7 @@ def test_adopter_home_unauthorized_role(client, db_session):
 
     # 2. Create a token with admin role
     token_payload = {
-        "sub": "admin.unauth@test.com",
+        "sub": "2",
         "role": "admin",
         "exp": 9999999999,
     }
@@ -132,7 +132,7 @@ def test_adopter_home_with_blacklisted_token(client, db_session):
 
     # 2. Create a valid adopter token
     token_payload = {
-        "sub": "adopter.blacklist@test.com",
+        "sub": "3",
         "role": "adopter",
         "exp": 9999999999,
     }
