@@ -48,7 +48,7 @@ async def submit_adoption_form_route(
 
     try:
         # Get user_id from token
-        user_id = token_payload.get("sub")
+        user_id = int(token_payload["sub"])
         # Convert Pydantic schema to dict before calling service
         form_data_dict = form_data.model_dump()
         # Add user_id from token to form data
@@ -96,7 +96,7 @@ async def get_my_adoption_form_route(
 
     try:
         # Get user_id from token
-        user_id = token_payload.get("sub")
+        user_id = int(token_payload["sub"])
         # Call service to get the adoption form
         form = await get_adoption_form_by_user(db, user_id)
 
@@ -139,7 +139,7 @@ async def update_my_adoption_form_route(
 
     try:
         # Get user_id from token
-        user_id = token_payload.get("sub")
+        user_id = int(token_payload["sub"])
         # Convert Pydantic schema to dict before calling service
         update_data_dict = update_data.model_dump()
         # Call service to update the adoption form
