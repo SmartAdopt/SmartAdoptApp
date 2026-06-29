@@ -35,11 +35,14 @@ python -m pytest backend/tests/test_google_oauth_utils.py -v
 
 # Run pet tests
 python -m pytest backend/tests/test_pet.py -v
+
+# Run adoption form tests
+python -m pytest backend/tests/test_adoption_form.py -v
 ```
 
 
 ### Test Coverage
-The backend currently has 90% code coverage with 59 tests passing:
+The backend currently has 90% code coverage with 66 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
 - 4 adopter routes tests
@@ -48,6 +51,7 @@ The backend currently has 90% code coverage with 59 tests passing:
 - 1 main test
 - 6 Backblaze B2 tests (image upload, authorization, validation)
 - 24 pet management tests (registration, update, listing, validation, role restrictions)
+- 7 adoption form tests (submission, retrieval, update, authorization, workflow)
 
 ---
 
@@ -859,7 +863,295 @@ Validates error handling when Backblaze connection fails.
 
 ---
 
-## 10. MongoDB Mock Implementation
+## 10. Adoption Form Routes Tests: `test_adoption_form.py`
+
+This file contains validation logic for adoption form endpoints, including submission, retrieval, update, role-based authorization, and workflow validation.
+
+### a) Test Data Constant
+```python
+FORM_DATA = {
+    "neighborhood": "La Floresta",
+    "address": "Calle Principal 123",
+    "employment_status": "employed",
+    "housing_type": "own_house",
+    "has_natural_space": True,
+    "has_pets": False,
+    "household_energy": "moderate",
+    "has_children": True,
+    "children_ages": [5, 8],
+    "long_term_commitment": True,
+    "preferred_species": "dog",
+    "preferred_gender": "female",
+    "preferred_energy": "medium",
+    "daily_time_dedication": "2-6",
+    "sleeping_location": "inside",
+    "behavior_approach": "positive_education",
+    "emergency_plan": "family_friend",
+    "motivation": "I want to provide a loving home to a pet in need.",
+}
+```
+**Purpose:** 
+Standardizes the input data for adoption form tests. Providing a reusable dictionary prevents code duplication and ensures consistency in tests that require form submission.
+
+### b) Functional Test: Successful Adoption Form Submission
+```python
+def test_submit_adoption_form_success(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="testadopter_unique@test.com",
+        phone_number="0934567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["message"] == "Adoption form registered successfully"
+    assert "form_id" in data
+```
+**Purpose:** 
+Validates the Happy Path of adoption form submission. It confirms that adopter users can successfully submit forms with valid tokens.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **Role Verification:** Only users with the `adopter` role can submit forms.
+* **Token Verification:** A valid JWT token is required.
+
+### c) Negative Test: Unauthorized Role Submission
+```python
+def test_submit_adoption_form_unauthorized_role(client, db_session):
+    user = User(
+        first_name="Admin",
+        last_name="User",
+        email="admin_unique@test.com",
+        phone_number="0934567891",
+        password_hash="hashed_password",
+        type="admin",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    admin_user = Admin(user_id=user.user_id)
+    db_session.add(admin_user)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "admin", "exp": 9999999999}
+    admin_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 403
+    assert "Access denied" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures that non-adopter users (e.g., admins) cannot submit adoption forms.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+* **Role-based Authorization:** The system enforces that only `adopter` role can submit forms.
+
+### d) Negative Test: Missing Token
+```python
+def test_submit_adoption_form_missing_token(client):
+    response = client.post("/adoption-forms/submit", json=FORM_DATA)
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that form submission requires authentication.
+* **HTTP 401 (Unauthorized):** Indicates missing or invalid token.
+
+### e) Functional Test: Get Form After Submission
+```python
+def test_get_my_adoption_form_after_submit(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="get_after_submit@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    
+    response = client.get(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["neighborhood"] == "La Floresta"
+    assert data["daily_time_dedication"] == "2-6"
+```
+**Purpose:** 
+Validates the complete workflow: after submitting a form, the user can retrieve it.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **HTTP 200 (OK):** Indicates successful form retrieval.
+* **Workflow Validation:** Tests the integration between POST and GET endpoints.
+
+### f) Functional Test: Update Form After Submission
+```python
+def test_update_my_adoption_form_after_submit(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="update_after_submit@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    
+    update_data = {
+        "neighborhood": "La Floresta",
+        "address": "Calle Principal 456",
+        "daily_time_dedication": "6+",
+    }
+    
+    response = client.put(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=update_data,
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Adoption form updated successfully"
+    assert data["form"]["neighborhood"] == "La Floresta"
+    assert data["form"]["address"] == "Calle Principal 456"
+    assert data["form"]["daily_time_dedication"] == "6+"
+```
+**Purpose:** 
+Validates the complete workflow: after submitting a form, the user can update it.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **HTTP 200 (OK):** Indicates successful form update.
+* **Partial Update:** Only provided fields are updated.
+
+### g) Negative Test: Get Form When None Exists
+```python
+def test_get_my_adoption_form_no_form(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="no_form@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.get(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+    )
+    
+    assert response.status_code == 404
+```
+**Purpose:** 
+Validates that users without a form receive an appropriate error response.
+* **HTTP 404 (Not Found):** Indicates no adoption form exists for the user.
+
+### h) Negative Test: Update Form When None Exists
+```python
+def test_update_my_adoption_form_no_form(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="no_form_update@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    update_data = {"neighborhood": "La Floresta"}
+    
+    response = client.put(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=update_data,
+    )
+    
+    assert response.status_code == 400
+```
+**Purpose:** 
+Validates that users without a form receive an appropriate error response when trying to update.
+* **HTTP 400 (Bad Request):** Indicates no form exists for the user to update.
+
+### Running Specific Tests
+To run only the adoption form tests:
+```bash
+python -m pytest backend/tests/test_adoption_form.py -v
+```
+
+---
+
+## 11. MongoDB Mock Implementation
 
 The test suite uses an in-memory mock MongoDB implementation to simulate MongoDB behavior without requiring a real MongoDB instance. This is configured in `conftest.py`:
 

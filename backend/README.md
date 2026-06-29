@@ -38,11 +38,12 @@ backend/                 # FastAPI backend application
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
 │   │   ├── routes/          # API endpoints
-│   │   │   ├── auth_routes.py     # Authentication endpoints
-│   │   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
-│   │   │   └── pet_routes.py      # Pet management endpoints
+│   │   │   ├── auth_routes.py         # Authentication endpoints
+│   │   │   ├── admin_routes.py        # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
+│   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
+│   │   │   ├── pet_routes.py          # Pet management endpoints
+│   │   │   └── adoption_form_routes.py # Adoption form endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py            # Authentication schemas
 │   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
@@ -75,8 +76,9 @@ backend/                 # FastAPI backend application
 │   │   ├── test_admin_routes.py     # Admin routes tests
 │   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
-│   │   ├── test_pet.py      # Pet management tests
-│   │   └── test_main.py     # Main endpoint tests
+│   │   ├── test_pet.py              # Pet management tests
+│   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
 ```
@@ -86,7 +88,7 @@ backend/                 # FastAPI backend application
 - **FastAPI** - Modern, fast web framework for building APIs
 - **SQLAlchemy** - ORM for database interaction
 - **PostgreSQL** - Relational database
-- **MongoDB** - NoSQL database for pet profiles
+- **MongoDB** - NoSQL database for pet profiles and adoption forms
 - **Motor** - Async MongoDB driver
 - **Pydantic** - Data validation using Python types
 - **Uvicorn** - ASGI server to run FastAPI
@@ -95,6 +97,12 @@ backend/                 # FastAPI backend application
 - **Authlib** - OAuth 2.0 integration for Google login
 - **Redis** - Token storage and management
 - **b2sdk** - Backblaze B2 cloud storage integration
+- **requests** - HTTP library for external API calls
+- **huggingface-hub** - Hugging Face Hub client for Llama 3 8B
+- **transformers** - NLP library for BLIP and Llama 3 8B
+- **PIL (pillow)** - Image processing library
+- **itsdangerous** - Secure data signing for cookies
+- **loguru** - Structured logging library
 
 
 ### Run Locally
@@ -156,6 +164,12 @@ The backend requires the following environment variables (defined in `.env.examp
 - `DOZZLE_PORT`: Dozzle log viewer port (internal)
 - `DOZZLE_EXTERNAL_PORT`: Dozzle port exposed to host (default: 8080)
 
+**Hugging Face**
+- `HF_TOKEN`: your_hugging_face_token
+
+**API URLs**
+- `VITE_API_URL`:api_url
+
 #### Start the Server
 ```bash
 # Go to the backend folder
@@ -185,6 +199,17 @@ python -m black --check backend/
 ### Static Types (mypy)
 ```bash
 python -m mypy backend/ --ignore-missing-imports
+```
+
+## Running Tests
+
+### Run All Tests
+```bash
+# Run all backend tests
+python -m pytest backend/tests/ -v
+
+# Run with coverage report
+python -m pytest backend/ --cov=backend --cov-report=term-missing
 ```
 
 
@@ -337,7 +362,70 @@ GET /auth/google/callback?code=...&role=adopter
 - `302 Found`: Redirect failed - Google OAuth not available
 - `401 Unauthorized`: Google authentication failed
 
-### Protected Endpoints
+### Token Management
+
+#### Refresh Token
+
+**POST** `/auth/refresh`
+
+Refreshes expired access tokens using the refresh token stored in an HTTP-Only cookie.
+
+**Request**
+```http
+POST /auth/refresh
+Authorization: Bearer <expired_access_token>
+Cookie: refresh_token=<refresh_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Note:**
+- The refresh token must be sent as an HTTP-Only cookie
+- The access token in the Authorization header must be expired (not valid)
+- The refresh token is rotated on each refresh for security
+
+**Error Responses**
+- `401 Unauthorized`: No credentials provided, token revoked, or no active session
+- `400 Bad Request`: Access token is still valid, refresh not needed
+
+#### Logout
+
+**POST** `/auth/logout`
+
+Logs out the user and revokes both access and refresh tokens.
+
+**Request**
+```http
+POST /auth/logout
+Authorization: Bearer <access_token>
+Cookie: refresh_token=<refresh_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Note:**
+- The access token is added to a blacklist in Redis
+- The refresh token is revoked in Redis
+- The refresh token cookie is deleted
+- Both tokens are immediately invalidated
+
+**Error Responses**
+- `401 Unauthorized`: No active session found
+
+---
+
+## Protected Endpoints
 
 #### GET /admin/dashboard
 
@@ -393,6 +481,271 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Error Responses**
 - `401 Unauthorized`: Missing or invalid token
 - `403 Forbidden`: User role is not "adopter"
+
+---
+
+## Adoption Form API Endpoints
+
+The adoption form system allows users with the **adopter** role to submit, view, and update their adoption applications. All endpoints require a valid JWT token with the `adopter` role.
+
+**Base URL:** `/adoption-forms`
+
+### Submit Adoption Form
+
+**POST** `/adoption-forms/submit`
+
+Creates a new adoption form for the authenticated user.
+
+**Authorization:** `Adopter` role required
+
+**Request Body**
+```json
+{
+  "neighborhood": "La Floresta",
+  "address": "Calle Principal 123",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "apartment",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": false,
+  "current_pets_details": null,
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [5, 8],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "male",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "2-6",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to provide a loving home to a pet in need."
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Adoption form registered successfully",
+  "form_id": "AF1",
+  "submission_date": "2026-06-28T10:30:00.000Z"
+}
+```
+
+**Validation Rules:**
+- `neighborhood`: must be at least 2 characters
+- `address`: must be at least 5 characters
+- `employment_status`: must be one of `employed`, `independent`
+- `housing_type`: must be one of `apartment`, `rented_house`, `own_house`
+- `household_energy`: must be one of `very_active`, `moderate`, `quiet`
+- `preferred_species`: must be one of `dog`, `cat`, `no_preference`
+- `preferred_gender`: must be one of `male`, `female`, `no_preference`
+- `preferred_energy`: must be one of `low`, `medium`, `high`
+- `daily_time_dedication`: must be `>2` (low), `2-6` (medium), or `6+` (high)
+- `sleeping_location`: must be one of `inside`, `patio`, `other`
+- `behavior_approach`: must be one of `positive_education`, `trainer`, `other`
+- `emergency_plan`: must be one of `family_friend`, `kennel`, `take_with_me`, `other`
+- `motivation`: must be at least 10 characters
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Validation error (invalid field value or too short fields)
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+
+---
+
+### Get My Adoption Form
+
+**GET** `/adoption-forms/me`
+
+Retrieves the adoption form for the authenticated user.
+
+**Authorization:** `Adopter` role required
+
+**Response (200 OK)**
+```json
+{
+  "user_id": "user@example.com",
+  "neighborhood": "Quito - Center",
+  "address": "Av. Amazonas N12-45 y República",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "own_house",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": true,
+  "current_pets_details": "3-year-old Golden Retriever, very sociable with other animals",
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [
+    8,
+    12
+  ],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "female",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "6+",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to adopt",
+  "submission_date": "2026-06-28T17:19:18.549000",
+  "last_updated": "2026-06-28T17:20:10.849000"
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `404 Not Found`: No adoption form found for this user
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Update My Adoption Form
+
+**PUT** `/adoption-forms/me`
+
+Updates the adoption form for the authenticated user. All fields are optional in the update request.
+
+**Authorization:** `Adopter` role required
+
+**Request Body** *(all fields are optional)*
+```json
+{
+  "neighborhood": "La Floresta",
+  "address": "Calle Principal 123",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "apartment",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": false,
+  "current_pets_details": null,
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [5, 8],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "male",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "2-6",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to provide a loving home to a pet in need."
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Adoption form updated successfully",
+  "form": {
+    "user_id": "user@example.com",
+    "neighborhood": "La Floresta",
+    "address": "Calle Principal 123",
+    "employment_status": "employed",
+    "employment_status_other": null,
+    "housing_type": "apartment",
+    "housing_type_other": null,
+    "has_natural_space": true,
+    "has_pets": false,
+    "current_pets_details": "3-year-old Golden Retriever, very sociable with other animals",
+    "household_energy": "moderate",
+    "has_children": true,
+    "children_ages": [
+      5,
+      8
+    ],
+    "long_term_commitment": true,
+    "preferred_species": "dog",
+    "preferred_gender": "male",
+    "preferred_energy": "medium",
+    "daily_time_dedication": "2-6",
+    "sleeping_location": "inside",
+    "sleeping_location_other": null,
+    "behavior_approach": "positive_education",
+    "behavior_approach_other": null,
+    "emergency_plan": "family_friend",
+    "emergency_plan_other": null,
+    "motivation": "I want to provide a loving home to a pet in need.",
+    "submission_date": "2026-06-28T17:19:18.549000",
+    "last_updated": "2026-06-28T17:33:29.981000"
+  }
+}
+```
+
+**Validation Rules:** Same as the submit endpoint, but only for fields that are provided in the request.
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Validation error (invalid field value)
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+## Backblaze B2 Image Upload
+
+The application uses Backblaze B2 cloud storage for image upload:
+
+- **Admin-only access**: Only users with admin role can upload images
+- **UUID filenames**: Unique filenames prevent conflicts
+- **Automatic URL generation**: Public URLs are generated automatically
+- **Bucket validation**: Checks bucket existence before upload
+- **Image type validation**: Only image files are accepted
+
+**Endpoint:**
+```http
+POST /backblaze/upload
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+file: <image_file>
+```
+
+**Request**
+```http
+POST /backblaze/upload
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: multipart/form-data
+
+file: dog.jpg
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Image uploaded successfully",
+  "image_url": "https://f000.backblazeb2.com/file/bucket-name/dog-12345.jpg"
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `400 Bad Request`: Invalid file type (not an image)
+- `503 Service Unavailable`: Backblaze bucket not found or not accessible
+- `500 Internal Server Error`: Failed to upload image
+
+**Configuration:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+For complete documentation, refer to `docs/README_BACKBLAZE.md`.
 
 ## Pet Management System
 
@@ -455,8 +808,8 @@ Content-Type: application/json
 - All AI-generated content is stored in MongoDB `pet_profiles` collection
 
 **Validation Rules:**
-- Age: 0-15 years (realistic range for pets)
-- Weight: 0-10 kg (realistic range for pets)
+- Age: 0-20 years (realistic range for pets)
+- Weight: 0-45 kg (realistic range for pets)
 - Image URL: Must be valid HTTP/HTTPS URL and is mandatory
 - Animal Breed: First element must be "dog" or "cat"
 - Gender: Must be "male" or "female"
@@ -659,7 +1012,7 @@ Authorization: Bearer <jwt_token>
 - `preferred_species`: String
 - `preferred_gender`: String
 - `preferred_energy`: String
-- `daily_time_dedication`: Integer
+- `daily_time_dedication`: String (>2, 2-6, 6+)
 - `sleeping_location`: String
 - `sleeping_location_other`: String (Optional)
 - `behavior_approach`: String
@@ -876,16 +1229,3 @@ logger.info("User registered successfully")
 logger.warning("Registration failed - Email already registered")
 logger.error("Failed to insert profile into MongoDB")
 ```
-
-### Documentation Access Logging
-
-The application includes a middleware that logs when users access the FastAPI documentation at `/docs`:
-```
-User accessing FastAPI documentation
-```
-
-For complete documentation on the logging system, refer to `docs/README_LOGS.md`.
-
-## License
-
-This project is part of SmartAdopt.

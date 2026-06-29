@@ -24,7 +24,7 @@ class AdoptionForm:
         preferred_gender: str,
         preferred_energy: str,
         # IV. Logistics and Education
-        daily_time_dedication: int,
+        daily_time_dedication: str,
         sleeping_location: str,
         behavior_approach: str,
         emergency_plan: str,
