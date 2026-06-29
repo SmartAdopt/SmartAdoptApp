@@ -4,10 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.database.mongo.mongo_db import get_mongo_db
 
 # Schema imports
-from app.schemas.adoption_form_schemas import AdoptionFormRequest, AdoptionFormResponse, AdoptionFormUpdateRequest
+from app.schemas.adoption_form_schemas import (
+    AdoptionFormRequest,
+    AdoptionFormResponse,
+    AdoptionFormUpdateRequest,
+)
 
 # Service imports
-from app.services.adoption_form_service import register_adoption_form, get_adoption_form_by_user, update_adoption_form
+from app.services.adoption_form_service import (
+    register_adoption_form,
+    get_adoption_form_by_user,
+    update_adoption_form,
+)
 
 # JWT utils import
 from app.utils.jwt.jwt_utils import verify_token
@@ -25,9 +33,7 @@ async def submit_adoption_form_route(
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to submit an adoption form (requires adopter role)
-    logger.info(
-        "POST /adoption-forms/submit - Adoption form submission request"
-    )
+    logger.info("POST /adoption-forms/submit - Adoption form submission request")
 
     # Verify user role is adopter
     user_role = token_payload.get("role", "").lower()
@@ -93,13 +99,13 @@ async def get_my_adoption_form_route(
         user_id = token_payload.get("sub")
         # Call service to get the adoption form
         form = await get_adoption_form_by_user(db, user_id)
-        
+
         if not form:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"message": "No adoption form found for this user"},
             )
-        
+
         return form
     except HTTPException:
         raise
@@ -138,7 +144,7 @@ async def update_my_adoption_form_route(
         update_data_dict = update_data.model_dump()
         # Call service to update the adoption form
         updated_form = await update_adoption_form(db, user_id, update_data_dict)
-        
+
         return {
             "message": "Adoption form updated successfully",
             "form": updated_form,
