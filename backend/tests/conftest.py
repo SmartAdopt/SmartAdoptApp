@@ -12,6 +12,7 @@ from unittest.mock import MagicMock
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+
 # Mock AI service BEFORE importing the app to avoid loading heavy ML models
 # This prevents SSL certificate errors when downloading models from HuggingFace
 async def mock_describe_image_with_blip(image_url: str) -> str:
@@ -21,12 +22,14 @@ async def mock_describe_image_with_blip(image_url: str) -> str:
         raise ValueError("Image URL must start with https://")
     return "A friendly dog looking for a home"
 
+
 async def mock_enrich_profile_with_llama(pet_data: dict, blip_description: str) -> dict:
     return {
         "title": "Test Pet",
         "tags": ["#Adoptable", "#Test"],
-        "emotional_description": "Test description"
+        "emotional_description": "Test description",
     }
+
 
 # Create mock module
 ai_service_mock = MagicMock()
@@ -34,7 +37,7 @@ ai_service_mock.describe_image_with_blip = mock_describe_image_with_blip
 ai_service_mock.enrich_profile_with_llama = mock_enrich_profile_with_llama
 
 # Insert mock into sys.modules BEFORE importing anything else
-sys.modules['app.services.ai_service'] = ai_service_mock
+sys.modules["app.services.ai_service"] = ai_service_mock
 
 # Set environment variables for CI/CD if not already set
 # This ensures tests work in CI/CD without .env file
