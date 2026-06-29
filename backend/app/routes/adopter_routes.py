@@ -40,7 +40,7 @@ def adopter_home(token_payload: dict = Depends(verify_token)):
         # Return adopter home data
         return {
             "message": "Welcome to Adopter Home",  # Welcome message
-            "user_email": token_payload.get("sub"),  # User email from token
+            "user_id": token_payload.get("sub"),  # User ID from token
             "user_role": token_payload.get("role"),  # User role from token
             "home_data": {
                 "available_pets": 45,  # Available pets count

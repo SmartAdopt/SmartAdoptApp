@@ -27,7 +27,7 @@ def test_admin_dashboard_success(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "admin@test.com",
+        "sub": "1",
         "role": "admin",
         "exp": 9999999999,  # Far future
     }
@@ -43,7 +43,7 @@ def test_admin_dashboard_success(client, db_session):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Welcome to Admin Dashboard"
-    assert data["user_email"] == "admin@test.com"
+    assert data["user_id"] == "1"
     assert data["user_role"] == "admin"
     assert "dashboard_data" in data
 
@@ -71,7 +71,7 @@ def test_admin_dashboard_unauthorized_role(client, db_session):
 
     # 2. Create a token with adopter role
     token_payload = {
-        "sub": "regular@test.com",
+        "sub": "2",
         "role": "adopter",
         "exp": 9999999999,
     }
@@ -132,7 +132,7 @@ def test_admin_dashboard_with_blacklisted_token(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "admin.blacklist@test.com",
+        "sub": "3",
         "role": "admin",
         "exp": 9999999999,
     }

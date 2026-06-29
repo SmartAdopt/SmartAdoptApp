@@ -45,7 +45,7 @@ TEST_PET_CAT = {
 def get_admin_token():
     """Helper function to create an admin token for testing"""
     payload = {
-        "sub": "admin@test.com",
+        "sub": "1",
         "role": "admin",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),
@@ -228,7 +228,7 @@ def test_register_pet_without_admin_role(client):
     """Test pet registration without admin role (Negative path)"""
     # Create a token with adopter role instead of admin
     payload = {
-        "sub": "adopter@test.com",
+        "sub": "2",
         "role": "adopter",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),
@@ -316,7 +316,7 @@ def test_list_pets_without_admin_role(client):
     """Test pet listing without admin role (Negative path)"""
     # Create a token with regular user role instead of admin or adopter
     payload = {
-        "sub": "user@test.com",
+        "sub": "3",
         "role": "user",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),

@@ -117,7 +117,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 7. **JWT Token Generation**
    - Backend generates JWT token for session management
-   - Token contains user email, role, expiration
+   - Token contains user ID, role, expiration
    - Token is returned to frontend
 
 ### Flow Diagram
