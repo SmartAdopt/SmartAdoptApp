@@ -289,7 +289,7 @@ def test_verify_token_with_expired_token(client):
 
     # Create an expired token
     expired_payload = {
-        "sub": "test@test.com",
+        "sub": "1",
         "role": "adopter",
         "exp": datetime.utcnow() - timedelta(minutes=1),  # Expired
         "iat": datetime.utcnow() - timedelta(minutes=2),
@@ -317,7 +317,7 @@ def test_decode_token_status_expired():
 
     # Create an expired token
     expired_payload = {
-        "sub": "test@test.com",
+        "sub": "1",
         "role": "adopter",
         "exp": datetime.utcnow() - timedelta(minutes=1),
         "iat": datetime.utcnow() - timedelta(minutes=2),
@@ -425,7 +425,7 @@ def test_refresh_internal_error(client):
 
     # Create an expired token (to pass the line 60 check)
     token_payload = {
-        "sub": "test@test.com",
+        "sub": "1",
         "role": "adopter",
         "exp": datetime.utcnow() - timedelta(minutes=1),  # Expired
     }
@@ -455,7 +455,7 @@ def test_logout_internal_error(client):
 
     # Create a valid token
     token_payload = {
-        "sub": "test@test.com",
+        "sub": "1",
         "role": "adopter",
         "exp": 9999999999,
     }

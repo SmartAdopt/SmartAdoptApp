@@ -2,7 +2,6 @@
 
 # Pydantic imports
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 import re
 
 # Datetime imports
@@ -110,6 +109,7 @@ class LoginResponse(BaseModel):
     first_name: str = Field(..., description="User's first name")
     last_name: str = Field(..., description="User's last name")
     email: EmailStr = Field(..., description="User's email")
+    phone_number: Optional[str] = Field(None, description="User's phone number")
     role: str = Field(..., description="User role")
     created_at: Optional[datetime] = Field(None, description="Registration date")
 

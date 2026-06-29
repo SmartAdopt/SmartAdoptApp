@@ -29,7 +29,7 @@ def test_backblaze_upload_success(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "backblaze.admin@test.com",
+        "sub": "1",
         "role": "admin",
         "exp": 9999999999,
     }
@@ -93,7 +93,7 @@ def test_backblaze_upload_unauthorized_role(client, db_session):
 
     # 2. Create a token with adopter role
     token_payload = {
-        "sub": "backblaze.regular@test.com",
+        "sub": "2",
         "role": "adopter",
         "exp": 9999999999,
     }
@@ -157,7 +157,7 @@ def test_backblaze_upload_invalid_file_type(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "backblaze.admin2@test.com",
+        "sub": "3",
         "role": "admin",
         "exp": 9999999999,
     }
@@ -208,7 +208,7 @@ def test_backblaze_upload_bucket_not_found(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "backblaze.admin3@test.com",
+        "sub": "4",
         "role": "admin",
         "exp": 9999999999,
     }
@@ -258,7 +258,7 @@ def test_backblaze_upload_service_error(client, db_session):
 
     # 2. Create a valid admin token
     token_payload = {
-        "sub": "backblaze.admin4@test.com",
+        "sub": "5",
         "role": "admin",
         "exp": 9999999999,
     }

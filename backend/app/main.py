@@ -8,6 +8,7 @@ from app.routes.admin_routes import router as admin_router
 from app.routes.adopter_routes import router as adopter_router
 from app.routes.backblaze_routes import router as backblaze_router
 from app.routes.pet_routes import router as pet_router
+from app.routes.adoption_form_routes import router as adoption_form_router
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -44,6 +45,9 @@ logger.info("Backblaze routes registered")
 # Include pet routes
 app.include_router(pet_router)
 logger.info("Pet routes registered")
+# Include adoption form routes
+app.include_router(adoption_form_router)
+logger.info("Adoption form routes registered")
 
 logger.info("FastAPI application initialized successfully")
 

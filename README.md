@@ -59,25 +59,33 @@ SmartAdoptApp/
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
-│   │   │   ├── user/       # User models (composition pattern: User base, Admin/Adopter references)
-│   │   │   └── pet/        # Pet models (Python models for MongoDB)
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
+│   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet, AdoptionForm)
+│   │   │   ├── user/            # User models (composition pattern: User base, Admin/Adopter references)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   └── adoption_form/  # Adoption form models
 │   │   ├── routes/          # API endpoints
-│   │   │   ├── auth_routes.py     # Authentication endpoints
-│   │   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
-│   │   │   └── pet_routes.py      # Pet management endpoints
+│   │   │   ├── auth_routes.py         # Authentication endpoints
+│   │   │   ├── admin_routes.py        # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
+│   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
+│   │   │   ├── pet_routes.py          # Pet management endpoints
+│   │   │   └── adoption_form_routes.py # Adoption form endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py         # Authentication schemas
-│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
-│   │   │   ├── pet_schemas.py          # Pet management schemas
-│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
+│   │   │   ├── auth_schemas.py            # Authentication schemas
+│   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py             # Pet management schemas
+│   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
+│   │   │   └── adoption_form_schemas.py   # Adoption form schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   ├── auth_service.py    # Authentication services
-│   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   ├── pet_service.py      # Pet management service
-│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── auth_service.py        # Authentication services
+│   │   │   ├── backblaze_service.py   # Backblaze B2 service
+│   │   │   ├── pet_service.py          # Pet management service
+│   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
+│   │   │   └── adoption_form_service.py # Adoption form service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -92,14 +100,15 @@ SmartAdoptApp/
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
-│   │   ├── conftest.py      # Test configuration
-│   │   ├── test_auth.py     # Authentication tests
-│   │   ├── test_google_oauth.py  # Google OAuth tests
-│   │   ├── test_admin_routes.py   # Admin routes tests
-│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── conftest.py              # Test configuration
+│   │   ├── test_auth.py             # Authentication tests
+│   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_admin_routes.py     # Admin routes tests
+│   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
-│   │   ├── test_pet.py      # Pet management tests
-│   │   └── test_main.py     # Main endpoint tests
+│   │   ├── test_pet.py              # Pet management tests
+│   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
 ├── frontend/               # React frontend application

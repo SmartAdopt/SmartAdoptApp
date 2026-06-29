@@ -19,6 +19,7 @@ import { AdopterExplore } from "../pages/adopter/AdopterExplore";
 import { AdopterRequests } from "../pages/adopter/AdopterRequests";
 import { AdopterFavorites } from "../pages/adopter/AdopterFavorites";
 import { AdopterSuitability } from "../pages/adopter/AdopterSuitability";
+import { AdopterSuitabilitySurveyPage } from "../pages/adopter/AdopterSuitabilitySurveyPage";
 import { ArticlePage } from "../pages/adopter/ArticlePage";
 
 // ==============================
@@ -49,6 +50,10 @@ export const AppRouter = () => {
         <Route path="/adopter/requests" element={<AdopterRequests />} />
         <Route path="/adopter/favorites" element={<AdopterFavorites />} />
         <Route path="/adopter/suitability" element={<AdopterSuitability />} />
+        <Route
+          path="/adopter/suitability/survey"
+          element={<AdopterSuitabilitySurveyPage />}
+        />
         <Route path="/adopter/profile" element={<AdopterProfile />} />
       </Route>
 
