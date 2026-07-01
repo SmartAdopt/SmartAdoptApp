@@ -1,73 +1,79 @@
-# React + TypeScript + Vite
+# SmartAdopt Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite application for the SmartAdopt pet adoption platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Adoption Form — Backend Integration Report
 
-## React Compiler
+**Date:** 2026-07-01  
+**Routes:** `/adopter/suitability` and `/adopter/suitability/survey`  
+**Backend Endpoints:** `POST /adoption-forms/submit`, `GET /adoption-forms/me`, `PUT /adoption-forms/me`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Summary
 
-## Expanding the ESLint configuration
+The suitability survey form has been fully integrated with the backend API. Previously, the frontend relied on `localStorage` to save survey data and logged dummy data to the console. The application now communicates with the real backend endpoints using JWT-authenticated HTTP requests, ensuring complete data persistence and validation mapping.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Implementation Details
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+#### 1. API Service Layer
+Created a dedicated service module (`src/services/adoptionForm.service.ts`) containing three main methods:
+* `submitForm(data)`: Triggers `POST /adoption-forms/submit` to create a new form.
+* `getMyForm()`: Triggers `GET /adoption-forms/me` to retrieve the authenticated user's form (returns `null` on 404).
+* `updateMyForm(data)`: Triggers `PUT /adoption-forms/me` to update an existing application.
+* **Note:** All methods utilize the shared `apiClient`, which automatically injects the JWT Bearer token into the headers.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+#### 2. Type Definitions & Data Mapping
+Significant refactoring was done in `src/types/suitability.types.ts` to align the frontend interfaces with the backend's Pydantic schemas. 
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+12 specific data-mapping mismatches were fixed to translate the Spanish UI inputs into the English enums required by the backend:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Field | Old Frontend Value | New Mapped Value |
+|-------|-------------|-------------|
+| `daily_time_dedication` | `number` (2, 6, 8) | `string` (`">2"`, `"2-6"`, `"6+"`) |
+| `employment_status` | `"Empleado"` | `"employed"` |
+| `housing_type` | `"Departamento"` | `"apartment"` |
+| `household_energy` | `"Muy activo (deportes...)"` | `"very_active"` |
+| `preferred_species` | `"Perro"` | `"dog"` |
+| `preferred_gender` | `"Macho"` | `"male"` |
+| `preferred_energy` | `"Baja (Tranquilo)"` | `"low"` |
+| `sleeping_location` | `"Dentro de casa/cama"` | `"inside"` |
+| `behavior_approach` | `"Refuerzo positivo/Educación"` | `"positive_education"` |
+| `emergency_plan` | `"Familiar/Amigo"` | `"family_friend"` |
+| `user_id` | Hardcoded `1` | Removed (extracted from JWT by backend) |
+| `submission_date` / `last_updated` | Client-generated | Removed (Server-generated) |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**Additional TypeScript Updates:**
+* Replaced the obsolete `BackendSuitabilityRequest` with `BackendAdoptionFormRequest`.
+* Added `BackendAdoptionFormUpdateRequest` for partial `PUT` requests.
+* Added standard response interfaces (`AdoptionFormSubmitResponse`, `AdoptionFormGetResponse`, `AdoptionFormUpdateResponse`).
+* Implemented a reverse mapper (`mapBackendResponseToSurvey()`) to correctly populate the UI when fetching existing data.
+
+#### 3. Survey Page (`AdopterSuitabilitySurveyPage.tsx`)
+* Fetches `GET /adoption-forms/me` on mount to check for existing records.
+* Pre-populates the UI if a record exists (unless the user triggered the "redo" flow).
+* Handles form submission dynamically, routing to either `POST` (new) or `PUT` (update).
+* Integrates visual loading spinners and error alerts for network operations.
+* Maintains `localStorage` strictly as a fallback for offline UI states.
+
+#### 4. Suitability Hub (`AdopterSuitability.tsx`)
+* Replaced the legacy `localStorage` read with a `react-query` hook fetching from `/adoption-forms/me`.
+* Derives the `isSurveyCompleted` boolean directly from the API response (`!!existingForm`).
+
+---
+
+### Bug Fixes
+
+**Stale Cache After Form Submission**
+* **Issue:** After submitting the survey, the user was redirected to the hub, but the UI still displayed the "fill for the first time" prompt. A manual refresh was required to update the DOM.
+* **Root Cause:** React Query cached the initial `null` response under the `["adoptionForm"]` key. Navigation did not trigger a refetch.
+* **Resolution:** Added cache invalidation immediately after a successful API submission to force a fresh fetch.
+
+```ts
+import { useQueryClient } from "@tanstack/react-query";
+const queryClient = useQueryClient();
+
+// Invoked upon successful POST/PUT
+await queryClient.invalidateQueries({ queryKey: ["adoptionForm"] });
