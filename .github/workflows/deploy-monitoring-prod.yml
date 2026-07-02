@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.PROD_EC2_USER }}
           key: ${{ secrets.PROD_EC2_SSH_KEY }}
           source: "monitoring/production"
-          target: "~/SmartAdoptApp"
+          target: "~/SmartAdoptApp/production/monitoring"
 
       - name: Deploy monitoring stack via SSH
         uses: appleboy/ssh-action@v1

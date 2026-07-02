@@ -18,11 +18,11 @@ npm install -D @commitlint/cli @commitlint/config-conventional husky
 ```
 
 **Step 2: Configure Commitlint**
-Create a `commitlint.config.mjs` file to use the conventional configuration.
+Create a `commitlint.config.js` file to use the conventional configuration.
 *For Mac/Linux/Windows:*
 
 ```bash
-node -e "fs.writeFileSync('commitlint.config.mjs', 'export default { extends: [\'@commitlint/config-conventional\'] };')"
+node -e "fs.writeFileSync('commitlint.config.js', 'export default { extends: [\'@commitlint/config-conventional\'] };')"
 
 ```
 
