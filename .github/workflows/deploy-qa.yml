@@ -141,7 +141,17 @@ jobs:
                 echo "Backend is healthy ✓"
                 break
               fi
-       
+              [ "$i" -eq 12 ] && {
+                echo "Healthcheck failed — rolling back..."
+                if [ "$PREV_BACKEND" != "none" ]; then
+                  docker tag "$PREV_BACKEND" ${{ secrets.DOCKER_USERNAME }}/backend-qa:qa
+                  docker tag "$PREV_FRONTEND" ${{ secrets.DOCKER_USERNAME }}/frontend-qa:qa
+                  docker compose -f docker-compose-qa.yml up -d --force-recreate
+                fi
+                exit 1
+              }
+              sleep 5
+            done
             
             docker image prune -f
             echo "QA deploy complete ✓ (sha: ${{ steps.vars.outputs.sha7 }})"
