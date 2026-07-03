@@ -1,0 +1,85 @@
+name: Deploy QA Mobile
+
+on:
+  push:
+    branches:
+      - qa
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-qa-mobile
+  cancel-in-progress: true
+
+jobs:
+  build-android-qa:
+    name: Build & Distribute Android APK (QA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build web bundle for QA mobile
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://smartadoptqa.programacionwebuce.net/api
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        working-directory: frontend
+        run: npx cap sync android
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Decode QA keystore
+        working-directory: frontend/android/app
+        run: echo "${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}" | base64 -d > qa-release.keystore
+
+      - name: Grant execute permission to gradlew
+        working-directory: frontend/android
+        run: chmod +x gradlew
+
+      - name: Build QA release APK
+        working-directory: frontend/android
+        env:
+          QA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}
+          QA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS_QA }}
+          QA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD_QA }}
+        run: ./gradlew assembleQaRelease --stacktrace
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID_QA }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: qa-testers
+          file: frontend/android/app/build/outputs/apk/qa/release/app-qa-release.apk
+          releaseNotes: |
+            Build QA automatic
+            Commit: ${{ github.sha }}
+            Rama: qa
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartadopt-qa-mobile-${{ github.sha }}
+          path: frontend/android/app/build/outputs/apk/qa/release/app-qa-release.apk
+          retention-days: 14
