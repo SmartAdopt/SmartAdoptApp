@@ -28,8 +28,7 @@ backend/                 # FastAPI backend application
 │   │   ├── main.py          # FastAPI application entry point
 │   │   ├── database/        # Database configurations (PostgreSQL, MongoDB, Redis)
 │   │   │   ├── postgres/    # PostgreSQL configuration
-│   │   │   │   ├── postgres_db.py # SQLAlchemy configuration (Base, Session)
-│   │   │   │   └── init_postgres.sql # Database initialization script
+│   │   │   │   └── postgres_db.py # SQLAlchemy configuration (Base, Session)
 │   │   │   ├── mongo/       # MongoDB configuration
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
@@ -37,30 +36,26 @@ backend/                 # FastAPI backend application
 │   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
-│   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
-│   │   │   └── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py         # Authentication endpoints
 │   │   │   ├── admin_routes.py        # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
-│   │   │   ├── adoption_form_routes.py # Adoption form endpoints
-│   │   │   └── favorite_routes.py     # Favorite endpoints
+│   │   │   └── adoption_form_routes.py # Adoption form endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py            # Authentication schemas
 │   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
-│   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
-│   │   │   └── favorite_schemas.py       # Favorite schemas
+│   │   │   └── adoption_form_schemas.py   # Adoption form schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
-│   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
-│   │   │   └── favorite_service.py    # Favorite service
+│   │   │   └── adoption_form_service.py # Adoption form service (MongoDB)
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -83,7 +78,6 @@ backend/                 # FastAPI backend application
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py              # Pet management tests
 │   │   ├── test_adoption_form.py    # Adoption form tests
-│   │   ├── test_favorite_routes.py  # Favorite tests
 │   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -748,125 +742,6 @@ Updates the adoption form for the authenticated user. All fields are optional in
 - `500 Internal Server Error`: Unexpected server error
 - `401 Unauthorized`: Missing or invalid token
 
-## Favorite Pets
-
-The favorites system allows adopters to save and manage their favorite pets. Favorites are stored in PostgreSQL (relational) while pet profile data is fetched from MongoDB.
-
-**Base URL:** `/adopter/favorites`
-
-### Add Favorite
-
-**POST** `/adopter/favorites/{pet_profile_id}`
-
-Adds a pet to the authenticated adopter's favorites. Validates that the pet profile exists in MongoDB before creating the favorite.
-
-**Authorization:** `Adopter` role required
-
-**Request**
-```http
-POST /adopter/favorites/PR1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Response (201 Created)**
-```json
-{
-  "message": "Pet added to favorites",
-  "favorite": {
-    "favorite_id": 1,
-    "user_id": 2,
-    "pet_profile_id": "PR1"
-  }
-}
-```
-
-**Error Responses**
-- `401 Unauthorized`: Missing or invalid token
-- `403 Forbidden`: User role is not "adopter"
-- `404 Not Found`: Pet profile not found in MongoDB
-- `409 Conflict`: Pet already in favorites
-
-### Remove Favorite
-
-**DELETE** `/adopter/favorites/{pet_profile_id}`
-
-Removes a pet from the authenticated adopter's favorites.
-
-**Authorization:** `Adopter` role required
-
-**Request**
-```http
-DELETE /adopter/favorites/PR1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Response (200 OK)**
-```json
-{
-  "message": "Pet removed from favorites"
-}
-```
-
-**Error Responses**
-- `401 Unauthorized`: Missing or invalid token
-- `403 Forbidden`: User role is not "adopter"
-- `404 Not Found`: Favorite not found
-
-### List Favorites
-
-**GET** `/adopter/favorites/`
-
-Returns all favorites for the authenticated adopter, including full pet profile data from MongoDB.
-
-**Authorization:** `Adopter` role required
-
-**Request**
-```http
-GET /adopter/favorites/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Response (200 OK)**
-```json
-{
-  "favorites": [
-    {
-      "favorite_id": 1,
-      "user_id": 2,
-      "pet_profile_id": "PR1",
-      "pet": {
-        "profile_id": "PR1",
-        "title": "Buddy: Your new best friend",
-        "tags": ["#Adoptable", "#LoyalFriend"],
-        "emotional_description": "Buddy is a special being...",
-        "status": "available",
-        "creation_date": "2026-06-18T05:53:30.061000",
-        "pet": {
-          "name": "Buddy",
-          "pet_image_url": "https://example.com/dog.jpg",
-          "animal_breed": ["dog", "Golden Retriever"],
-          "age": 3,
-          "gender": "male",
-          "is_sterilized": true,
-          "vaccines_up_to_date": ["rabies"],
-          "dewormed": true,
-          "weight_kg": 8.5,
-          "special_conditions": [],
-          "brief_description": "Friendly dog looking for a home"
-        }
-      }
-    }
-  ],
-  "count": 1
-}
-```
-
-**Error Responses**
-- `401 Unauthorized`: Missing or invalid token
-- `403 Forbidden`: User role is not "adopter"
-
----
-
 ## Backblaze B2 Image Upload
 
 The application uses Backblaze B2 cloud storage for image upload:
@@ -1141,12 +1016,6 @@ Authorization: Bearer <jwt_token>
 - `user_id`: Integer (Foreign Key to User, Primary Key)
 - `created_at`: DateTime
 - Uses composition pattern with User table
-
-### Favorite
-- `favorite_id`: Integer (Primary Key, auto-increment)
-- `user_id`: Integer (Foreign Key to User, NOT NULL)
-- `pet_profile_id`: String (VARCHAR, NOT NULL)
-- Unique constraint on (`user_id`, `pet_profile_id`)
 
 ### Pet
 - `name`: String
