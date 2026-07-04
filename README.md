@@ -63,7 +63,8 @@ SmartAdoptApp/
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
-│   │   │   └── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py         # Authentication endpoints
 │   │   │   ├── admin_routes.py        # Admin-protected endpoints
@@ -71,21 +72,24 @@ SmartAdoptApp/
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
 │   │   │   ├── adoption_form_routes.py # Adoption form endpoints
-│   │   │   └── favorite_routes.py     # Favorite endpoints
+│   │   │   ├── favorite_routes.py     # Favorite endpoints
+│   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py            # Authentication schemas
 │   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
 │   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
-│   │   │   └── favorite_schemas.py       # Favorite schemas
+│   │   │   ├── favorite_schemas.py       # Favorite schemas
+│   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
-│   │   │   └── favorite_service.py    # Favorite service
+│   │   │   ├── favorite_service.py    # Favorite service
+│   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management

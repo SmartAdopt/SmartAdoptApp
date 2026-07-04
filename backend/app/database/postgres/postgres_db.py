@@ -19,6 +19,7 @@ def get_engine():
         _engine = create_engine(
             f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
         )
+        Base.metadata.create_all(bind=_engine)
         logger.info("PostgreSQL engine created successfully")
     return _engine
 
