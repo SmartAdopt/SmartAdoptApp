@@ -16,10 +16,19 @@ import { SidebarItem } from "../atoms/SidebarItem";
 import { Logo } from "../atoms/Logo"; // Imported to replace the placeholder
 import { useAuth } from "../../hooks/useAuth";
 
-export const AdopterSidebar = () => {
+interface AdopterSidebarProps {
+  onClose?: () => void;
+}
+
+export const AdopterSidebar = ({ onClose }: AdopterSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logoutUser } = useAuth();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (onClose) onClose();
+  };
 
   return (
     <Box
@@ -31,11 +40,12 @@ export const AdopterSidebar = () => {
         display: "flex",
         flexDirection: "column",
         py: 3,
+        height: "100%", // Ensures it fills the Drawer
       }}
     >
       {/* 1. CLICKABLE LOGO: Navigates to the public landing page */}
       <Box
-        onClick={() => navigate("/")}
+        onClick={() => handleNavigation("/")}
         sx={{
           px: 3,
           mb: 4,
@@ -52,42 +62,42 @@ export const AdopterSidebar = () => {
           icon={<HomeIcon />}
           label="Inicio"
           selected={location.pathname === "/adopter/dashboard"}
-          onClick={() => navigate("/adopter/dashboard")}
+          onClick={() => handleNavigation("/adopter/dashboard")}
         />
 
         <SidebarItem
           icon={<SearchIcon />}
           label="Explorar"
           selected={location.pathname === "/adopter/explore"}
-          onClick={() => navigate("/adopter/explore")}
+          onClick={() => handleNavigation("/adopter/explore")}
         />
 
         <SidebarItem
           icon={<DescriptionIcon />}
           label="Solicitudes"
           selected={location.pathname === "/adopter/requests"}
-          onClick={() => navigate("/adopter/requests")}
+          onClick={() => handleNavigation("/adopter/requests")}
         />
 
         <SidebarItem
           icon={<FavoriteIcon />}
           label="Favoritos"
           selected={location.pathname === "/adopter/favorites"}
-          onClick={() => navigate("/adopter/favorites")}
+          onClick={() => handleNavigation("/adopter/favorites")}
         />
 
         <SidebarItem
           icon={<AssignmentTurnedInIcon />}
           label="Idoneidad"
           selected={location.pathname === "/adopter/suitability"}
-          onClick={() => navigate("/adopter/suitability")}
+          onClick={() => handleNavigation("/adopter/suitability")}
         />
 
         <SidebarItem
           icon={<PersonIcon />}
           label="Perfil"
           selected={location.pathname === "/adopter/profile"}
-          onClick={() => navigate("/adopter/profile")}
+          onClick={() => handleNavigation("/adopter/profile")}
         />
 
         <Divider sx={{ my: 2 }} />
@@ -97,7 +107,7 @@ export const AdopterSidebar = () => {
           icon={<LanguageIcon />}
           label="Ver Sitio Público"
           selected={location.pathname === "/"}
-          onClick={() => navigate("/")}
+          onClick={() => handleNavigation("/")}
         />
       </List>
 
@@ -107,7 +117,10 @@ export const AdopterSidebar = () => {
           startIcon={<LogoutIcon />}
           variant="outlined"
           color="inherit"
-          onClick={() => logoutUser()}
+          onClick={() => {
+            logoutUser();
+            if (onClose) onClose();
+          }}
         >
           Cerrar Sesión
         </Button>
