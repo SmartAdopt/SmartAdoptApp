@@ -105,7 +105,7 @@ def update_profile(
         )
 
     # Extract user ID from token (users can only edit their own profile)
-    user_id = int(token_payload.get("sub"))
+    user_id = int(token_payload.get("sub", 0))
 
     try:
         # Convert Pydantic schema to dict, excluding None values (partial update)

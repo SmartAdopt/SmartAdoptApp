@@ -475,7 +475,7 @@ def update_adopter_profile(
 
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(new_password.encode("utf-8"), salt).decode("utf-8")
-        user.password_hash = hashed
+        user.password_hash = hashed  # type: ignore[assignment]
 
     # Update profile fields
     if "first_name" in update_data and update_data["first_name"] is not None:
