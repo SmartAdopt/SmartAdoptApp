@@ -51,9 +51,12 @@ jobs:
 
       - name: Decode and validate QA keystore
         working-directory: frontend/android/app
+        env:
+          QA_BASE64: ${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}
+          QA_PASS: ${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}" | base64 -d > qa-release.keystore
-          keytool -list -v -keystore qa-release.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}" -storetype JKS
+          echo "$QA_BASE64" | base64 -d > qa-release.keystore
+          keytool -list -v -keystore qa-release.keystore -storepass "$QA_PASS" -storetype JKS
 
       - name: Grant execute permission to gradlew
         working-directory: frontend/android
