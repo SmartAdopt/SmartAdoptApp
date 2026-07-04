@@ -28,12 +28,14 @@ android {
             storePassword System.getenv("QA_KEYSTORE_PASSWORD")
             keyAlias System.getenv("QA_KEY_ALIAS")
             keyPassword System.getenv("QA_KEY_PASSWORD")
+            storeType "JKS" 
         }
         prod {
             storeFile file("prod-release.keystore")
             storePassword System.getenv("PROD_KEYSTORE_PASSWORD")
             keyAlias System.getenv("PROD_KEY_ALIAS")
             keyPassword System.getenv("PROD_KEY_PASSWORD")
+            storeType "JKS" 
         }
     }
     flavorDimensions "environment"

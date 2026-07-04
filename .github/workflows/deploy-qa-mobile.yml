@@ -49,9 +49,11 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Decode QA keystore
+      - name: Decode and validate QA keystore
         working-directory: frontend/android/app
-        run: echo "${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}" | base64 -d > qa-release.keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}" | base64 -d > qa-release.keystore
+          keytool -list -v -keystore qa-release.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}" -storetype JKS
 
       - name: Grant execute permission to gradlew
         working-directory: frontend/android
