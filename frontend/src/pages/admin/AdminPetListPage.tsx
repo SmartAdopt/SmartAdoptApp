@@ -203,7 +203,7 @@ const SectionHeader = ({
           size="small"
           onClick={onSave}
           disabled={isSaving}
-          sx={{ color: "#22C55E" }}
+          sx={{ color: "#22C55E", minWidth: 48, minHeight: 48 }}
         >
           <CheckIcon fontSize="small" />
         </IconButton>
@@ -211,7 +211,7 @@ const SectionHeader = ({
           size="small"
           onClick={onCancel}
           disabled={isSaving}
-          sx={{ color: "#EF4444" }}
+          sx={{ color: "#EF4444", minWidth: 48, minHeight: 48 }}
         >
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -220,7 +220,12 @@ const SectionHeader = ({
       <IconButton
         size="small"
         onClick={onEdit}
-        sx={{ color: "#9CA3AF", "&:hover": { color: "#6B7280" } }}
+        sx={{
+          color: "#9CA3AF",
+          "&:hover": { color: "#6B7280" },
+          minWidth: 48,
+          minHeight: 48,
+        }}
       >
         <EditIcon sx={{ fontSize: 18 }} />
       </IconButton>
@@ -503,19 +508,26 @@ export const AdminPetListPage = () => {
 
       {/* MAIN SPLIT-PANEL LAYOUT */}
       {rawPets && rawPets.length > 0 && selectedPet && selectedPet.pet && (
-        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 3,
+            alignItems: "flex-start",
+          }}
+        >
           {/* ==========================================
               LEFT PANEL: Pet List Sidebar
               ========================================== */}
           <Paper
             elevation={0}
             sx={{
-              width: 260,
-              minWidth: 260,
+              width: { xs: "100%", md: 260 },
+              minWidth: { xs: "100%", md: 260 },
               p: 3,
               borderRadius: 3,
               border: "1px solid #E5E7EB",
-              position: "sticky",
+              position: { xs: "static", md: "sticky" },
               top: 24,
             }}
           >
@@ -585,7 +597,7 @@ export const AdminPetListPage = () => {
                   alt={selectedPet.pet.name}
                   sx={{
                     width: "100%",
-                    height: 340,
+                    height: { xs: 240, md: 340 },
                     objectFit: "cover",
                     display: "block",
                     bgcolor: "#F3F4F6",

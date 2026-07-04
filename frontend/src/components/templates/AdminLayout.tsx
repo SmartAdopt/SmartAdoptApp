@@ -13,7 +13,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     <Box sx={{ minHeight: "100vh", bgcolor: "#F8FAFC" }}>
       <AdminNavbar />
 
-      <Box component="main" sx={{ py: 4 }}>
+      <Box component="main" sx={{ py: { xs: 2, md: 4 } }}>
         <Container maxWidth="lg">{children}</Container>
       </Box>
     </Box>

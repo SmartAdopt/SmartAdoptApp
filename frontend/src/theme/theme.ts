@@ -1,9 +1,9 @@
 // src/theme/theme.ts
 
-import { createTheme } from "@mui/material/styles";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 
 // Define the global theme based on SmartAdopt prototypes
-export const theme = createTheme({
+let theme = createTheme({
   palette: {
     primary: {
       main: "#2563EB", // Blue used in main buttons and links
@@ -35,17 +35,59 @@ export const theme = createTheme({
     borderRadius: 8, // Standard rounded corners for inputs and buttons
   },
   components: {
-    // Override default MUI button styles for consistency
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          // Mobile First: Prevent long URLs or continuous strings from breaking the viewport
+          wordBreak: "break-word",
+          overflowWrap: "break-word",
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
           padding: "10px 24px",
+          minHeight: 48, // Touch target mobile-first
+          minWidth: 48, // Touch target mobile-first
           boxShadow: "none", // Flat design as seen in prototypes
+          whiteSpace: "normal", // Mobile First: Allow button text to wrap instead of overflowing
+          textAlign: "center",
+          lineHeight: 1.2,
           "&:hover": {
             boxShadow: "none",
           },
         },
       },
     },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 48, // Touch target mobile-first
+          minWidth: 48, // Touch target mobile-first
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          overflow: "hidden", // Mobile First: Prevent content from spilling horizontally
+          maxWidth: "100vw",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          overflow: "hidden", // Mobile First: Container bounds protection
+          maxWidth: "100vw",
+        },
+      },
+    },
   },
 });
+
+// Apply responsive font sizes (automatically scales h1-h6 down on mobile viewports)
+theme = responsiveFontSizes(theme);
+
+export { theme };

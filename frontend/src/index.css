@@ -1,0 +1,5 @@
+/* Global Mobile First Image Reset */
+img {
+  max-width: 100%;
+  height: auto;
+}
