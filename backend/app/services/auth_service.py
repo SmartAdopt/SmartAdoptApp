@@ -431,6 +431,77 @@ def refresh_tokens(redis_client, refresh_token: str) -> Dict[str, str]:
     return {"access_token": new_access_token, "refresh_token": new_refresh_token}
 
 
+def update_adopter_profile(
+    db: Session, user_id: int, update_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    # Update adopter profile (partial update)
+    logger.info(f"Profile update attempt for user ID: {user_id}")
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        logger.warning(f"Profile update failed - user not found: {user_id}")
+        raise ValueError("User not found")
+
+    if user.type.lower() != "adopter":
+        logger.warning(f"Profile update failed - user is not an adopter: {user_id}")
+        raise ValueError("User is not an adopter")
+
+    # Check email uniqueness if email is being updated
+    if "email" in update_data and update_data["email"] is not None:
+        existing_user = (
+            db.query(User)
+            .filter(User.email == update_data["email"], User.user_id != user_id)
+            .first()
+        )
+        if existing_user:
+            logger.warning(
+                f"Profile update failed - email already in use: {update_data['email']}"
+            )
+            raise ValueError("Email already in use")
+
+    # Handle password change
+    current_password = update_data.get("current_password")
+    new_password = update_data.get("new_password")
+
+    if current_password and new_password:
+        if not bcrypt.checkpw(
+            current_password.encode("utf-8"),
+            user.password_hash.encode("utf-8"),
+        ):
+            logger.warning(
+                f"Profile update failed - incorrect current password for user: {user_id}"
+            )
+            raise ValueError("Current password is incorrect")
+
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(new_password.encode("utf-8"), salt).decode("utf-8")
+        user.password_hash = hashed  # type: ignore[assignment]
+
+    # Update profile fields
+    if "first_name" in update_data and update_data["first_name"] is not None:
+        user.first_name = update_data["first_name"]
+    if "last_name" in update_data and update_data["last_name"] is not None:
+        user.last_name = update_data["last_name"]
+    if "phone_number" in update_data and update_data["phone_number"] is not None:
+        user.phone_number = update_data["phone_number"]
+    if "email" in update_data and update_data["email"] is not None:
+        user.email = update_data["email"]
+
+    db.commit()
+    db.refresh(user)
+
+    logger.info(f"Profile updated successfully for user ID: {user_id}")
+
+    return {
+        "user_id": user.user_id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone_number": user.phone_number,
+        "type": user.type,
+    }
+
+
 def logout_user(redis_client, refresh_token: str) -> None:
     # Delete refresh token from Redis
     logger.info("Logout attempt")

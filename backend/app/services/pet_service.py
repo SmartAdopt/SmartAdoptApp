@@ -247,6 +247,7 @@ async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str,
         # Prepare update data for pet fields
         pet_update_data = {}
         allowed_pet_fields = {
+            "name",
             "age",
             "is_sterilized",
             "vaccines_up_to_date",
@@ -282,11 +283,17 @@ async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str,
 
         for field in allowed_pet_fields:
             if field in pet_data:
-                pet_update_data[field] = pet_data[field]
+                value = pet_data[field]
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    continue
+                pet_update_data[field] = value
 
         for field in allowed_ai_fields:
             if field in pet_data:
-                ai_update_data[field] = pet_data[field]
+                value = pet_data[field]
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    continue
+                ai_update_data[field] = value
 
         # Combine all updates
         update_data = {}
