@@ -12,6 +12,7 @@ export const adaptLoginResponse = (response: LoginApiResponse): AuthSession => {
     id: response.id,
     name: `${response.first_name} ${response.last_name}`.trim(),
     email: response.email,
+    phone_number: response.phone_number,
     role: response.role,
   };
 };

@@ -23,6 +23,7 @@ export interface LoginApiResponse {
   first_name: string;
   last_name: string;
   email: string;
+  phone_number?: string;
   role: "admin" | "adopter" | "user";
   created_at?: string;
   refresh_token?: string; // <-- Add this property as optional
@@ -68,5 +69,26 @@ export interface AuthSession {
   id: number;
   name: string;
   email: string;
+  phone_number?: string;
   role: "admin" | "adopter" | "user";
+}
+
+// ---------------------------------------------------------
+// 3. PROFILE UPDATE API CONTRACTS
+// Matches backend PUT /adopter/profile (UpdateAdopterProfile schema)
+// ---------------------------------------------------------
+
+export interface UpdateProfileApiRequest {
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  email?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
+export interface UpdateProfileApiResponse {
+  message: string;
+  user_id: number;
+  updated_at: string;
 }
