@@ -60,9 +60,12 @@ jobs:
 
       - name: Decode and validate production keystore
         working-directory: frontend/android/app
+        env:
+          PROD_BASE64: ${{ secrets.ANDROID_KEYSTORE_PROD_BASE64 }}
+          PROD_PASS: ${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_PROD_BASE64 }}" | base64 -d > prod-release.keystore
-          keytool -list -v -keystore prod-release.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}" -storetype JKS
+          echo "$PROD_BASE64" | base64 -d > prod-release.keystore
+          keytool -list -v -keystore prod-release.keystore -storepass "$PROD_PASS" -storetype JKS
 
       - name: Grant execute permission to gradlew
         working-directory: frontend/android

@@ -42,15 +42,15 @@ python -m pytest backend/tests/test_adoption_form.py -v
 
 
 ### Test Coverage
-The backend currently has 90% code coverage with 66 tests passing:
+The backend currently has 90% code coverage with 81 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
-- 4 adopter routes tests
+- 14 adopter routes tests (home access + profile update)
 - 6 Google OAuth tests
 - 1 Google OAuth utils test
 - 1 main test
 - 6 Backblaze B2 tests (image upload, authorization, validation)
-- 24 pet management tests (registration, update, listing, validation, role restrictions)
+- 17 pet management tests (registration, update, listing, validation, role restrictions, AI enrichment)
 - 7 adoption form tests (submission, retrieval, update, authorization, workflow)
 
 ---
@@ -414,7 +414,7 @@ Validates that blacklisted tokens are rejected for admin access.
 
 ## 5. Adopter Routes Tests: `test_adopter_routes.py`
 
-This file contains validation logic for adopter-specific endpoints, including home access, role verification, and token validation.
+This file contains validation logic for adopter-specific endpoints, including home access, profile update, role verification, and token validation.
 
 ### a) Functional Test: Adopter Home Success
 ```python
@@ -452,6 +452,139 @@ def test_adopter_home_with_blacklisted_token(client, db_session):
 ```
 **Purpose:** 
 Validates that blacklisted tokens are rejected for adopter access.
+
+### d) Functional Test: Successful Profile Update
+```python
+def test_update_profile_success(client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "first_name": "NewName",
+        "last_name": "NewLastName",
+        "phone_number": "0988888888",
+        "email": "newemail@test.com",
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Profile updated successfully"
+    assert data["user_id"] == user.user_id
+    assert "updated_at" in data
+```
+**Purpose:** 
+Validates successful adopter profile update. Returns an `UpdateResponse` with confirmation message, user ID, and timestamp.
+* **HTTP 200 (OK):** Indicates successful update.
+* **Response format:** `{message, user_id, updated_at}` using `UpdateResponse` schema.
+
+### e) Functional Test: Partial Profile Update
+```python
+def test_update_profile_partial_first_name(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={"first_name": "OnlyName"})
+    
+    assert response.status_code == 200
+    assert data["message"] == "Profile updated successfully"
+```
+**Purpose:** 
+Validates partial update — only provided fields are updated, others remain unchanged.
+
+### f) Functional Test: Password Change
+```python
+def test_update_profile_password_success(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "TestPass123",
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 200
+```
+**Purpose:** 
+Validates password change with correct current password. Verifies that login works with the new password afterwards.
+
+### g) Negative Test: Password Validation (Wrong Current)
+```python
+def test_update_profile_password_wrong_current(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "WrongPass123",
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 400
+    assert "Current password is incorrect" in response.text
+```
+**Purpose:** 
+Ensures password change requires the correct current password.
+* **HTTP 400 (Bad Request):** Indicates incorrect current password.
+
+### h) Negative Test: Password Validation (Missing Current)
+```python
+def test_update_profile_password_missing_current(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 422
+```
+**Purpose:** 
+Validates that `current_password` is required when `new_password` is provided (cross-field validation).
+* **HTTP 422 (Unprocessable Entity):** Indicates validation error.
+
+### i) Negative Test: Password Validation (Same Password)
+```python
+def test_update_profile_password_same_password(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "TestPass123",
+        "new_password": "TestPass123",
+    })
+    
+    assert response.status_code == 422
+```
+**Purpose:** 
+Validates that new password must be different from current password.
+
+### j) Negative Test: Email Duplicate
+```python
+def test_update_profile_email_duplicate(client, db_session):
+    # Create two users, try to update user1's email to user2's email
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={"email": "other@test.com"})
+    
+    assert response.status_code == 409
+```
+**Purpose:** 
+Ensures email uniqueness is enforced during profile update.
+* **HTTP 409 (Conflict):** Indicates email already in use by another user.
+
+### k) Negative Test: Unauthorized Role Update
+```python
+def test_update_profile_unauthorized_role(client, db_session):
+    # Create admin user and token
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {admin_token}"}, json={"first_name": "Hacker"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can update their profile.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+
+### l) Negative Test: No Token
+```python
+def test_update_profile_no_token(client):
+    response = client.put("/adopter/profile", json={"first_name": "NoToken"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that profile update requires authentication.
+
+### m) Negative Test: Invalid Token
+```python
+def test_update_profile_invalid_token(client):
+    response = client.put("/adopter/profile", headers={"Authorization": "Bearer invalid_token"}, json={"first_name": "Invalid"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that invalid tokens are rejected.
 
 ---
 
