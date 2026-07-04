@@ -16,6 +16,7 @@ from datetime import datetime
 
 # Service imports
 from app.services.auth_service import update_adopter_profile
+from app.services.favorite_service import get_favorite_count
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -30,7 +31,10 @@ router = APIRouter(prefix="/adopter", tags=["Adopter"])
     summary="Adopter Home",
     description="Get adopter home data (requires adopter role)",
 )
-def adopter_home(token_payload: dict = Depends(verify_token)):
+def adopter_home(
+    token_payload: dict = Depends(verify_token),
+    db=Depends(get_db),
+):
     # Endpoint for adopter home - protected by JWT and role-based authorization
     # Only users with role="adopter" can access this endpoint
     logger.info(f"GET /adopter/home - Request from user: {token_payload.get('sub')}")
@@ -49,6 +53,10 @@ def adopter_home(token_payload: dict = Depends(verify_token)):
         logger.info(
             f"Adopter home accessed successfully by user: {token_payload.get('sub')}"
         )
+        # Get actual favorite count from database
+        user_id = int(token_payload.get("sub", 0))
+        favorite_count = get_favorite_count(db, user_id)
+
         # Return adopter home data
         return {
             "message": "Welcome to Adopter Home",  # Welcome message
@@ -57,7 +65,7 @@ def adopter_home(token_payload: dict = Depends(verify_token)):
             "home_data": {
                 "available_pets": 45,  # Available pets count
                 "my_adoptions": 2,  # User's adoptions count
-                "favorite_pets": 8,  # User's favorite pets count
+                "favorite_pets": favorite_count,  # User's favorite pets count
             },
         }
 

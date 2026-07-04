@@ -253,6 +253,11 @@ def client(db_session):
         side_effect=lambda credentials: __import__(
             "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
         ).verify_token(credentials, mock_redis),
+    ), patch(
+        "app.routes.favorite_routes.verify_token",
+        side_effect=lambda credentials: __import__(
+            "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
+        ).verify_token(credentials, mock_redis),
     ):
         # Create the test client
         with TestClient(app) as test_client:
