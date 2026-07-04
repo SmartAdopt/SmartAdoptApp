@@ -37,7 +37,8 @@ backend/                 # FastAPI backend application
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
-│   │   │   └── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py         # Authentication endpoints
 │   │   │   ├── admin_routes.py        # Admin-protected endpoints
@@ -45,21 +46,24 @@ backend/                 # FastAPI backend application
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
 │   │   │   ├── adoption_form_routes.py # Adoption form endpoints
-│   │   │   └── favorite_routes.py     # Favorite endpoints
+│   │   │   ├── favorite_routes.py     # Favorite endpoints
+│   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py            # Authentication schemas
 │   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
 │   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
-│   │   │   └── favorite_schemas.py       # Favorite schemas
+│   │   │   ├── favorite_schemas.py       # Favorite schemas
+│   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
-│   │   │   └── favorite_service.py    # Favorite service
+│   │   │   ├── favorite_service.py    # Favorite service
+│   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -915,6 +919,105 @@ file: dog.jpg
 
 For complete documentation, refer to `docs/README_BACKBLAZE.md`.
 
+## Foundation Info
+
+The foundation info system stores the organization's legal and contact information as a singleton record in PostgreSQL.
+
+**Base URL:** `/foundation`
+
+### Create Foundation Info
+
+**POST** `/foundation/`
+
+Creates the foundation record. Only one record is allowed (singleton pattern).
+
+**Authorization:** `Admin` role required
+
+**Request Body**
+```json
+{
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Foundation created successfully",
+  "foundation_id": 1
+}
+```
+
+**Validation Rules:**
+- `name`, `legal_representative`: Only letters allowed (including accented characters and ñ)
+- `phone`: Exactly 10 digits, must start with "09" (Ecuador mobile)
+- `address`: Letters, numbers, dots, commas, dashes, slashes, and hash
+- `email`: Valid email format
+- `business_hours`: Letters, numbers, dots, commas, colons, and dashes
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `409 Conflict`: Foundation already exists
+- `422 Unprocessable Entity`: Validation error
+
+### Get Foundation Info
+
+**GET** `/foundation/`
+
+Retrieves the foundation's information. Public endpoint (no authentication required).
+
+**Response (200 OK)**
+```json
+{
+  "foundation_id": 1,
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Error Responses**
+- `404 Not Found`: Foundation not created yet
+
+### Update Foundation Info
+
+**PUT** `/foundation/`
+
+Updates the foundation's information. All fields are optional in the update request.
+
+**Authorization:** `Admin` role required
+
+**Request Body** *(all fields optional)*
+```json
+{
+  "phone": "0998887777",
+  "business_hours": "Lun-Vie 8:00-17:00"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Foundation updated successfully",
+  "foundation_id": 1
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `404 Not Found`: Foundation not created yet
+- `422 Unprocessable Entity`: Validation error
+
+---
+
 ## Pet Management System
 
 The application includes a comprehensive pet management system with AI-powered profile generation using BLIP and Llama 3 8B models.
@@ -1168,6 +1271,15 @@ Authorization: Bearer <jwt_token>
 - `status`: String ("available", "in_process", "adopted")
 - `creation_date`: DateTime
 - `pet`: Object (Pet basic information)
+
+### Foundation
+- `foundation_id`: Integer (Primary Key, auto-increment)
+- `name`: String — Foundation legal name
+- `phone`: String — Contact phone number (10 digits, starts with 09)
+- `address`: String — Physical address
+- `email`: String — Official email
+- `legal_representative`: String — Legal representative name
+- `business_hours`: String — Business hours
 
 ### AdoptionForm
 - `form_id`: String (Primary Key, auto-generated: AF####)
