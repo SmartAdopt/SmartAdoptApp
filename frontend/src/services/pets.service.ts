@@ -5,6 +5,7 @@ import type {
   PetRegistrationRequest,
   PetRegistrationResponse,
   AIProfileResponse,
+  PetUpdatePayload,
 } from "../types/pets.types";
 import type { Pet } from "../types/dashboard.types";
 
@@ -65,6 +66,34 @@ export const petsService = {
       ...pet,
       id: pet.profile_id ?? pet.id,
     }));
+  },
+
+  /**
+   * Update a pet profile (partial update)
+   * Endpoint: PUT /pets/{profile_id}
+   */
+  updatePet: async (
+    profileId: string,
+    data: Partial<PetUpdatePayload>,
+  ): Promise<PetRegistrationResponse> => {
+    const response = await apiClient.put<PetRegistrationResponse>(
+      `/pets/${profileId}`,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * Regenerate AI fields for a profile based on factual data
+   * Endpoint: POST /pets/{profile_id}/regenerate
+   */
+  regenerateProfile: async (
+    profileId: string,
+  ): Promise<PetRegistrationResponse> => {
+    const response = await apiClient.post<PetRegistrationResponse>(
+      `/pets/${profileId}/regenerate`,
+    );
+    return response.data;
   },
 
   /**
