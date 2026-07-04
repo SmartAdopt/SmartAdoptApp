@@ -39,3 +39,16 @@ SELECT user_id FROM "user" WHERE email = 'admin@smartadopt.com';
 
 -- Reset the sequence to start from 2 so new users don't conflict with admin ID 1
 SELECT setval('user_user_id_seq', 2, false);
+
+-- Create favorite table
+CREATE TABLE IF NOT EXISTS "favorite" (
+    favorite_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
+    pet_profile_id VARCHAR NOT NULL,
+    UNIQUE(user_id, pet_profile_id)
+);
+
+-- Create indexes for favorite
+CREATE INDEX IF NOT EXISTS ix_favorite_favorite_id ON "favorite"(favorite_id);
+CREATE INDEX IF NOT EXISTS ix_favorite_user_id ON "favorite"(user_id);
+CREATE INDEX IF NOT EXISTS ix_favorite_pet_profile_id ON "favorite"(pet_profile_id);
