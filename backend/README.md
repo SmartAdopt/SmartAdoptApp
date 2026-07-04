@@ -482,6 +482,50 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `401 Unauthorized`: Missing or invalid token
 - `403 Forbidden`: User role is not "adopter"
 
+#### PUT /adopter/profile
+
+Updates the authenticated adopter's profile. Only the adopter themselves can update their own profile. All fields are optional.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+PUT /adopter/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone_number": "0987654321",
+  "email": "newemail@example.com",
+  "current_password": "OldPass123",
+  "new_password": "NewPass456"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Profile updated successfully",
+  "user_id": 1,
+  "updated_at": "2026-07-03T12:00:00.000000"
+}
+```
+
+**Validation Rules:**
+- `first_name`, `last_name`: Only letters allowed, 2-50 characters
+- `phone_number`: Exactly 10 digits, must start with "09" (Ecuador mobile)
+- `email`: Valid email format
+- `current_password` and `new_password`: Both required together for password change, must be different
+- `new_password`: Minimum 8 characters, must contain uppercase, lowercase, and number
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `409 Conflict`: Email already in use
+- `400 Bad Request`: Validation error
+
 ---
 
 ## Adoption Form API Endpoints
@@ -824,6 +868,7 @@ Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
+  "name": "Buddy",
   "age": 4,
   "is_sterilized": false,
   "weight_kg": 9.0,
@@ -864,8 +909,10 @@ Content-Type: application/json
 ```
 
 **Allowed Fields for Update:**
-- Pet fields: age, is_sterilized, vaccines_up_to_date, dewormed, weight_kg, special_conditions, brief_description
+- Pet fields: name, age, is_sterilized, vaccines_up_to_date, dewormed, weight_kg, special_conditions, brief_description
 - AI fields: title, tags, emotional_description (optional, for manual editing)
+
+**Note:** Empty strings or whitespace-only values are ignored and the original value is preserved.
 
 ### Pet Regenerate AI Content
 

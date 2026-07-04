@@ -3,6 +3,7 @@
 # Pydantic imports
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
+from datetime import datetime
 from app.schemas.pet_profile_schemas import PetProfileResponse
 
 # Logger import
@@ -186,3 +187,10 @@ class PetRegisterResponse(BaseModel):
     # Schema for pet registration response
     message: str = Field(..., description="Confirmation message")
     profile: PetProfileResponse = Field(..., description="Complete pet profile")
+
+
+class UpdateResponse(BaseModel):
+    # Schema for pet profile update response
+    message: str = Field(..., description="Confirmation message")
+    profile_id: str = Field(..., description="Updated profile ID")
+    updated_at: datetime = Field(..., description="Update date")
