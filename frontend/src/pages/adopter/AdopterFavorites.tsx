@@ -22,7 +22,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
-import { petsService } from "../../services/pets.service";
+import { favoritesService } from "../../services/favorites.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
 
@@ -56,6 +56,8 @@ const FavoritePetCard = ({
         borderColor: "grey.200",
         overflow: "hidden",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <CardMedia
@@ -63,12 +65,15 @@ const FavoritePetCard = ({
         height="220"
         image={petImage}
         alt={petName}
+        sx={{ objectFit: "cover" }}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
           e.currentTarget.src = "/dog.svg";
         }}
       />
 
-      <CardContent>
+      <CardContent
+        sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}
+      >
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -101,13 +106,15 @@ const FavoritePetCard = ({
           <Chip label={petGender} size="small" />
         </Stack>
 
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => navigate(`/adopter/pet/${profile.id}`)}
-        >
-          Ver Perfil
-        </Button>
+        <Box sx={{ mt: "auto", pt: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => navigate(`/adopter/pet/${profile.id}`)}
+          >
+            Ver Perfil
+          </Button>
+        </Box>
       </CardContent>
     </Card>
   );
@@ -117,23 +124,36 @@ const FavoritePetCard = ({
 // FAVORITES PAGE
 // ==========================================
 export const AdopterFavorites = () => {
-  const { favoritePetIds, toggleFavorite } = usePetDatabase();
+  const { favoritePetIds, toggleFavorite, isFavoritesLoaded } =
+    usePetDatabase();
 
-  // Fetch from the real backend API (same as admin and explore)
+  // Fetch only the favorites from the backend (with embedded pet data)
   const {
-    data: allPets = [],
+    data: favoritesData,
     isLoading,
     isError,
-  } = useQuery<AIProfileResponse[]>({
-    queryKey: ["adopterFavoritePets"],
-    queryFn: petsService.getRawPetsDatabase,
+  } = useQuery({
+    queryKey: ["adopterFavoritesList"],
+    queryFn: favoritesService.listFavoritesWithPets,
     staleTime: 1000 * 60 * 5,
+    // Only fetch when the user context is ready
+    enabled: isFavoritesLoaded,
   });
 
-  // Filter only pets whose IDs are in the favoritePetIds array
+  // Extract the pet objects from the favorites API response.
+  // We STILL filter by favoritePetIds from the PetContext.
+  // This ensures that when the user clicks the unfavorite heart, the card
+  // disappears instantly (optimistic UI) without waiting for a React Query refetch.
   const favoritedPets = useMemo(() => {
-    return allPets.filter((pet) => favoritePetIds.includes(pet.id));
-  }, [allPets, favoritePetIds]);
+    if (!favoritesData?.favorites) return [];
+
+    return favoritesData.favorites
+      .filter((fav) => favoritePetIds.includes(fav.pet_profile_id))
+      .map((fav) => fav.pet)
+      .filter((pet): pet is AIProfileResponse => Boolean(pet));
+  }, [favoritesData, favoritePetIds]);
+
+  const loading = isLoading || !isFavoritesLoaded;
 
   return (
     <AdopterLayout>
@@ -147,7 +167,7 @@ export const AdopterFavorites = () => {
       </Box>
 
       {/* Loading & Error States */}
-      {isLoading && (
+      {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
           <CircularProgress size={40} color="primary" />
         </Box>
@@ -160,7 +180,7 @@ export const AdopterFavorites = () => {
       )}
 
       {/* Render logic */}
-      {!isLoading && !isError && (
+      {!loading && !isError && (
         <>
           {favoritedPets.length === 0 ? (
             <Box
