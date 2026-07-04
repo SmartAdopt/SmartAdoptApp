@@ -103,7 +103,7 @@ async def update_pet_route(
 
     try:
         # Convert Pydantic schema to dict before calling service
-        pet_data_dict = pet_data.model_dump()
+        pet_data_dict = pet_data.model_dump(exclude_unset=True)  # Exclude unset fields for partial updates
         # Call service to update the profile
         updated_pet = await update_pet(db, profile_id, pet_data_dict)
         # Return response with complete profile
