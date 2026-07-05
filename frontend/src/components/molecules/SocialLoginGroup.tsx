@@ -6,6 +6,17 @@ import { useNavigate } from "react-router-dom"; // <-- Fix 1: Added useNavigate
 import { SocialButton } from "../atoms/SocialButton";
 import { useAuth } from "../../context/AuthContext";
 
+interface OAuthTokenPayload {
+  access_token?: string;
+  refresh_token?: string;
+  role?: string;
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+}
+
 export const SocialLoginGroup = () => {
   const { loginUser } = useAuth();
   const navigate = useNavigate(); // <-- Fix 1: Initialized navigate
@@ -34,21 +45,9 @@ export const SocialLoginGroup = () => {
     );
   };
 
-  // 4. Listen for the message from the backend callback using BroadcastChannel
+  // 4. Listen for the message from the backend callback
   useEffect(() => {
-    const channel = new BroadcastChannel("oauth_channel");
-
-    channel.onmessage = (event: MessageEvent) => {
-      // Extract the payload (The JSON returned by /auth/google/callback)
-      // Securely parse the event data, as it often arrives as a stringified JSON
-      let data;
-      try {
-        data =
-          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      } catch {
-        return; // Ignore if not a valid JSON message
-      }
-
+    const handleTokens = (data: OAuthTokenPayload) => {
       if (data && data.access_token && data.role) {
         // We received the tokens!
 
@@ -60,11 +59,11 @@ export const SocialLoginGroup = () => {
 
         // 2. Format the user session to match our Context interface
         const sessionData = {
-          id: data.id,
-          name: `${data.first_name} ${data.last_name}`.trim(),
-          email: data.email,
+          id: data.id ? parseInt(data.id, 10) : 0,
+          name: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
+          email: data.email || "",
           phone_number: data.phone_number,
-          role: data.role,
+          role: data.role as "admin" | "adopter" | "user",
         };
 
         // 3. Log the user in globally
@@ -79,6 +78,39 @@ export const SocialLoginGroup = () => {
         }
       }
     };
+
+    // Web Implementation: BroadcastChannel
+    const channel = new BroadcastChannel("oauth_channel");
+    channel.onmessage = (event: MessageEvent) => {
+      let data;
+      try {
+        data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+      handleTokens(data);
+    };
+
+    // Electron Implementation: IPC listener via contextBridge
+    const win = window as unknown as {
+      electronAPI?: {
+        onOAuthResult: (callback: (data: unknown) => void) => void;
+      };
+    };
+    if (win.electronAPI && win.electronAPI.onOAuthResult) {
+      win.electronAPI.onOAuthResult((data: unknown) => {
+        let parsedData = data as OAuthTokenPayload;
+        if (typeof data === "string") {
+          try {
+            parsedData = JSON.parse(data);
+          } catch {
+            // Ignore
+          }
+        }
+        handleTokens(parsedData);
+      });
+    }
 
     return () => {
       channel.close();
