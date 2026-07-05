@@ -127,12 +127,19 @@ export const AdopterSuitability = () => {
                   </Typography>
 
                   <Box
-                    sx={{ display: "flex", gap: 2, justifyContent: "center" }}
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: 2,
+                      justifyContent: "center",
+                    }}
                   >
                     <Button
                       variant="contained"
                       color="primary"
                       size="large"
+                      fullWidth
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
                       onClick={() => navigate("/adopter/suitability/survey")}
                     >
                       Llenar el registro por primera vez
@@ -158,6 +165,7 @@ export const AdopterSuitability = () => {
                   />
                   <Typography
                     variant="h4"
+                    typography={{ xs: "h5", md: "h4" }}
                     fontWeight={800}
                     gutterBottom
                     color="text.primary"
@@ -175,12 +183,19 @@ export const AdopterSuitability = () => {
                   </Typography>
 
                   <Box
-                    sx={{ display: "flex", gap: 2, justifyContent: "center" }}
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: 2,
+                      justifyContent: "center",
+                    }}
                   >
                     <Button
                       variant="contained"
                       color="primary"
                       startIcon={<EditIcon />}
+                      fullWidth
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
                       onClick={() => navigate("/adopter/suitability/survey")}
                     >
                       Ver y Editar Formulario
@@ -189,6 +204,8 @@ export const AdopterSuitability = () => {
                       variant="outlined"
                       color="primary"
                       startIcon={<RefreshIcon />}
+                      fullWidth
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
                       onClick={handleRedoSurvey}
                     >
                       Hacer de nuevo la encuesta
