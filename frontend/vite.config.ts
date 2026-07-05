@@ -7,31 +7,35 @@ import electron from 'vite-plugin-electron';
 export default defineConfig({
   plugins: [
     react(),
-    electron([
-      {
-        entry: '../electron/main.ts',
-      },
-      {
-        entry: '../electron/preload.ts',
-        onstart(options) {
-          try {
-            options.reload()
-          } catch {
-            console.warn('Could not reload Electron: channel closed');
-          }
-        },
-      },
-      {
-        entry: '../electron/popup-preload.ts',
-        onstart(options) {
-          try {
-            options.reload()
-          } catch {
-            console.warn('Could not reload Electron: channel closed');
-          }
-        },
-      },
-    ]),
+    ...(process.env.VITE_WEB_ONLY === 'true'
+      ? []
+      : [
+          electron([
+            {
+              entry: '../electron/main.ts',
+            },
+            {
+              entry: '../electron/preload.ts',
+              onstart(options) {
+                try {
+                  options.reload();
+                } catch {
+                  console.warn('Could not reload Electron: channel closed');
+                }
+              },
+            },
+            {
+              entry: '../electron/popup-preload.ts',
+              onstart(options) {
+                try {
+                  options.reload();
+                } catch {
+                  console.warn('Could not reload Electron: channel closed');
+                }
+              },
+            },
+          ]),
+        ]),
   ],
 
   // 1. Vite Server Configuration (Proxy for Dockerized Backend)
