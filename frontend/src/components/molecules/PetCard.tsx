@@ -67,7 +67,10 @@ export const PetCard = ({
         component="img"
         image={imagen}
         alt={nombre}
-        sx={{ height: 220, objectFit: "cover" }}
+        sx={{
+          height: { xs: 280, sm: 220 },
+          objectFit: "cover",
+        }}
       />
 
       <CardContent

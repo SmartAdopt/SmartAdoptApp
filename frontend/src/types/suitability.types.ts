@@ -245,12 +245,14 @@ export interface AdoptionFormUpdateResponse {
 const employmentStatusMap: Record<string, string> = {
   Empleado: "employed",
   Independiente: "independent",
+  Otro: "other",
 };
 
 const housingTypeMap: Record<string, string> = {
   Departamento: "apartment",
   "Casa en renta(con permiso de tener mascota)": "rented_house",
   "Casa propia": "own_house",
+  Otro: "other",
 };
 
 const householdEnergyMap: Record<string, string> = {
