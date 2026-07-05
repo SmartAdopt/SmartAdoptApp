@@ -2,19 +2,28 @@
 
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import electron from 'vite-plugin-electron/simple';
+import electron from 'vite-plugin-electron';
 
 export default defineConfig({
   plugins: [
     react(),
-    electron({
-      main: {
+    electron([
+      {
         entry: '../electron/main.ts',
       },
-      preload: {
-        input: '../electron/preload.ts',
+      {
+        entry: '../electron/preload.ts',
+        onstart(options) {
+          options.reload()
+        },
       },
-    }),
+      {
+        entry: '../electron/popup-preload.ts',
+        onstart(options) {
+          options.reload()
+        },
+      },
+    ]),
   ],
 
   // 1. Vite Server Configuration (Proxy for Dockerized Backend)
@@ -32,6 +41,7 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Proxy for WebSockets (Real-time notifications RF-05)
       '/ws': {
