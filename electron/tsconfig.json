@@ -1,0 +1,17 @@
+{
+  "extends": "../frontend/tsconfig.node.json",
+  "compilerOptions": {
+    "typeRoots": [
+      "../frontend/node_modules/@types"
+    ],
+    "paths": {
+      "electron": [
+        "../frontend/node_modules/electron"
+      ]
+    },
+    "ignoreDeprecations": "5.0"
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}
