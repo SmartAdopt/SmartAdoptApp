@@ -71,6 +71,7 @@ export interface AuthSession {
   email: string;
   phone_number?: string;
   role: "admin" | "adopter" | "user";
+  createdAt?: string;
 }
 
 // ---------------------------------------------------------
