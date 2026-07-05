@@ -62,10 +62,9 @@ const FavoritePetCard = ({
     >
       <CardMedia
         component="img"
-        height="220"
         image={petImage}
         alt={petName}
-        sx={{ objectFit: "cover" }}
+        sx={{ height: 220, objectFit: "cover" }}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
           e.currentTarget.src = "/dog.svg";
         }}

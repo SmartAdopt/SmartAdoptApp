@@ -30,6 +30,7 @@ import { PetProfilePage } from "../pages/adopter/PetProfilePage";
 import { InfoPage } from "../pages/InfoPage";
 import { AdminAddPetPage } from "../pages/admin/AdminAddPetPage";
 import { AdminPetListPage } from "../pages/admin/AdminPetListPage";
+import { AdminLegalInfoPage } from "../pages/admin/AdminLegalInfoPage";
 
 export const AppRouter = () => {
   return (
@@ -64,6 +65,7 @@ export const AppRouter = () => {
         {/* Future admin routes will go here */}
         <Route path="/admin/pets" element={<AdminPetListPage />} />
         <Route path="/admin/pets/new" element={<AdminAddPetPage />} />
+        <Route path="/admin/legal-info" element={<AdminLegalInfoPage />} />
       </Route>
 
       {/* FALLBACK */}

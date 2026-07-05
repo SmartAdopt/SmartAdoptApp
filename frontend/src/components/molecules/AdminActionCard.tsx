@@ -7,7 +7,8 @@ interface AdminActionCardProps {
   icon: ReactNode;
   title: string;
   description: string;
-  buttonColor: "primary" | "success" | "warning" | "secondary";
+  buttonColor:
+    "primary" | "success" | "warning" | "secondary" | "info" | "error";
   buttonText?: string;
   onClick: () => void;
 }
