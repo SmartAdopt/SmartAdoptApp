@@ -9,6 +9,8 @@ from app.routes.adopter_routes import router as adopter_router
 from app.routes.backblaze_routes import router as backblaze_router
 from app.routes.pet_routes import router as pet_router
 from app.routes.adoption_form_routes import router as adoption_form_router
+from app.routes.favorite_routes import router as favorite_router
+from app.routes.foundation_routes import router as foundation_router
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -48,6 +50,12 @@ logger.info("Pet routes registered")
 # Include adoption form routes
 app.include_router(adoption_form_router)
 logger.info("Adoption form routes registered")
+# Include favorite routes
+app.include_router(favorite_router)
+logger.info("Favorite routes registered")
+# Include foundation routes
+app.include_router(foundation_router)
+logger.info("Foundation routes registered")
 
 logger.info("FastAPI application initialized successfully")
 

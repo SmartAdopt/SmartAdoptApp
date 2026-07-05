@@ -14,6 +14,7 @@ interface AuthContextType {
   user: AuthSession | null;
   role: "admin" | "adopter" | "user" | null;
   loginUser: (sessionData: AuthSession) => void;
+  updateUser: (partialData: Partial<AuthSession>) => void;
   logoutUser: () => void;
 }
 
@@ -51,6 +52,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.setItem("user", JSON.stringify(sessionData));
   };
 
+  // Merge partial updates into the existing session (e.g. after a profile save)
+  const updateUser = (partialData: Partial<AuthSession>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partialData };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const logoutUser = () => {
     setUser(null);
     localStorage.removeItem("user");
@@ -64,6 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     user,
     role: user?.role || null,
     loginUser,
+    updateUser,
     logoutUser,
   };
 

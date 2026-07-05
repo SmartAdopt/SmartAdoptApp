@@ -1,4 +1,9 @@
+# MongoDB async connection module for Motor
+
+# Motor imports
 from motor.motor_asyncio import AsyncIOMotorClient
+
+# Config import
 from app.config import settings
 
 # Logger import

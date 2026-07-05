@@ -33,29 +33,37 @@ backend/                 # FastAPI backend application
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet) and MongoDB models
+│   │   ├── models/          # SQLAlchemy ORM and MongoDB models
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
-│   │   │   └── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
 │   │   │   ├── auth_routes.py         # Authentication endpoints
 │   │   │   ├── admin_routes.py        # Admin-protected endpoints
 │   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
-│   │   │   └── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── favorite_routes.py     # Favorite endpoints
+│   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
 │   │   │   ├── auth_schemas.py            # Authentication schemas
 │   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
-│   │   │   └── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── favorite_schemas.py       # Favorite schemas
+│   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
-│   │   │   └── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── favorite_service.py    # Favorite service
+│   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -78,6 +86,7 @@ backend/                 # FastAPI backend application
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py              # Pet management tests
 │   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   ├── test_favorite_routes.py  # Favorite tests
 │   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -742,6 +751,125 @@ Updates the adoption form for the authenticated user. All fields are optional in
 - `500 Internal Server Error`: Unexpected server error
 - `401 Unauthorized`: Missing or invalid token
 
+## Favorite Pets
+
+The favorites system allows adopters to save and manage their favorite pets. Favorites are stored in PostgreSQL (relational) while pet profile data is fetched from MongoDB.
+
+**Base URL:** `/adopter/favorites`
+
+### Add Favorite
+
+**POST** `/adopter/favorites/{pet_profile_id}`
+
+Adds a pet to the authenticated adopter's favorites. Validates that the pet profile exists in MongoDB before creating the favorite.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+POST /adopter/favorites/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Pet added to favorites",
+  "favorite": {
+    "favorite_id": 1,
+    "user_id": 2,
+    "pet_profile_id": "PR1"
+  }
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `404 Not Found`: Pet profile not found in MongoDB
+- `409 Conflict`: Pet already in favorites
+
+### Remove Favorite
+
+**DELETE** `/adopter/favorites/{pet_profile_id}`
+
+Removes a pet from the authenticated adopter's favorites.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+DELETE /adopter/favorites/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Pet removed from favorites"
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `404 Not Found`: Favorite not found
+
+### List Favorites
+
+**GET** `/adopter/favorites/`
+
+Returns all favorites for the authenticated adopter, including full pet profile data from MongoDB.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+GET /adopter/favorites/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "favorites": [
+    {
+      "favorite_id": 1,
+      "user_id": 2,
+      "pet_profile_id": "PR1",
+      "pet": {
+        "profile_id": "PR1",
+        "title": "Buddy: Your new best friend",
+        "tags": ["#Adoptable", "#LoyalFriend"],
+        "emotional_description": "Buddy is a special being...",
+        "status": "available",
+        "creation_date": "2026-06-18T05:53:30.061000",
+        "pet": {
+          "name": "Buddy",
+          "pet_image_url": "https://example.com/dog.jpg",
+          "animal_breed": ["dog", "Golden Retriever"],
+          "age": 3,
+          "gender": "male",
+          "is_sterilized": true,
+          "vaccines_up_to_date": ["rabies"],
+          "dewormed": true,
+          "weight_kg": 8.5,
+          "special_conditions": [],
+          "brief_description": "Friendly dog looking for a home"
+        }
+      }
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+
+---
+
 ## Backblaze B2 Image Upload
 
 The application uses Backblaze B2 cloud storage for image upload:
@@ -790,6 +918,105 @@ file: dog.jpg
 - `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
 
 For complete documentation, refer to `docs/README_BACKBLAZE.md`.
+
+## Foundation Info
+
+The foundation info system stores the organization's legal and contact information as a singleton record in PostgreSQL.
+
+**Base URL:** `/foundation`
+
+### Create Foundation Info
+
+**POST** `/foundation/`
+
+Creates the foundation record. Only one record is allowed (singleton pattern).
+
+**Authorization:** `Admin` role required
+
+**Request Body**
+```json
+{
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Foundation created successfully",
+  "foundation_id": 1
+}
+```
+
+**Validation Rules:**
+- `name`, `legal_representative`: Only letters allowed (including accented characters and ñ)
+- `phone`: Exactly 10 digits, must start with "09" (Ecuador mobile)
+- `address`: Letters, numbers, dots, commas, dashes, slashes, and hash
+- `email`: Valid email format
+- `business_hours`: Letters, numbers, dots, commas, colons, and dashes
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `409 Conflict`: Foundation already exists
+- `422 Unprocessable Entity`: Validation error
+
+### Get Foundation Info
+
+**GET** `/foundation/`
+
+Retrieves the foundation's information. Public endpoint (no authentication required).
+
+**Response (200 OK)**
+```json
+{
+  "foundation_id": 1,
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Error Responses**
+- `404 Not Found`: Foundation not created yet
+
+### Update Foundation Info
+
+**PUT** `/foundation/`
+
+Updates the foundation's information. All fields are optional in the update request.
+
+**Authorization:** `Admin` role required
+
+**Request Body** *(all fields optional)*
+```json
+{
+  "phone": "0998887777",
+  "business_hours": "Lun-Vie 8:00-17:00"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Foundation updated successfully",
+  "foundation_id": 1
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `404 Not Found`: Foundation not created yet
+- `422 Unprocessable Entity`: Validation error
+
+---
 
 ## Pet Management System
 
@@ -1017,6 +1244,12 @@ Authorization: Bearer <jwt_token>
 - `created_at`: DateTime
 - Uses composition pattern with User table
 
+### Favorite
+- `favorite_id`: Integer (Primary Key, auto-increment)
+- `user_id`: Integer (Foreign Key to User, NOT NULL)
+- `pet_profile_id`: String (VARCHAR, NOT NULL)
+- Unique constraint on (`user_id`, `pet_profile_id`)
+
 ### Pet
 - `name`: String
 - `pet_image_url`: String (HTTP/HTTPS URL, mandatory)
@@ -1038,6 +1271,15 @@ Authorization: Bearer <jwt_token>
 - `status`: String ("available", "in_process", "adopted")
 - `creation_date`: DateTime
 - `pet`: Object (Pet basic information)
+
+### Foundation
+- `foundation_id`: Integer (Primary Key, auto-increment)
+- `name`: String — Foundation legal name
+- `phone`: String — Contact phone number (10 digits, starts with 09)
+- `address`: String — Physical address
+- `email`: String — Official email
+- `legal_representative`: String — Legal representative name
+- `business_hours`: String — Business hours
 
 ### AdoptionForm
 - `form_id`: String (Primary Key, auto-generated: AF####)

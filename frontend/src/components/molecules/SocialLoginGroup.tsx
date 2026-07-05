@@ -63,6 +63,7 @@ export const SocialLoginGroup = () => {
           id: data.id,
           name: `${data.first_name} ${data.last_name}`.trim(),
           email: data.email,
+          phone_number: data.phone_number,
           role: data.role,
         };
 

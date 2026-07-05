@@ -1282,9 +1282,214 @@ To run only the adoption form tests:
 python -m pytest backend/tests/test_adoption_form.py -v
 ```
 
+To run only the favorite tests:
+```bash
+python -m pytest backend/tests/test_favorite_routes.py -v
+```
+
 ---
 
-## 11. MongoDB Mock Implementation
+## 11. Favorite Routes Tests: `test_favorite_routes.py`
+
+This file contains 14 tests organized into 3 test classes, covering the complete favorites CRUD workflow with MongoDB validation.
+
+### Test Data Constant
+```python
+TEST_PET_PROFILE = {
+    "_id": "PR1",
+    "title": "Friendly Dog",
+    "tags": ["#Adoptable", "#Friendly"],
+    "emotional_description": "A very friendly dog looking for a home.",
+    "status": "available",
+    "creation_date": datetime.now(),
+    "pet": {
+        "name": "Buddy",
+        "pet_image_url": "https://example.com/dog.jpg",
+        "animal_breed": ["dog", "Golden Retriever"],
+        "age": 3,
+        "gender": "male",
+        "is_sterilized": True,
+        "vaccines_up_to_date": ["rabies"],
+        "dewormed": True,
+        "weight_kg": 8.5,
+        "special_conditions": [],
+        "brief_description": "Friendly dog looking for a home",
+    },
+}
+```
+**Purpose:** 
+Standardizes the mock pet profile data used in MongoDB validation for favorites tests.
+
+### TestAddFavorite Class (6 tests)
+
+#### a) Functional Test: Add Favorite Success
+```python
+def test_add_favorite_success(self, client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    _override_mongo_db_with_pet(TEST_PET_PROFILE)
+    response = client.post(
+        "/adopter/favorites/PR1",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201
+    assert data["message"] == "Pet added to favorites"
+    assert data["favorite"]["pet_profile_id"] == "PR1"
+```
+**Purpose:** 
+Validates the Happy Path of adding a favorite. Confirms that an adopter can favorite an existing pet profile.
+* **HTTP 201 (Created):** Indicates successful favorite creation.
+* **MongoDB Validation:** The pet profile must exist in MongoDB before adding.
+
+#### b) Negative Test: Duplicate Favorite
+```python
+def test_add_favorite_duplicate(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 409
+    assert "Pet already in favorites" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures the unique constraint (user_id + pet_profile_id) prevents duplicate favorites.
+* **HTTP 409 (Conflict):** Indicates the pet is already in the user's favorites.
+
+#### c) Negative Test: Pet Not Found in MongoDB
+```python
+def test_add_favorite_pet_not_found(self, client, db_session):
+    _override_mongo_db_with_pet(None)
+    response = client.post(
+        "/adopter/favorites/PR999",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404
+    assert "Pet profile not found" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Validates that non-existent pet profile IDs are rejected before creating the favorite.
+* **HTTP 404 (Not Found):** Indicates the pet profile does not exist in MongoDB.
+
+#### d) Negative Test: Unauthorized Role
+```python
+def test_add_favorite_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can add favorites.
+
+#### e) Negative Test: No Token
+```python
+def test_add_favorite_no_token(self, client):
+    response = client.post("/adopter/favorites/PR1")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that adding favorites requires authentication.
+
+#### f) Negative Test: Invalid Token
+```python
+def test_add_favorite_invalid_token(self, client):
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": "Bearer invalid_token"})
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that invalid tokens are rejected.
+
+### TestRemoveFavorite Class (4 tests)
+
+#### a) Functional Test: Remove Favorite Success
+```python
+def test_remove_favorite_success(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.delete("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["message"] == "Pet removed from favorites"
+```
+**Purpose:** 
+Validates the complete add-remove workflow.
+* **HTTP 200 (OK):** Indicates successful favorite removal.
+
+#### b) Negative Test: Remove Non-existent Favorite
+```python
+def test_remove_favorite_not_found(self, client, db_session):
+    response = client.delete("/adopter/favorites/PR999", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 404
+    assert "Favorite not found" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures removing a non-existent favorite returns the appropriate error.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_remove_favorite_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.delete("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can remove favorites.
+
+#### d) Negative Test: No Token
+```python
+def test_remove_favorite_no_token(self, client):
+    response = client.delete("/adopter/favorites/PR1")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that removing favorites requires authentication.
+
+### TestListFavorites Class (4 tests)
+
+#### a) Functional Test: List Favorites with Pet Data
+```python
+def test_list_favorites_success(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert data["count"] == 1
+    assert data["favorites"][0]["pet_profile_id"] == "PR1"
+    assert data["favorites"][0]["pet"] is not None
+    assert data["favorites"][0]["pet"]["title"] == "Friendly Dog"
+```
+**Purpose:** 
+Validates that the list endpoint returns favorites with full pet profile data from MongoDB.
+* **HTTP 200 (OK):** Indicates successful listing.
+* **Pet Data:** Each favorite includes the complete pet profile (title, tags, emotional_description, pet info).
+
+#### b) Functional Test: Empty Favorites List
+```python
+def test_list_favorites_empty(self, client, db_session):
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert data["count"] == 0
+    assert data["favorites"] == []
+```
+**Purpose:** 
+Validates that users with no favorites receive an empty list.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_list_favorites_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can list favorites.
+
+#### d) Negative Test: No Token
+```python
+def test_list_favorites_no_token(self, client):
+    response = client.get("/adopter/favorites/")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that listing favorites requires authentication.
+
+---
+
+## 12. MongoDB Mock Implementation
 
 The test suite uses an in-memory mock MongoDB implementation to simulate MongoDB behavior without requiring a real MongoDB instance. This is configured in `conftest.py`:
 
@@ -1344,7 +1549,7 @@ class MockMongoCollection:
 **Purpose:** 
 Provides isolated testing environment for MongoDB operations without external dependencies, ensuring tests are fast, reliable, and can run in CI/CD pipelines.
 
-## 11. Redis Mock Implementation
+## 13. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
 
