@@ -37,6 +37,7 @@ backend/                 # FastAPI backend application
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── applications/   # Adoption application models (Python models for MongoDB)
 │   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
 │   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
@@ -46,6 +47,7 @@ backend/                 # FastAPI backend application
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
 │   │   │   ├── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── applications_routes.py # Adoption application endpoints
 │   │   │   ├── favorite_routes.py     # Favorite endpoints
 │   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
@@ -54,6 +56,7 @@ backend/                 # FastAPI backend application
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
 │   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── applications_schemas.py   # Adoption application schemas
 │   │   │   ├── favorite_schemas.py       # Favorite schemas
 │   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
@@ -62,6 +65,7 @@ backend/                 # FastAPI backend application
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── applications_service.py # Adoption application service (MongoDB)
 │   │   │   ├── favorite_service.py    # Favorite service
 │   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
@@ -76,6 +80,7 @@ backend/                 # FastAPI backend application
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
+│   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py              # Test configuration
@@ -751,6 +756,151 @@ Updates the adoption form for the authenticated user. All fields are optional in
 - `500 Internal Server Error`: Unexpected server error
 - `401 Unauthorized`: Missing or invalid token
 
+---
+
+## Adoption Applications API Endpoints
+
+The adoption applications system allows adopters to apply for a specific pet and view their submitted applications. All endpoints require a valid JWT token with the `adopter` role.
+
+**Base URL:** `/applications`
+
+### Submit Adoption Application
+
+**POST** `/applications/{pet_profile_id}`
+
+Creates a new adoption application for a specific pet. The pet's form must be submitted before applying. The application is cross-evaluated by AI using the adopter's form and the pet's profile.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+POST /applications/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Application submitted successfully",
+  "application_id": "APP1",
+  "pet_profile_id": "PR1",
+  "status": "pending",
+  "created_at": "2026-07-05T12:00:00.000Z"
+}
+```
+
+**Validation Rules:**
+- Adopter must have an existing adoption form (submit via `POST /adoption-forms/submit` first)
+- Pet must exist in MongoDB and have status `available`
+- Duplicate applications for the same pet are not allowed
+- Pet status is updated to `in_process` on successful application
+
+**AI Cross-Evaluation:**
+- Uses Llama 3 8B to evaluate 15 fields across main criteria and logistics
+- Each field scored 0 or 1 (max 15 total)
+- Main score: sum of 11 main fields (compatibility, housing, lifestyle, etc.)
+- Logistics score: sum of 4 logistics fields (transport, costs, time, paperwork)
+- AI justification text explaining the evaluation
+- Scores are recalculated server-side from the breakdown to ensure accuracy
+- If AI returns fewer than 15 fields, padded with "Unavailable" placeholders (points=0)
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Missing adoption form, pet not available, or duplicate application
+- `404 Not Found`: Pet not found
+- `503 Service Unavailable`: AI service error
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Get My Applications
+
+**GET** `/applications/me`
+
+Retrieves all adoption applications for the authenticated adopter, including full pet profile data.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+GET /applications/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "applications": [
+    {
+      "application_id": "APP1",
+      "user_id": 2,
+      "pet_profile_id": "PR1",
+      "status": "pending",
+      "total_score": 10,
+      "total_max_score": 15,
+      "main_score": 8,
+      "main_max_score": 11,
+      "logistics_education_score": 2,
+      "logistics_education_max_score": 4,
+      "ai_breakdown": [
+        {"section": "Main Criteria", "field": "Pet Compatibility", "points": 1, "max_points": 1, "evaluation": "Good match with current pets"},
+        {"section": "Main Criteria", "field": "Housing Suitability", "points": 1, "max_points": 1, "evaluation": "Apartment with natural space"},
+        {"section": "Main Criteria", "field": "Lifestyle Match", "points": 1, "max_points": 1, "evaluation": "Energy level matches"},
+        {"section": "Main Criteria", "field": "Family Dynamics", "points": 1, "max_points": 1, "evaluation": "Good with children"},
+        {"section": "Main Criteria", "field": "Commitment Level", "points": 1, "max_points": 1, "evaluation": "Long-term commitment confirmed"},
+        {"section": "Main Criteria", "field": "Pet Care Knowledge", "points": 1, "max_points": 1, "evaluation": "Previous pet experience"},
+        {"section": "Main Criteria", "field": "Responsibility Indicators", "points": 1, "max_points": 1, "evaluation": "Employed and stable"},
+        {"section": "Main Criteria", "field": "Sleeping Arrangements", "points": 0, "max_points": 1, "evaluation": "Indoor sleeping"},
+        {"section": "Main Criteria", "field": "Behavior & Training", "points": 0, "max_points": 1, "evaluation": "Will use positive education"},
+        {"section": "Main Criteria", "field": "Emergency Preparedness", "points": 0, "max_points": 1, "evaluation": "Has emergency plan"},
+        {"section": "Main Criteria", "field": "Motivation & Intent", "points": 1, "max_points": 1, "evaluation": "Strong motivation to adopt"},
+        {"section": "Logistics & Education", "field": "Daily Time Dedication", "points": 1, "max_points": 1, "evaluation": "2-6 hours daily"},
+        {"section": "Logistics & Education", "field": "Financial Capacity", "points": 0, "max_points": 1, "evaluation": "Employed"},
+        {"section": "Logistics & Education", "field": "Adoption Process Knowledge", "points": 0, "max_points": 1, "evaluation": "Familiar with process"},
+        {"section": "Logistics & Education", "field": "Transport & Accessibility", "points": 1, "max_points": 1, "evaluation": "Accessible location"}
+      ],
+      "ai_justification": "The applicant demonstrates strong compatibility with the pet...",
+      "created_at": "2026-07-05T12:00:00.000Z",
+      "pet": {
+        "profile_id": "PR1",
+        "title": "Buddy: Your new best friend",
+        "tags": ["#Adoptable", "#LoyalFriend"],
+        "emotional_description": "Buddy is a special being looking for a loving home...",
+        "status": "in_process",
+        "creation_date": "2026-06-18T05:53:30.061000",
+        "pet": {
+          "name": "Buddy",
+          "pet_image_url": "https://example.com/dog.jpg",
+          "animal_breed": ["dog", "Golden Retriever"],
+          "age": 3,
+          "gender": "male",
+          "is_sterilized": true,
+          "vaccines_up_to_date": ["rabies"],
+          "dewormed": true,
+          "weight_kg": 8.5,
+          "special_conditions": [],
+          "brief_description": "Friendly dog looking for a home"
+        }
+      }
+    }
+  ],
+  "count": 1
+}
+```
+
+**Scoring Breakdown:**
+- **Main Criteria** (11 fields, max 11 points): Pet Compatibility, Housing Suitability, Lifestyle Match, Family Dynamics, Commitment Level, Pet Care Knowledge, Responsibility Indicators, Sleeping Arrangements, Behavior & Training, Emergency Preparedness, Motivation & Intent
+- **Logistics & Education** (4 fields, max 4 points): Daily Time Dedication, Financial Capacity, Adoption Process Knowledge, Transport & Accessibility
+- **Total**: Sum of all 15 fields (max 15 points)
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
 ## Favorite Pets
 
 The favorites system allows adopters to save and manage their favorite pets. Favorites are stored in PostgreSQL (relational) while pet profile data is fetched from MongoDB.
@@ -1310,6 +1460,20 @@ Authorization: Bearer <jwt_token>
 - `emergency_plan_other`: String (Optional)
 - `motivation`: String
 
+### Application (MongoDB)
+- `application_id`: String (Primary Key, auto-generated: APP####)
+- `user_id`: Integer
+- `pet_profile_id`: String
+- `status`: String ("pending", "approved", "rejected")
+- `total_score`: Integer (sum of all 15 fields, max 15)
+- `total_max_score`: Integer (always 15)
+- `main_score`: Integer (sum of 11 main fields, max 11)
+- `main_max_score`: Integer (always 11)
+- `logistics_education_score`: Integer (sum of 4 logistics fields, max 4)
+- `logistics_education_max_score`: Integer (always 4)
+- `ai_breakdown`: List[Object] (15 items: section, field, points, max_points, evaluation)
+- `ai_justification`: String (AI evaluation text)
+- `created_at`: DateTime
 
 ## Development Notes
 

@@ -11,6 +11,7 @@ from app.routes.pet_routes import router as pet_router
 from app.routes.adoption_form_routes import router as adoption_form_router
 from app.routes.favorite_routes import router as favorite_router
 from app.routes.foundation_routes import router as foundation_router
+from app.routes.applications_routes import router as applications_router
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -56,6 +57,9 @@ logger.info("Favorite routes registered")
 # Include foundation routes
 app.include_router(foundation_router)
 logger.info("Foundation routes registered")
+# Include application routes
+app.include_router(applications_router)
+logger.info("Application routes registered")
 
 logger.info("FastAPI application initialized successfully")
 
