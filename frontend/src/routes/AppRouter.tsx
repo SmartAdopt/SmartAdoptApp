@@ -26,6 +26,7 @@ import { ArticlePage } from "../pages/adopter/ArticlePage";
 // PROTECTED PAGES (Admin)
 // ==============================
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
+import { AdminRequestsPage } from "../pages/admin/AdminRequestsPage";
 import { PetProfilePage } from "../pages/adopter/PetProfilePage";
 import { InfoPage } from "../pages/InfoPage";
 import { AdminAddPetPage } from "../pages/admin/AdminAddPetPage";
@@ -62,6 +63,7 @@ export const AppRouter = () => {
       {/* Explicitly restrict to 'admin' only */}
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/requests" element={<AdminRequestsPage />} />
         {/* Future admin routes will go here */}
         <Route path="/admin/pets" element={<AdminPetListPage />} />
         <Route path="/admin/pets/new" element={<AdminAddPetPage />} />

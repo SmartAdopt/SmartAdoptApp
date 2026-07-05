@@ -75,7 +75,7 @@ export const AdminDashboard = () => {
             description="Aprueba o rechaza adoptantes"
             icon={<DescriptionOutlinedIcon fontSize="large" />}
             buttonColor="primary"
-            onClick={() => console.log("Revisar Solicitudes")}
+            onClick={() => navigate("/admin/requests")}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
