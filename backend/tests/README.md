@@ -38,11 +38,14 @@ python -m pytest backend/tests/test_pet.py -v
 
 # Run adoption form tests
 python -m pytest backend/tests/test_adoption_form.py -v
+
+# Run adoption application tests
+python -m pytest backend/tests/test_applications.py -v
 ```
 
 
 ### Test Coverage
-The backend currently has 90% code coverage with 81 tests passing:
+The backend currently has 90% code coverage with 92 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
 - 14 adopter routes tests (home access + profile update)
@@ -52,6 +55,7 @@ The backend currently has 90% code coverage with 81 tests passing:
 - 6 Backblaze B2 tests (image upload, authorization, validation)
 - 17 pet management tests (registration, update, listing, validation, role restrictions, AI enrichment)
 - 7 adoption form tests (submission, retrieval, update, authorization, workflow)
+- 11 adoption application tests (create, listing, authorization, validation, workflow)
 
 ---
 
@@ -1489,7 +1493,207 @@ Validates that listing favorites requires authentication.
 
 ---
 
-## 12. MongoDB Mock Implementation
+## 12. Adoption Application Routes Tests: `test_applications.py`
+
+This file contains 11 tests organized into 2 test classes, covering the complete adoption application workflow with AI cross-evaluation and MongoDB validation.
+
+### Test Data Constants
+
+```python
+MOCK_AI_RESULT = {
+    "total_score": 10,
+    "total_max_score": 15,
+    "main_score": 8,
+    "main_max_score": 11,
+    "logistics_education_score": 2,
+    "logistics_education_max_score": 4,
+    "breakdown": [
+        {"section": "I. Candidate Information", "field": "employment_status", ...},
+        # ... 15 items total
+    ],
+    "justification": "The applicant demonstrates good compatibility...",
+}
+```
+**Purpose:** 
+Standardizes the mock AI evaluation result used across all application tests. Contains all 15 breakdown items with varying scores (0 or 1) to test realistic scenarios.
+
+### TestCreateApplication Class (7 tests)
+
+#### a) Functional Test: Create Application Success
+```python
+def test_create_application_success(self, client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    _override_mongo_db()
+    
+    with patch("app.services.applications_service.evaluate_adoption_application",
+               new_callable=AsyncMock) as mock_ai:
+        mock_ai.return_value = MOCK_AI_RESULT
+        response = client.post(
+            "/applications/PR1",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    
+    assert response.status_code == 201
+    assert data["message"] == "Adoption application created successfully"
+    assert data["application_id"] == "APP1"
+    assert data["status"] == "pending"
+```
+**Purpose:** 
+Validates the Happy Path of creating an adoption application. Confirms that an adopter with a valid form can apply for an available pet.
+* **HTTP 201 (Created):** Indicates successful application creation.
+* **Minimal Response:** Returns only application_id, pet_profile_id, status, and created_at.
+* **AI Evaluation:** Mocked to return a controlled result with known scores.
+
+#### b) Negative Test: Missing Adoption Form
+```python
+def test_create_application_no_form(self, client, db_session):
+    _override_mongo_db(form_exists=False)
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 400
+    assert "suitability form" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Ensures that adopters must complete the suitability form before applying.
+* **HTTP 400 (Bad Request):** Indicates missing prerequisite.
+
+#### c) Negative Test: Pet Not Found
+```python
+def test_create_application_pet_not_found(self, client, db_session):
+    _override_mongo_db(pet_exists=False)
+    response = client.post("/applications/PR999", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Validates that non-existent pet profiles are rejected.
+* **HTTP 404 (Not Found):** Indicates pet profile does not exist in MongoDB.
+
+#### d) Negative Test: Pet Not Available
+```python
+def test_create_application_pet_not_available(self, client, db_session):
+    _override_mongo_db(pet_status="adopted")
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 409
+    assert "not available" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Ensures that only pets with `available` status can be applied for.
+* **HTTP 409 (Conflict):** Indicates the pet is not available for adoption.
+
+#### e) Negative Test: Duplicate Application
+```python
+def test_create_application_duplicate(self, client, db_session):
+    _override_mongo_db(duplicate=True)
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 409
+    assert "already applied" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Prevents duplicate applications for the same pet by the same adopter.
+* **HTTP 409 (Conflict):** Indicates the user already applied for this pet.
+
+#### f) Negative Test: Unauthorized Role
+```python
+def test_create_application_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can create applications.
+
+#### g) Negative Test: No Token
+```python
+def test_create_application_no_token(self, client):
+    response = client.post("/applications/PR1")
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that creating applications requires authentication.
+
+### TestListApplications Class (4 tests)
+
+#### a) Functional Test: List Applications with Pet Data
+```python
+def test_list_applications_success(self, client, db_session):
+    app_doc = _build_app_document(user_id=user.user_id)
+    _override_mongo_db(existing_apps=[app_doc])
+    
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 200
+    assert data["count"] == 1
+    assert data["applications"][0]["application_id"] == "APP1"
+    assert data["applications"][0]["total_score"] == MOCK_AI_RESULT["total_score"]
+    assert data["applications"][0]["ai_justification"] == MOCK_AI_RESULT["justification"]
+    assert data["applications"][0]["pet"]["profile_id"] == "PR1"
+```
+**Purpose:** 
+Validates that the list endpoint returns applications with full pet profile data and AI evaluation results.
+* **HTTP 200 (OK):** Indicates successful listing.
+* **Full Response:** Returns total_score, main_score, logistics scores, 15-item ai_breakdown, ai_justification, and pet data.
+
+#### b) Functional Test: Empty Applications List
+```python
+def test_list_applications_empty(self, client, db_session):
+    _override_mongo_db(existing_apps=[])
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 200
+    assert data["count"] == 0
+    assert data["applications"] == []
+```
+**Purpose:** 
+Validates that users with no applications receive an empty list.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_list_applications_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can list applications.
+
+#### d) Negative Test: No Token
+```python
+def test_list_applications_no_token(self, client):
+    response = client.get("/applications/me")
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that listing applications requires authentication.
+
+### Mock Override Strategy
+
+The `_override_mongo_db()` helper function provides fine-grained control over MongoDB mock behavior:
+
+```python
+def _override_mongo_db(
+    form_exists=True,     # Whether the adopter has a form
+    pet_exists=True,      # Whether the pet exists in MongoDB
+    pet_status="available", # Pet status (available, in_process, adopted)
+    duplicate=False,      # Whether a duplicate application exists
+    existing_apps=None,   # List of existing apps for GET endpoint
+):
+```
+
+**Purpose:** 
+Provides isolated testing with full control over each test scenario, using `app.dependency_overrides[get_mongo_db]` to inject mock collections with `AsyncMock` methods for find_one, insert_one, update_one, and to_list operations.
+
+---
+
+## 13. MongoDB Mock Implementation
 
 The test suite uses an in-memory mock MongoDB implementation to simulate MongoDB behavior without requiring a real MongoDB instance. This is configured in `conftest.py`:
 
@@ -1549,7 +1753,7 @@ class MockMongoCollection:
 **Purpose:** 
 Provides isolated testing environment for MongoDB operations without external dependencies, ensuring tests are fast, reliable, and can run in CI/CD pipelines.
 
-## 13. Redis Mock Implementation
+## 14. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
 

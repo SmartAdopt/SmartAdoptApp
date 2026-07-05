@@ -145,13 +145,19 @@ async def enrich_profile_with_llama(
             - FOCUS on permanent traits: environment preferences (indoor/outdoor), personality, behavioral patterns, physical appearance
             - IMPORTANT: If the image shows indoor/home-related elements (furniture, carpets, windows, living room, bedroom, etc.), describe that they enjoy spending time at home and are comfortable indoors. If the image shows outdoor elements (grass, trees, parks, streets, nature, etc.), describe that they enjoy spending time outdoors and love exploring outside.
 
+            REMEMBER: Be critical. NOT all fields should be 1. Score 0 wherever there's a genuine concern. A realistic evaluation has a mix of 1s and 0s.
+
+            IMPORTANT: The breakdown array MUST contain ALL 15 fields listed above (fields 1 through 15). Do not skip any field. Every single field must appear in the breakdown.
+
+            IMPORTANT: Calculate total_score by SUMMING all 15 field points. Calculate main_score by summing only fields 1-11. Calculate logistics_education_score by summing only fields 12-15.
+
             You MUST respond ONLY with a JSON object with the following structure:
             {{
                 "title": "a catchy title for the profile",
                 "tags": ["#tag1", "#tag2", "#tag3", "#tag4"],
                 "emotional_description": "a heartfelt description"
             }}
-            """
+        """
 
         # Log the prompt for debugging
         logger.info(f"Sending prompt to Llama 3 8B (length: {len(prompt)} chars)")
@@ -192,3 +198,299 @@ async def enrich_profile_with_llama(
     except Exception as e:
         logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
         raise Exception("Failed to enrich profile")
+
+
+async def evaluate_adoption_application(
+    form_data: Dict[str, Any], pet_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    # Evaluate cross-compatibility between adopter form and pet data using Llama 3 8B
+    logger.info("Evaluating adoption application with Llama 3 8B")
+
+    # Validate inputs
+    if not form_data:
+        logger.error("Form data is invalid")
+        raise ValueError("Form data must be a non-empty dictionary")
+
+    if not pet_data:
+        logger.error("Pet data is invalid")
+        raise ValueError("Pet data must be a non-empty dictionary")
+
+    # Extract pet info from nested structure
+    pet = pet_data.get("pet", {})
+    if not pet:
+        logger.error("Pet data missing 'pet' field")
+        raise ValueError("Pet data must contain a 'pet' field")
+
+    try:
+        # Sanitize form values to avoid breaking JSON in prompt
+        def _safe(val):
+            if val is None:
+                return ""
+            return str(val).replace('"', "'").replace("\n", " ").replace("\r", " ")
+
+        # Build a compact representation of form data for the prompt
+        pet_info = {
+            "name": pet.get("name"),
+            "species": (
+                pet.get("animal_breed", [None, None])[0]
+                if pet.get("animal_breed")
+                else None
+            ),
+            "breed": (
+                pet.get("animal_breed", [None, None])[1]
+                if pet.get("animal_breed") and len(pet.get("animal_breed", [])) > 1
+                else None
+            ),
+            "age": pet.get("age"),
+            "gender": pet.get("gender"),
+            "weight_kg": pet.get("weight_kg"),
+            "sterilized": pet.get("is_sterilized"),
+            "dewormed": pet.get("dewormed"),
+            "vaccines": pet.get("vaccines_up_to_date", []),
+            "special_conditions": pet.get("special_conditions", []),
+            "brief_description": pet.get("brief_description"),
+            "title": pet_data.get("title"),
+            "emotional_description": pet_data.get("emotional_description"),
+        }
+
+        # Create prompt for Llama 3 8B
+        prompt = f"""You are an adoption compatibility evaluator. Your task is to evaluate whether an adopter is compatible with a specific pet based on the adopter's form and the pet's profile.
+
+    ADOPTER FORM DATA:
+    - Neighborhood: {form_data.get('neighborhood')}
+    - Employment Status: {form_data.get('employment_status')} {f"({form_data.get('employment_status_other')})" if form_data.get('employment_status_other') else ''}
+    - Housing Type: {form_data.get('housing_type')} {f"({form_data.get('housing_type_other')})" if form_data.get('housing_type_other') else ''}
+    - Has Natural Space: {'Yes' if form_data.get('has_natural_space') else 'No'}
+    - Currently Has Pets: {'Yes' if form_data.get('has_pets') else 'No'} {f"- Details: {form_data.get('current_pets_details')}" if form_data.get('current_pets_details') else ''}
+    - Household Energy Level: {form_data.get('household_energy')}
+    - Has Children: {'Yes' if form_data.get('has_children') else 'No'} {f"- Ages: {form_data.get('children_ages')}" if form_data.get('children_ages') else ''}
+    - Long Term Commitment: {'Yes' if form_data.get('long_term_commitment') else 'No'}
+    - Preferred Species: {form_data.get('preferred_species')}
+    - Preferred Gender: {form_data.get('preferred_gender')}
+    - Preferred Energy Level: {form_data.get('preferred_energy')}
+    - Daily Time Dedication: {form_data.get('daily_time_dedication')} hours
+    - Sleeping Location: {form_data.get('sleeping_location')} {f"({form_data.get('sleeping_location_other')})" if form_data.get('sleeping_location_other') else ''}
+    - Behavior Approach: {form_data.get('behavior_approach')} {f"({form_data.get('behavior_approach_other')})" if form_data.get('behavior_approach_other') else ''}
+    - Emergency Plan: {form_data.get('emergency_plan')} {f"({form_data.get('emergency_plan_other')})" if form_data.get('emergency_plan_other') else ''}
+    - Motivation: {form_data.get('motivation')}
+
+    PET PROFILE DATA:
+    - Name: {pet_info['name']}
+    - Species: {pet_info['species']}
+    - Breed: {pet_info['breed']}
+    - Age: {pet_info['age']} years
+    - Gender: {pet_info['gender']}
+    - Weight: {pet_info['weight_kg']} kg
+    - Sterilized: {'Yes' if pet_info['sterilized'] else 'No'}
+    - Special Conditions: {', '.join(pet_info['special_conditions']) if pet_info['special_conditions'] else 'None'}
+    - Brief Description: {pet_info['brief_description']}
+    - Profile Title: {pet_info['title']}
+    - Emotional Description: {pet_info['emotional_description']}
+
+    For each field, evaluate cross-compatibility between the adopter's response and this specific pet's profile. Score each field 1 (compatible) or 0 (not compatible).
+
+    CRITICAL: Be STRICT and DEMANDING. Not everything should be compatible. Only score 1 when there's clear evidence of compatibility. Score 0 if there's any reasonable doubt or mismatch. A score of 15/15 is almost never realistic - real adopters have weaknesses.
+
+    Specifically consider this pet's needs based on its species, breed, age, weight, special conditions, and description. A mismatch in any area should result in 0.
+
+    SECTION I - CANDIDATE INFORMATION:
+    1. employment_status: Score 0 if the adopter's job leaves little time for this specific pet's needs (e.g., a high-energy dog needs more time than a cat).
+    2. housing_type: Score 0 if the housing is too small or restrictive for this pet's size and energy level (e.g., a large dog in a small apartment without outdoor access).
+    3. has_natural_space: Score 0 if the pet clearly needs outdoor space and the adopter doesn't have it (e.g., a high-energy breed without a yard).
+
+    SECTION II - COEXISTENCE AND EXPERIENCE:
+    4. has_pets: Score 0 if introducing this specific pet to existing pets could be problematic (e.g., same gender aggression, territorial breeds).
+    5. household_energy: Score 0 if the household energy level conflicts with this pet's temperament (e.g., a high-anxiety pet in a very active household).
+    6. has_children: Score 0 if the pet's temperament or special conditions are incompatible with children of those ages.
+    7. long_term_commitment: Score 0 if the adopter doesn't fully understand the long-term commitment this specific pet requires.
+
+    SECTION III - PET PREFERENCES:
+    8. preferred_species: Score 0 if the species doesn't match and the adopter didn't say no_preference.
+    9. preferred_gender: Score 0 if the gender doesn't match and the adopter didn't say no_preference.
+    10. preferred_energy: Score 0 if the pet's energy level clearly differs from what the adopter prefers.
+
+    SECTION V - MOTIVATION:
+    11. motivation: Score 0 if the motivation seems generic, superficial, or doesn't address this specific pet's known needs (based on breed, special conditions, etc.).
+
+    SECTION IV - LOGISTICS AND EDUCATION:
+    12. daily_time_dedication: Score 0 if the adopter's available time is insufficient for this specific pet's care requirements.
+    13. sleeping_location: Score 0 if the planned sleeping location is inappropriate for this pet's needs.
+    14. behavior_approach: Score 0 if the adopter's approach is unlikely to work well with this pet's likely behavioral traits.
+    15. emergency_plan: Score 0 if the emergency plan is unrealistic or doesn't consider this pet's specific needs.
+
+    You MUST respond ONLY with a JSON object with the following structure:
+    {{
+    "total_score": integer (sum of ALL compatible fields, 0-15),
+    "total_max_score": 15,
+    "main_score": integer (sum of compatible main fields from sections I, II, III, V, 0-11),
+    "main_max_score": 11,
+    "logistics_education_score": integer (sum of compatible logistics fields from section IV, 0-4),
+    "logistics_education_max_score": 4,
+    "breakdown": [
+        {{"section": "I. Candidate Information", "field": "employment_status", "label": "Employment Status", "answer": "{_safe(form_data.get('employment_status'))}", "evaluation": "Brief explanation of why this is or is not compatible with the pet", "points": 0 or 1, "max_points": 1}},
+        {{"section": "I. Candidate Information", "field": "housing_type", "label": "Housing Type", "answer": "{_safe(form_data.get('housing_type'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "I. Candidate Information", "field": "has_natural_space", "label": "Has Natural Space", "answer": "{'Yes' if form_data.get('has_natural_space') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "II. Coexistence and Experience", "field": "has_pets", "label": "Has Pets", "answer": "{'Yes' if form_data.get('has_pets') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "II. Coexistence and Experience", "field": "household_energy", "label": "Household Energy", "answer": "{_safe(form_data.get('household_energy'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "II. Coexistence and Experience", "field": "has_children", "label": "Has Children", "answer": "{'Yes' if form_data.get('has_children') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "II. Coexistence and Experience", "field": "long_term_commitment", "label": "Long Term Commitment", "answer": "{'Yes' if form_data.get('long_term_commitment') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "III. Pet Preferences", "field": "preferred_species", "label": "Preferred Species", "answer": "{_safe(form_data.get('preferred_species'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "III. Pet Preferences", "field": "preferred_gender", "label": "Preferred Gender", "answer": "{_safe(form_data.get('preferred_gender'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "III. Pet Preferences", "field": "preferred_energy", "label": "Preferred Energy", "answer": "{_safe(form_data.get('preferred_energy'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "V. Motivation", "field": "motivation", "label": "Motivation", "answer": "{_safe(form_data.get('motivation'))[:80]}...", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "IV. Logistics and Education", "field": "daily_time_dedication", "label": "Daily Time Dedication", "answer": "{_safe(form_data.get('daily_time_dedication'))} hours", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "IV. Logistics and Education", "field": "sleeping_location", "label": "Sleeping Location", "answer": "{_safe(form_data.get('sleeping_location'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "IV. Logistics and Education", "field": "behavior_approach", "label": "Behavior Approach", "answer": "{_safe(form_data.get('behavior_approach'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "IV. Logistics and Education", "field": "emergency_plan", "label": "Emergency Plan", "answer": "{_safe(form_data.get('emergency_plan'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}}
+    ],
+    "justification": "A detailed justification explaining the overall compatibility evaluation, highlighting key matches and concerns"
+    }}
+    """
+
+        # Log the prompt for debugging
+        logger.info(
+            f"Sending evaluation prompt to Llama 3 8B (length: {len(prompt)} chars)"
+        )
+
+        # Generate response using chat_completion
+        messages = [{"role": "user", "content": prompt}]
+        result = llama_client.chat_completion(
+            messages, max_tokens=2500, temperature=0.3
+        )
+
+        # Parse the response content
+        content = result.choices[0].message.content
+
+        # Log the raw content for debugging
+        logger.info(f"Raw evaluation response from Llama 3 8B: {content}")
+
+        # Extract JSON from response using brace depth tracking
+        try:
+            if content is None:
+                raise ValueError("Llama 3 8B returned None content")
+
+            json_start = content.find("{")
+
+            if json_start == -1:
+                raise ValueError("No JSON block found in response")
+
+            # Track brace depth to find matching closing brace
+            depth = 0
+            json_end = -1
+            in_string = False
+            escape = False
+            for i in range(json_start, len(content)):
+                ch = content[i]
+                if in_string:
+                    if escape:
+                        escape = False
+                    elif ch == "\\":
+                        escape = True
+                    elif ch == '"':
+                        in_string = False
+                else:
+                    if ch == '"':
+                        in_string = True
+                    elif ch == "{":
+                        depth += 1
+                    elif ch == "}":
+                        depth -= 1
+                        if depth == 0:
+                            json_end = i + 1
+                            break
+
+            if json_end == -1:
+                raise ValueError("No matching closing brace found in response")
+
+            json_str = content[json_start:json_end]
+            evaluation_data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {str(e)}")
+            logger.error(f"Response content: {content}")
+            raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
+
+        # Validate required fields in response
+        required_fields = [
+            "total_score",
+            "total_max_score",
+            "main_score",
+            "main_max_score",
+            "logistics_education_score",
+            "logistics_education_max_score",
+            "breakdown",
+            "justification",
+        ]
+        for field in required_fields:
+            if field not in evaluation_data:
+                logger.error(f"Missing required field '{field}' in Llama response")
+                raise ValueError(f"AI response missing required field: {field}")
+
+        # Validate breakdown is a list with 15 items
+        if not isinstance(evaluation_data["breakdown"], list):
+            logger.error("Breakdown is not a list")
+            raise ValueError("AI response breakdown must be a list")
+
+        if len(evaluation_data["breakdown"]) != 15:
+            logger.warning(
+                f"Breakdown has {len(evaluation_data['breakdown'])} items, expected 15 - padding with defaults"
+            )
+            # If AI returns fewer than 15 items, pad with defaults (points=0)
+            while len(evaluation_data["breakdown"]) < 15:
+                idx = len(evaluation_data["breakdown"]) + 1
+                evaluation_data["breakdown"].append(
+                    {
+                        "section": "Unavailable",
+                        "field": f"field_{idx}",
+                        "label": f"Field {idx}",
+                        "answer": "Not evaluated",
+                        "evaluation": "AI did not evaluate this field",
+                        "points": 0,
+                        "max_points": 1,
+                    }
+                )
+            # If more than 15, truncate
+            evaluation_data["breakdown"] = evaluation_data["breakdown"][:15]
+
+        # Recalculate scores from breakdown points (AI can't sum reliably)
+        main_fields = evaluation_data["breakdown"][:11]
+        logistics_fields = evaluation_data["breakdown"][11:15]
+
+        calculated_main = sum(item.get("points", 0) for item in main_fields)
+        calculated_logistics = sum(item.get("points", 0) for item in logistics_fields)
+        calculated_total = calculated_main + calculated_logistics
+
+        evaluation_data["main_score"] = calculated_main
+        evaluation_data["logistics_education_score"] = calculated_logistics
+        evaluation_data["total_score"] = calculated_total
+
+        logger.info(
+            f"Scores recalculated from breakdown - total: {calculated_total}/15, "
+            f"main: {calculated_main}/11, logistics: {calculated_logistics}/4"
+        )
+
+        # Validate each breakdown item has required fields
+        for item in evaluation_data["breakdown"]:
+            item_fields = [
+                "section",
+                "field",
+                "label",
+                "answer",
+                "evaluation",
+                "points",
+                "max_points",
+            ]
+            for field in item_fields:
+                if field not in item:
+                    logger.warning(f"Breakdown item missing field '{field}'")
+                    item[field] = (
+                        "" if field != "points" and field != "max_points" else 0
+                    )
+
+        logger.info("Adoption application evaluation completed successfully")
+        return evaluation_data
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON response: {str(e)}")
+        raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to evaluate adoption application: {str(e)}")
+        raise Exception("Failed to evaluate adoption application")

@@ -63,6 +63,7 @@ SmartAdoptApp/
 │   │   │   ├── user/            # User models (User, Admin, Adopter)
 │   │   │   ├── pet/             # Pet models (Python models for MongoDB)
 │   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── applications/   # Adoption application models (Python models for MongoDB)
 │   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
 │   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
@@ -72,6 +73,7 @@ SmartAdoptApp/
 │   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
 │   │   │   ├── pet_routes.py          # Pet management endpoints
 │   │   │   ├── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── applications_routes.py # Adoption application endpoints
 │   │   │   ├── favorite_routes.py     # Favorite endpoints
 │   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
@@ -80,6 +82,7 @@ SmartAdoptApp/
 │   │   │   ├── pet_schemas.py             # Pet management schemas
 │   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
 │   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── applications_schemas.py   # Adoption application schemas
 │   │   │   ├── favorite_schemas.py       # Favorite schemas
 │   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
@@ -88,6 +91,7 @@ SmartAdoptApp/
 │   │   │   ├── pet_service.py          # Pet management service
 │   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── applications_service.py # Adoption application service (MongoDB)
 │   │   │   ├── favorite_service.py    # Favorite service
 │   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
@@ -102,6 +106,7 @@ SmartAdoptApp/
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
+│   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py              # Test configuration
