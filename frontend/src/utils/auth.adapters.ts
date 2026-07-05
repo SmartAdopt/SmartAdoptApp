@@ -14,5 +14,6 @@ export const adaptLoginResponse = (response: LoginApiResponse): AuthSession => {
     email: response.email,
     phone_number: response.phone_number,
     role: response.role,
+    createdAt: response.created_at,
   };
 };

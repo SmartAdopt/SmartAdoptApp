@@ -95,6 +95,15 @@ export const AdopterProfile = () => {
   const derivedFirstName = nameParts[0] || "";
   const derivedLastName = nameParts.slice(1).join(" ") || "";
 
+  // Format the member since date
+  const rawDate = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("es-ES", {
+        month: "long",
+        year: "numeric",
+      })
+    : "Fecha desconocida";
+  const memberSince = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
+
   // Profile form
   const {
     control,
@@ -469,43 +478,7 @@ export const AdopterProfile = () => {
         {/* RIGHT COLUMN: Metadata & Status Cards */}
         <Grid item xs={12} md={4}>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  fontWeight={700}
-                  color="text.secondary"
-                  gutterBottom
-                >
-                  Estado de Verificación
-                </Typography>
-                <Typography
-                  variant="body1"
-                  fontWeight={600}
-                  color="success.main"
-                  sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
-                >
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor: "success.main",
-                    }}
-                  />
-                  Cuenta Verificada
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={12}>
+            <Grid item xs={12}>
               <Paper
                 elevation={0}
                 sx={{
@@ -528,7 +501,7 @@ export const AdopterProfile = () => {
                   color="text.primary"
                   sx={{ mt: 1, fontWeight: 500 }}
                 >
-                  Mayo 2026
+                  {memberSince}
                 </Typography>
               </Paper>
             </Grid>
