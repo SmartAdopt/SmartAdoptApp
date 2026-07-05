@@ -14,13 +14,21 @@ export default defineConfig({
       {
         entry: '../electron/preload.ts',
         onstart(options) {
-          options.reload()
+          try {
+            options.reload()
+          } catch {
+            console.warn('Could not reload Electron: channel closed');
+          }
         },
       },
       {
         entry: '../electron/popup-preload.ts',
         onstart(options) {
-          options.reload()
+          try {
+            options.reload()
+          } catch {
+            console.warn('Could not reload Electron: channel closed');
+          }
         },
       },
     ]),
