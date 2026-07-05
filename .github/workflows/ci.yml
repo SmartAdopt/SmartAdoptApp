@@ -1,7 +1,7 @@
 name: CI- Continuous Integration
 on:
   push:
-    branches: ["develop", "qa", "main", "feature/**", "bugfix/**", "release/**"]
+    branches: ["develop", "qa", "main", "feature/**", "bugfix/**", "release/**", "refactor/**","hotfix/**","chore/**","docs/**","test/**"]
   pull_request:
     branches: ["develop", "qa", "main"]
 
