@@ -7,12 +7,40 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:electron": "npm run build && electron-builder --win nsis --publish never",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",
     "server": "json-server --watch db.json --port 8000",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
+  },
+  "build": {
+    "appId": "net.programacionwebuce.smartadopt.desktop",
+    "productName": "SmartAdopt",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
