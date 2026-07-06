@@ -29,14 +29,15 @@ def get_foundation(db: Session) -> Foundation:
 def update_foundation(db: Session, data: Dict[str, Any]) -> Foundation:
     foundation = db.query(Foundation).first()
     if not foundation:
-        logger.warning("Foundation update failed - not found")
-        raise ValueError("Foundation not found")
-
-    for key, value in data.items():
-        if value is not None:
-            setattr(foundation, key, value)
+        logger.info("Foundation not found, creating a new one on PUT")
+        foundation = Foundation(**data)
+        db.add(foundation)
+    else:
+        for key, value in data.items():
+            if value is not None:
+                setattr(foundation, key, value)
 
     db.commit()
     db.refresh(foundation)
-    logger.info(f"Foundation updated: {foundation.name}")
+    logger.info(f"Foundation updated/created: {foundation.name}")
     return foundation

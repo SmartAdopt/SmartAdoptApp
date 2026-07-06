@@ -14,6 +14,7 @@ import {
   GroupsOutlined as GroupsOutlinedIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   VisibilityOutlined as VisibilityOutlinedIcon,
+  AccountBalanceOutlined as AccountBalanceOutlinedIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -74,7 +75,7 @@ export const AdminDashboard = () => {
             description="Aprueba o rechaza adoptantes"
             icon={<DescriptionOutlinedIcon fontSize="large" />}
             buttonColor="primary"
-            onClick={() => console.log("Revisar Solicitudes")}
+            onClick={() => navigate("/admin/requests")}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -102,6 +103,15 @@ export const AdminDashboard = () => {
             icon={<VisibilityOutlinedIcon fontSize="large" />}
             buttonColor="secondary"
             onClick={() => navigate("/admin/pets")}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminActionCard
+            title="Datos Legales"
+            description="Información legal de la organización"
+            icon={<AccountBalanceOutlinedIcon fontSize="large" />}
+            buttonColor="info"
+            onClick={() => navigate("/admin/legal-info")}
           />
         </Grid>
       </Grid>

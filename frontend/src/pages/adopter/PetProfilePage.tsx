@@ -12,6 +12,8 @@ import {
   CircularProgress,
   IconButton,
   Chip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -22,8 +24,10 @@ import {
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { petsService } from "../../services/pets.service";
+import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { useState } from "react";
 
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,10 +48,52 @@ export const PetProfilePage = () => {
     enabled: !!id,
   });
 
+  // Check if the user has already requested this pet
+  const { data: hasRequested, refetch: refetchHasRequested } = useQuery({
+    queryKey: ["hasRequested", id],
+    queryFn: () => adoptionRequestsService.hasRequested(id!),
+    enabled: !!id,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
   const isFavorite = id ? favoritePetIds.includes(id) : false;
 
   const handleToggleFavorite = () => {
     if (id) toggleFavorite(id);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setSnackbarMessage("¡Enlace copiado al portapapeles!");
+    setSnackbarOpen(true);
+  };
+
+  const handleRequestAdoption = async () => {
+    if (!id || hasRequested) return;
+
+    setIsSubmitting(true);
+    try {
+      await adoptionRequestsService.createRequest(id);
+      setSnackbarMessage("¡Solicitud enviada con éxito!");
+      setSnackbarOpen(true);
+      refetchHasRequested();
+    } catch (error) {
+      setSnackbarMessage(
+        error instanceof Error
+          ? error.message
+          : "Error al enviar la solicitud.",
+      );
+      setSnackbarOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   if (isLoading) {
@@ -124,7 +170,7 @@ export const PetProfilePage = () => {
           >
             {isFavorite ? <FavoriteFilledIcon /> : <FavoriteBorderIcon />}
           </IconButton>
-          <IconButton size="small">
+          <IconButton size="small" onClick={handleShare}>
             <ShareIcon />
           </IconButton>
         </Box>
@@ -353,17 +399,24 @@ export const PetProfilePage = () => {
 
               <Button
                 variant="contained"
-                color="warning"
+                color={hasRequested ? "success" : "warning"}
                 fullWidth
                 size="large"
+                disabled={hasRequested || isSubmitting}
+                onClick={handleRequestAdoption}
                 sx={{ mb: 2, borderRadius: 2 }}
               >
-                Solicitar Adopción
+                {isSubmitting
+                  ? "Enviando..."
+                  : hasRequested
+                    ? "Solicitud enviada"
+                    : "Solicitar Adopción"}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 sx={{ mb: 2, borderRadius: 2 }}
+                onClick={() => navigate("/adopter/suitability")}
               >
                 Ver Tu Compatibilidad
               </Button>
@@ -438,6 +491,22 @@ export const PetProfilePage = () => {
           </Box>
         </Grid>
       </Grid>
+
+      {/* Temporary Notification */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarMessage.includes("éxito") ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </AdopterLayout>
   );
 };

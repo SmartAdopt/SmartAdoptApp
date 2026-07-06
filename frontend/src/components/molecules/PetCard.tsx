@@ -9,6 +9,7 @@ import {
   Stack,
   Button,
   IconButton, // <-- NEW
+  Box,
 } from "@mui/material";
 
 // NEW: Import both heart states
@@ -58,11 +59,23 @@ export const PetCard = ({
         borderColor: "grey.200",
         overflow: "hidden",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <CardMedia component="img" height="220" image={imagen} alt={nombre} />
+      <CardMedia
+        component="img"
+        image={imagen}
+        alt={nombre}
+        sx={{
+          height: { xs: 280, sm: 220 },
+          objectFit: "cover",
+        }}
+      />
 
-      <CardContent>
+      <CardContent
+        sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}
+      >
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -96,13 +109,15 @@ export const PetCard = ({
           📍 {ubicacion}
         </Typography>
 
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => navigate(`/adopter/pet/${id}`)}
-        >
-          Ver Perfil
-        </Button>
+        <Box sx={{ mt: "auto", pt: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => navigate(`/adopter/pet/${id}`)}
+          >
+            Ver Perfil
+          </Button>
+        </Box>
       </CardContent>
     </Card>
   );

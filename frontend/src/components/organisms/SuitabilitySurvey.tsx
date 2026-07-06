@@ -125,7 +125,7 @@ export const SuitabilitySurvey: React.FC<SuitabilitySurveyProps> = ({
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 3, md: 5 },
+        p: { xs: 2, sm: 3, md: 5 },
         borderRadius: 3,
         border: "1px solid",
         borderColor: "divider",
@@ -941,14 +941,29 @@ export const SuitabilitySurvey: React.FC<SuitabilitySurveyProps> = ({
           )}
         </Grid>
 
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 5 }}>
-          <Box sx={{ display: "flex", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column-reverse", sm: "row" },
+            justifyContent: "space-between",
+            mt: 5,
+            gap: { xs: 3, sm: 0 },
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
             {onCancel && (
               <Button
                 variant="text"
                 color="inherit"
                 onClick={onCancel}
-                sx={{ px: 4 }}
+                fullWidth
+                sx={{ px: 4, width: { xs: "100%", sm: "auto" } }}
               >
                 Cancelar
               </Button>
@@ -957,14 +972,20 @@ export const SuitabilitySurvey: React.FC<SuitabilitySurveyProps> = ({
               variant="outlined"
               onClick={handleBack}
               disabled={activeStep === 0}
-              sx={{ px: 4 }}
+              fullWidth
+              sx={{ px: 4, width: { xs: "100%", sm: "auto" } }}
             >
               Atrás
             </Button>
           </Box>
 
           {activeStep < totalSteps - 1 ? (
-            <Button variant="contained" onClick={handleNext} sx={{ px: 4 }}>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              fullWidth
+              sx={{ px: 4, width: { xs: "100%", sm: "auto" } }}
+            >
               Siguiente
             </Button>
           ) : (
@@ -972,14 +993,14 @@ export const SuitabilitySurvey: React.FC<SuitabilitySurveyProps> = ({
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-end",
+                alignItems: { xs: "center", sm: "flex-end" },
                 gap: 2,
               }}
             >
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ textAlign: "right", maxWidth: 400 }}
+                sx={{ textAlign: { xs: "center", sm: "right" }, maxWidth: 400 }}
               >
                 Al hacer clic en el botón enviar, verifico que toda la
                 información anterior es verdadera y precisa.
@@ -988,7 +1009,8 @@ export const SuitabilitySurvey: React.FC<SuitabilitySurveyProps> = ({
                 type="submit"
                 variant="contained"
                 color="primary"
-                sx={{ px: 4 }}
+                fullWidth
+                sx={{ px: 4, width: { xs: "100%", sm: "auto" } }}
               >
                 Enviar
               </Button>

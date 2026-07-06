@@ -1,10 +1,43 @@
-// vite.config.ts
+// frontend/vite.config.ts
+
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import electron from 'vite-plugin-electron';
 
 export default defineConfig({
-  plugins: [react()],
-  
+  plugins: [
+    react(),
+    ...(process.env.VITE_WEB_ONLY === 'true'
+      ? []
+      : [
+          electron([
+            {
+              entry: '../electron/main.ts',
+            },
+            {
+              entry: '../electron/preload.ts',
+              onstart(options) {
+                try {
+                  options.reload();
+                } catch {
+                  console.warn('Could not reload Electron: channel closed');
+                }
+              },
+            },
+            {
+              entry: '../electron/popup-preload.ts',
+              onstart(options) {
+                try {
+                  options.reload();
+                } catch {
+                  console.warn('Could not reload Electron: channel closed');
+                }
+              },
+            },
+          ]),
+        ]),
+  ],
+
   // 1. Vite Server Configuration (Proxy for Dockerized Backend)
   server: {
     port: 5173,
@@ -20,6 +53,7 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Proxy for WebSockets (Real-time notifications RF-05)
       '/ws': {

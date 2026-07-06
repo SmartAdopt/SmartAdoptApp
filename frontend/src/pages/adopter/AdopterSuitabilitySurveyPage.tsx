@@ -109,9 +109,13 @@ export const AdopterSuitabilitySurveyPage = () => {
 
   return (
     <AdopterLayout>
-      <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 0 } }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight={800} gutterBottom>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ mb: 4, mt: { xs: 2, sm: 0 } }}>
+          <Typography
+            typography={{ xs: "h5", md: "h4" }}
+            fontWeight={800}
+            gutterBottom
+          >
             Registro de Idoneidad
           </Typography>
           <Typography variant="body1" color="text.secondary">
