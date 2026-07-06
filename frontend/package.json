@@ -6,8 +6,13 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:electron:qa": "cross-env VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api npm run dev",
+    "dev:electron:prod": "cross-env VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api npm run dev",
     "build": "tsc -b && vite build",
     "build:electron": "npm run build && electron-builder --win nsis --publish never",
+    "build:electron:local": "cross-env VITE_API_URL=http://localhost:8000/api npm run build:electron",
+    "build:electron:qa": "cross-env VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api npm run build:electron",
+    "build:electron:prod": "cross-env VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api npm run build:electron",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",

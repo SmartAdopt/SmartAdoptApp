@@ -150,6 +150,8 @@ electron-builder uses this field as the Electron entry point when packaging the 
 
 The React app reads the backend URL from `VITE_API_URL` at **build time** (Vite embeds it into the bundle).
 
+If `VITE_API_URL` is not set and the app runs as packaged Electron (`file://`), SmartAdopt now falls back to `http://localhost:8000/api` so local desktop builds keep working without a broken relative `/api`.
+
 | Environment | `VITE_API_URL` | When set |
 |-------------|----------------|----------|
 | Local (default) | *(unset — uses Vite proxy)* | `npm run dev` proxies `/api` and `/auth` to `localhost:8000` |
@@ -160,17 +162,16 @@ The React app reads the backend URL from `VITE_API_URL` at **build time** (Vite 
 **Examples:**
 
 ```bash
-# Build installer pointing to QA backend (local test)
+# Build installer pointing to local backend
 cd frontend
-set VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api
-npm run build:electron
+npm run build:electron:local
+
+# Build installer pointing to QA backend (local test)
+npm run build:electron:qa
 
 # Build installer pointing to Production backend (local test)
-set VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api
-npm run build:electron
+npm run build:electron:prod
 ```
-
-On macOS/Linux shells, use `export VITE_API_URL=...` instead of `set`.
 
 ---
 
@@ -387,8 +388,13 @@ Using the AWS Console:
 | Script | Command | Purpose |
 |--------|---------|---------|
 | `dev` | `vite` | Local development with Electron |
+| `dev:electron:qa` | `cross-env VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api npm run dev` | Run desktop app against QA backend |
+| `dev:electron:prod` | `cross-env VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api npm run dev` | Run desktop app against Production backend |
 | `build` | `tsc -b && vite build` | Compile web + Electron sources |
 | `build:electron` | `npm run build && electron-builder --win nsis --publish never` | Full Windows installer build |
+| `build:electron:local` | `cross-env VITE_API_URL=http://localhost:8000/api npm run build:electron` | Build desktop installer for local backend |
+| `build:electron:qa` | `cross-env VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api npm run build:electron` | Build desktop installer for QA |
+| `build:electron:prod` | `cross-env VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api npm run build:electron` | Build desktop installer for Production |
 
 ---
 

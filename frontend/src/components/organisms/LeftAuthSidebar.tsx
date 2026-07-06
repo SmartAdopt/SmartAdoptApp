@@ -3,6 +3,7 @@
 import { Box } from "@mui/material";
 import { Logo } from "../atoms/Logo";
 import { FeatureInfoCard } from "../molecules/FeatureInfoCard";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 export const LeftAuthSidebar = () => {
   return (
@@ -15,7 +16,7 @@ export const LeftAuthSidebar = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <FeatureInfoCard
-          icon={<img src="/adopt.svg" width={20} alt="icon" />}
+          icon={<img src={PUBLIC_ASSETS.adopt} width={20} alt="icon" />}
           title="Para Adoptantes"
           description="Encuentra tu compañero perfecto mediante emparejamiento con IA y un proceso de adopción sin complicaciones"
           borderColor="primary.light"
@@ -25,7 +26,7 @@ export const LeftAuthSidebar = () => {
         <FeatureInfoCard
           icon={
             <img
-              src="/heart.svg"
+              src={PUBLIC_ASSETS.heart}
               width={20}
               alt="icon"
               style={{ filter: "grayscale(100%) brightness(50%)" }}

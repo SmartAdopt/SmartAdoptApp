@@ -3,6 +3,7 @@
 
 import { Box, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 interface LogoProps {
   sx?: SxProps<Theme>;
@@ -22,7 +23,11 @@ export const Logo = ({ sx }: LogoProps) => {
         }}
       >
         {/* Placeholder Icon */}
-        <img src="/logo.svg" alt="logo" style={{ width: 20, height: 20 }} />
+        <img
+          src={PUBLIC_ASSETS.logo}
+          alt="logo"
+          style={{ width: 20, height: 20 }}
+        />
       </Box>
       <Box>
         <Typography
