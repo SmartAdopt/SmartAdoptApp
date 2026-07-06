@@ -14,7 +14,7 @@ function createWindow() {
         width: 1024,
         height: 768,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.mjs'),
+            preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         },
@@ -33,7 +33,7 @@ function createWindow() {
                 action: 'allow',
                 overrideBrowserWindowOptions: {
                     webPreferences: {
-                        preload: path.join(__dirname, 'popup-preload.mjs'),
+                        preload: path.join(__dirname, 'popup-preload.js'),
                         contextIsolation: false, // We need to override window.BroadcastChannel natively
                         nodeIntegration: true // Allows importing ipcRenderer in the popup-preload
                     }
