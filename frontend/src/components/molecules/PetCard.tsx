@@ -8,11 +8,19 @@ import {
   Chip,
   Stack,
   Button,
+  IconButton, // <-- NEW
 } from "@mui/material";
 
-import { FavoriteBorder as FavoriteBorderIcon } from "@mui/icons-material";
+// NEW: Import both heart states
+import {
+  FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteIcon,
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { usePetDatabase } from "../../context/PetContext"; // <-- NEW: Import context
 
 interface PetCardProps {
+  id: string;
   nombre: string;
   raza: string;
   edad: string;
@@ -22,6 +30,7 @@ interface PetCardProps {
 }
 
 export const PetCard = ({
+  id,
   nombre,
   raza,
   edad,
@@ -29,6 +38,17 @@ export const PetCard = ({
   ubicacion,
   imagen,
 }: PetCardProps) => {
+  const navigate = useNavigate();
+
+  // Consume favorites state and toggler from our Context
+  const { favoritePetIds, toggleFavorite } = usePetDatabase();
+  const isFavorite = favoritePetIds.includes(id);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents triggering other click events on the card
+    toggleFavorite(id);
+  };
+
   return (
     <Card
       elevation={0}
@@ -53,7 +73,14 @@ export const PetCard = ({
             {nombre}
           </Typography>
 
-          <FavoriteBorderIcon />
+          {/* DYNAMIC HEART BUTTON */}
+          <IconButton
+            onClick={handleFavoriteClick}
+            color={isFavorite ? "error" : "default"} // Red color if favorite
+            size="small"
+          >
+            {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
         </Stack>
 
         <Typography color="text.secondary" gutterBottom>
@@ -62,7 +89,6 @@ export const PetCard = ({
 
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Chip label={edad} size="small" />
-
           <Chip label={genero} size="small" />
         </Stack>
 
@@ -70,7 +96,11 @@ export const PetCard = ({
           📍 {ubicacion}
         </Typography>
 
-        <Button fullWidth variant="contained">
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => navigate(`/adopter/pet/${id}`)}
+        >
           Ver Perfil
         </Button>
       </CardContent>

@@ -7,6 +7,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { type AuthSession } from "../types/auth.types";
+import { logger } from "../utils/logger";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         return JSON.parse(storedUser);
       } catch {
         // Removed the unused 'error' variable to satisfy the linter
-        console.error("Failed to parse user session");
+        logger.error("Failed to parse user session");
         localStorage.removeItem("user");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");

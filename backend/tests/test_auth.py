@@ -1,4 +1,4 @@
-from app.models.user import User
+from app.models.user.user import User
 from jose import jwt
 from app.config import settings
 from datetime import datetime, timedelta
@@ -267,7 +267,14 @@ def test_blacklisted_token_rejected_in_protected_endpoint(client):
     exp_timestamp = payload.get("exp")
     if exp_timestamp:
         exp_datetime = datetime.fromtimestamp(exp_timestamp)
-        add_token_to_blacklist(access_token, exp_datetime)
+
+        # Create a mock redis client for the blacklist
+        class MockRedis:
+            def setex(self, key, ttl, value):
+                pass
+
+        mock_redis = MockRedis()
+        add_token_to_blacklist(mock_redis, access_token, exp_datetime)
 
     # 3. Try to access protected endpoint with blacklisted token
     # Note: Since we're using a mock Redis, the blacklist functionality is limited

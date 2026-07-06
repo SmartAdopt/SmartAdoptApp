@@ -43,11 +43,12 @@ The logging system is configured in `app/utils/logger/logger_config.py`.
 The console handler outputs logs to stdout with the following features:
 
 - **Color-coded output**: Entire log lines are colored based on log level
+  - DEBUG: Default terminal color
   - INFO: Green
   - WARNING: Yellow
   - ERROR: Red
 - **Format**: `{timestamp} | {level} | {name}:{function}:{line} - {message}`
-- **Level**: INFO and above
+- **Level**: INFO and above (DEBUG logs are ignored in standard logs to reduce noise but can be enabled for diagnostics)
 
 ### File Handlers
 
@@ -67,11 +68,12 @@ Two file handlers are configured for persistent logging:
 
 ## Log Levels
 
-The application uses the standard log levels:
+The application uses four log levels to classify events:
 
-- **INFO**: General information about application flow
-- **WARNING**: Warning messages for potentially harmful situations
-- **ERROR**: Error messages for error events that might still allow the application to continue running
+- **DEBUG**: Fine-grained informational events useful to debug the application. Crucially, Pydantic field validation starts and successful checks are logged as `DEBUG` to keep standard outputs clean.
+- **INFO**: General operational messages highlighting application flow (e.g. successful user/pet registration, successful logins, route triggers).
+- **WARNING**: Client-side bad requests, input validation failures, or expected business logic failures (e.g. invalid password complexity, email already registered, missing required pet image URL).
+- **ERROR**: Internal server errors, database failures, or external service failure events (e.g. failed to insert into MongoDB, failed to generate BLIP description, Redis failures).
 
 ## Usage
 
@@ -85,9 +87,10 @@ from app.utils.logger.logger_config import logger
 
 ```python
 # Log at different levels
-logger.info("User logged in successfully")
-logger.warning("Invalid credentials attempt")
-logger.error("Database connection failed")
+logger.debug("Validating email field: user@example.com")
+logger.info("User registered successfully")
+logger.warning("Registration failed - Email already registered")
+logger.error("Failed to connect to PostgreSQL database")
 ```
 
 ### Logging with Context

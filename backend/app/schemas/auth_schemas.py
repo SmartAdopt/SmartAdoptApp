@@ -32,59 +32,59 @@ class RegisterRequest(BaseModel):
     @field_validator("first_name", "last_name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        logger.info(f"Validating name: {v}")
+        logger.debug(f"Validating name: {v}")
         if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", v):
-            logger.error(
+            logger.warning(
                 f"Name validation failed for: {v} - contains invalid characters"
             )
             raise ValueError("Name must contain only letters")
-        logger.info(f"Name validation passed for: {v}")
+        logger.debug(f"Name validation passed for: {v}")
         return v.strip()
 
     # Validate that phone number contains only digits and starts with 09 (Ecuador mobile)
     @field_validator("phone_number")
     @classmethod
     def validate_phone_number(cls, v: str) -> str:
-        logger.info(f"Validating phone number: {v}")
+        logger.debug(f"Validating phone number: {v}")
         if not v.isdigit():
-            logger.error(
+            logger.warning(
                 f"Phone number validation failed for: {v} - contains non-digit characters"
             )
             raise ValueError("Phone number must contain only digits")
         if not v.startswith("09"):
-            logger.error(
+            logger.warning(
                 f"Phone number validation failed for: {v} - does not start with 09"
             )
             raise ValueError("Phone number must start with 09 (Ecuador mobile)")
-        logger.info(f"Phone number validation passed for: {v}")
+        logger.debug(f"Phone number validation passed for: {v}")
         return v
 
     # Validate password complexity (uppercase, lowercase, number)
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        logger.info("Validating password complexity")
+        logger.debug("Validating password complexity")
         if not re.search(r"[A-Z]", v):
-            logger.error("Password validation failed - missing uppercase letter")
+            logger.warning("Password validation failed - missing uppercase letter")
             raise ValueError("Password must contain at least one uppercase letter")
         if not re.search(r"[a-z]", v):
-            logger.error("Password validation failed - missing lowercase letter")
+            logger.warning("Password validation failed - missing lowercase letter")
             raise ValueError("Password must contain at least one lowercase letter")
         if not re.search(r"[0-9]", v):
-            logger.error("Password validation failed - missing number")
+            logger.warning("Password validation failed - missing number")
             raise ValueError("Password must contain at least one number")
-        logger.info("Password validation passed")
+        logger.debug("Password validation passed")
         return v
 
     # Validate that role is either admin or adopter
     @field_validator("requested_role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        logger.info(f"Validating role: {v}")
+        logger.debug(f"Validating role: {v}")
         if v not in ["admin", "adopter"]:
-            logger.error(f"Role validation failed for: {v} - invalid role")
+            logger.warning(f"Role validation failed for: {v} - invalid role")
             raise ValueError("Role must be either admin or adopter")
-        logger.info(f"Role validation passed for: {v}")
+        logger.debug(f"Role validation passed for: {v}")
         return v
 
 

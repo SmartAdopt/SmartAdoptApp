@@ -182,7 +182,7 @@ jobs:
             MONGO_PASSWORD=${{ secrets.PROD_MONGO_PASSWORD }}
             MONGO_DB=${{ secrets.PROD_MONGO_DB }}
             MONGO_PORT=${{ secrets.PROD_MONGO_PORT }}
-            MONGO_EXTERNAL_PORT=${{ secrets.PROD_MONGO_EXTERNAL_PORT }}
+            MONGO_HOST=${{ secrets.PROD_MONGO_HOST }}
             SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
             ALGORITHM=${{ secrets.PROD_ALGORITHM }}
             ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.PROD_ACCESS_TOKEN_EXPIRE_MINUTES }}
@@ -196,6 +196,7 @@ jobs:
             BACKBLAZE_KEY_ID=${{ secrets.PROD_BACKBLAZE_KEY_ID }}
             BACKBLAZE_APPLICATION_KEY=${{ secrets.PROD_BACKBLAZE_APPLICATION_KEY }}
             BACKBLAZE_BUCKET_NAME=${{ secrets.PROD_BACKBLAZE_BUCKET_NAME }}
+            HF_TOKEN=${{ secrets.PROD_HF_TOKEN }}
             DOZZLE_EXTERNAL_PORT=${{ secrets.PROD_DOZZLE_EXTERNAL_PORT }}
             DOZZLE_PORT=${{ secrets.PROD_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.PROD_DOZZLE_USERNAME }}

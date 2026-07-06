@@ -51,6 +51,7 @@ export const ArticlesSection = () => {
         {articles.map((article) => (
           <Grid item xs={12} md={4} key={article.id}>
             <ArticleCard
+              id={article.id}
               titulo={article.titulo}
               descripcion={article.descripcion}
               categoria={article.categoria}

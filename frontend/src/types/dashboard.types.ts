@@ -8,6 +8,11 @@ export interface Pet {
   genero: "Macho" | "Hembra";
   ubicacion: string;
   imagen: string;
+  // Optional detailed fields for the Profile View
+  peso?: string;
+  esterilizado?: boolean;
+  vacunado?: boolean;
+  biografia?: string;
 }
 
 export interface Article {

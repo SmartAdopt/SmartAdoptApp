@@ -1,6 +1,6 @@
 // src/components/organisms/LoginForm.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -8,11 +8,12 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Snackbar,
 } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { AuthToggle } from "../molecules/AuthToggle";
 import { SocialLoginGroup } from "../molecules/SocialLoginGroup";
-import { useAuth } from "../../context/AuthContext"; // Note: Updated path to our actual Context
+import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../services/auth.service";
 import type { LoginApiRequest } from "../../types/auth.types";
 
@@ -24,7 +25,27 @@ export const LoginForm = () => {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { loginUser } = useAuth(); // Note: Changed to match our AuthContext signature
+  // State for the success Toast notification
+  const [successToast, setSuccessToast] = useState<string>("");
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if there is a success message coming from the Register view
+    if (location.state?.successMessage) {
+      const message = location.state.successMessage;
+      // Clean the history state to prevent the toast from reappearing on page reload
+      window.history.replaceState({}, document.title);
+
+      // Delay state update to avoid synchronous cascading renders
+      setTimeout(() => {
+        setSuccessToast(message);
+      }, 0);
+    }
+  }, [location]);
+
+  const handleCloseToast = () => setSuccessToast("");
+
+  const { loginUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +125,7 @@ export const LoginForm = () => {
           InputProps={{ sx: { bgcolor: "grey.50" } }}
         />
 
-        {/* Removed Demo Credentials Alert to keep UI clean */}
+        {/* Removed demo credentials alert to keep UI clean */}
 
         <Button
           type="submit"
@@ -136,6 +157,23 @@ export const LoginForm = () => {
           ← Volver a inicio
         </Button>
       </Box>
+
+      {/* Material UI Snackbar Component for success notification */}
+      <Snackbar
+        open={!!successToast}
+        autoHideDuration={6000} // Will automatically close after 6 seconds
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseToast}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%", borderRadius: 2 }}
+        >
+          {successToast}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

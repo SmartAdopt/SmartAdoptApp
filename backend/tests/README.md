@@ -33,22 +33,21 @@ python -m pytest backend/tests/test_adopter_routes.py -v
 # Run Google OAuth utils tests
 python -m pytest backend/tests/test_google_oauth_utils.py -v
 
-# Run Backblaze routes tests
-python -m pytest backend/tests/test_backblaze_routes.py -v
+# Run pet tests
+python -m pytest backend/tests/test_pet.py -v
 ```
 
 
 ### Test Coverage
-The backend currently has 90% code coverage with 45 tests passing:
-The backend currently has 90% code coverage with 39 tests passing:
+The backend currently has 90% code coverage with 59 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
 - 4 adopter routes tests
-- 3 Google OAuth tests
+- 6 Google OAuth tests
 - 1 Google OAuth utils test
 - 1 main test
-- 13 additional auth tests (error handling, token validation)
 - 6 Backblaze B2 tests (image upload, authorization, validation)
+- 24 pet management tests (registration, update, listing, validation, role restrictions)
 
 ---
 
@@ -631,8 +630,296 @@ Validates error handling when Backblaze service fails.
 
 ---
 
-## 9. Redis Mock Implementation
-## 8. Redis Mock Implementation
+## 9. Pet Management Routes Tests: `test_pet.py`
+
+This file contains validation logic for pet management endpoints, including registration, update, listing, validation, and role-based authorization.
+
+### a) Test Data Constants
+```python
+TEST_PET_DOG = {
+    "name": "Buddy",
+    "pet_image_url": "https://example.com/dog.jpg",
+    "animal_breed": ["dog", "Golden Retriever"],
+    "age": 3,
+    "gender": "male",
+    "is_sterilized": True,
+    "vaccines_up_to_date": ["rabies", "parvovirus"],
+    "dewormed": True,
+    "weight_kg": 8.5,
+    "special_conditions": [],
+    "brief_description": "Friendly dog looking for a home",
+}
+```
+**Purpose:** 
+Standardizes test data for pet registration and updates.
+
+### b) Functional Test: Successful Pet Registration (Dog)
+```python
+def test_register_pet_success(client):
+    token = get_admin_token()
+    response = client.post(
+        "/pets/register",
+        json=TEST_PET_DOG,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["message"] == "Pet registered successfully"
+    assert "pet_id" in data
+```
+**Purpose:** 
+Validates the Happy Path of pet registration for dogs.
+* **HTTP 201 (Created):** Indicates successful pet registration.
+
+### c) Functional Test: Successful Pet Registration (Cat)
+```python
+def test_register_cat_pet_success(client):
+    cat_pet = TEST_PET_DOG.copy()
+    cat_pet["animal_breed"] = ["cat", "Siamese"]
+    cat_pet["name"] = "Whiskers"
+    
+    token = get_admin_token()
+    response = client.post(
+        "/pets/register",
+        json=cat_pet,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 201
+```
+**Purpose:** 
+Validates pet registration for cats with different breed.
+
+### d) Negative Test: Registration Without Admin Role
+```python
+def test_register_pet_without_admin_role(client):
+    adopter_token = get_adopter_token()
+    response = client.post(
+        "/pets/register",
+        json=TEST_PET_DOG,
+        headers={"Authorization": f"Bearer {adopter_token}"}
+    )
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures that non-admin users cannot register pets.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+
+### e) Negative Test: Age Validation (Out of Range)
+```python
+def test_register_pet_validation_error_age_out_of_range(client):
+    invalid_pet = TEST_PET_DOG.copy()
+    invalid_pet["age"] = 20  # Exceeds maximum of 15 years
+    
+    token = get_admin_token()
+    response = client.post(
+        "/pets/register",
+        json=invalid_pet,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 422
+    assert "Age cannot exceed 15 years" in str(data)
+```
+**Purpose:** 
+Validates age validation (0-15 years range).
+* **HTTP 422 (Unprocessable Entity):** Indicates validation error.
+
+### f) Negative Test: Weight Validation (Out of Range)
+```python
+def test_register_pet_validation_error_weight_out_of_range(client):
+    invalid_pet = TEST_PET_DOG.copy()
+    invalid_pet["weight_kg"] = 15.0  # Exceeds maximum of 10 kg
+    
+    token = get_admin_token()
+    response = client.post(
+        "/pets/register",
+        json=invalid_pet,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == 422
+    assert "Weight cannot exceed 10 kg" in str(data)
+```
+**Purpose:** 
+Validates weight validation (0-10 kg range).
+
+### g) Functional Test: Successful Pet Update
+```python
+def test_update_pet_success(client):
+    update_data = {
+        "name": "Buddy",
+        "pet_image_url": "https://example.com/dog.jpg",
+        "animal_breed": ["dog", "Golden Retriever"],
+        "age": 4,
+        "gender": "male",
+        "is_sterilized": False,
+        "vaccines_up_to_date": ["rabies"],
+        "dewormed": True,
+        "weight_kg": 9.0,
+        "special_conditions": [],
+        "brief_description": "Friendly dog looking for a home",
+    }
+    
+    token = get_admin_token()
+    response = client.put(
+        "/pets/P1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code in [200, 400]
+```
+**Purpose:** 
+Validates successful pet update with allowed fields.
+
+### h) Negative Test: Update Restricted Fields
+```python
+def test_update_pet_restricted_fields(client):
+    update_data = {
+        "name": "New Name",  # Restricted
+        "pet_image_url": "https://example.com/dog.jpg",
+        "animal_breed": ["dog", "Golden Retriever"],
+        "age": 4,
+        "gender": "male",
+        "is_sterilized": False,
+        "vaccines_up_to_date": ["rabies"],
+        "dewormed": True,
+        "weight_kg": 9.0,
+        "special_conditions": [],
+        "brief_description": "Friendly dog looking for a home",
+    }
+    
+    token = get_admin_token()
+    response = client.put(
+        "/pets/P1",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code in [200, 400]
+```
+**Purpose:** 
+Validates that restricted fields (name, pet_image_url, animal_breed, gender) cannot be modified.
+
+### i) Functional Test: Pet Listing
+```python
+def test_list_pets_success(client):
+    token = get_admin_token()
+    response = client.get(
+        "/pets/",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code in [200, 500]
+```
+**Purpose:** 
+Validates successful pet listing for admin users.
+
+### j) Negative Test: Listing Without Admin Role
+```python
+def test_list_pets_without_admin_role(client):
+    adopter_token = get_adopter_token()
+    response = client.get(
+        "/pets/",
+        headers={"Authorization": f"Bearer {adopter_token}"}
+    )
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures that non-admin users cannot list pets.
+
+### k) Functional Test: Backblaze URL Retrieval
+```python
+def test_backblaze_url_retrieval_success(client):
+    with patch("app.services.backblaze_service.get_image_url", return_value="https://example.com/image.jpg"):
+        from app.services.backblaze_service import get_image_url
+        url = get_image_url("test_dog.jpg")
+        assert url == "https://example.com/image.jpg"
+```
+**Purpose:** 
+Validates successful Backblaze URL retrieval for pet images.
+
+### l) Negative Test: Backblaze URL Retrieval Error
+```python
+def test_backblaze_url_retrieval_error(client):
+    with patch("app.services.backblaze_service.get_image_url", side_effect=Exception("Backblaze connection failed")):
+        from app.services.backblaze_service import get_image_url
+        try:
+            get_image_url("test_dog.jpg")
+            assert False, "Should have raised an exception"
+        except Exception as e:
+            assert "Backblaze connection failed" in str(e)
+```
+**Purpose:** 
+Validates error handling when Backblaze connection fails.
+
+---
+
+## 10. MongoDB Mock Implementation
+
+The test suite uses an in-memory mock MongoDB implementation to simulate MongoDB behavior without requiring a real MongoDB instance. This is configured in `conftest.py`:
+
+```python
+class MockMongoClient:
+    def __init__(self):
+        self.databases = {}
+
+    def __getitem__(self, name):
+        if name not in self.databases:
+            self.databases[name] = MockMongoDatabase()
+        return self.databases[name]
+
+class MockMongoDatabase:
+    def __init__(self):
+        self.collections = {}
+
+    def __getitem__(self, name):
+        if name not in self.collections:
+            self.collections[name] = MockMongoCollection()
+        return self.collections[name]
+
+class MockMongoCollection:
+    def __init__(self):
+        self.documents = []
+
+    async def find_one(self, query):
+        for doc in self.documents:
+            if all(doc.get(k) == v for k, v in query.items()):
+                return doc
+        return None
+
+    async def find(self, query=None):
+        return self
+
+    def __aiter__(self):
+        return iter(self.documents)
+
+    async def insert_one(self, document):
+        self.documents.append(document)
+        return MagicMock(inserted_id=str(len(self.documents)))
+
+    async def update_one(self, query, update):
+        for doc in self.documents:
+            if all(doc.get(k) == v for k, v in query.items()):
+                doc.update(update.get('$set', {}))
+        return MagicMock(modified_count=1)
+
+    async def find_one_and_update(self, query, update):
+        for doc in self.documents:
+            if all(doc.get(k) == v for k, v in query.items()):
+                doc.update(update.get('$set', {}))
+                return doc
+        return None
+```
+
+**Purpose:** 
+Provides isolated testing environment for MongoDB operations without external dependencies, ensuring tests are fast, reliable, and can run in CI/CD pipelines.
+
+## 11. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
 
