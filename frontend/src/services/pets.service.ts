@@ -8,10 +8,9 @@ import type {
   PetUpdatePayload,
 } from "../types/pets.types";
 import type { Pet } from "../types/dashboard.types";
+import { API_BASE_URL } from "../utils/apiBaseUrl";
 
 import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const petsService = {
   /**

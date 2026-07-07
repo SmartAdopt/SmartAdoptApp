@@ -5,6 +5,7 @@ import { Box, Divider, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // <-- Fix 1: Added useNavigate
 import { SocialButton } from "../atoms/SocialButton";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../utils/apiBaseUrl";
 
 interface OAuthTokenPayload {
   access_token?: string;
@@ -20,7 +21,6 @@ interface OAuthTokenPayload {
 export const SocialLoginGroup = () => {
   const { loginUser } = useAuth();
   const navigate = useNavigate(); // <-- Fix 1: Initialized navigate
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   // Cleanup: We removed Apple and Facebook buttons based on UI requirements.
   // We leave Google as the primary SSO method.

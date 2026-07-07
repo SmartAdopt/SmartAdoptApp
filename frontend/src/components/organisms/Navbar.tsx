@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Logo } from "../atoms/Logo";
 import { useAuth } from "../../context/AuthContext";
 import { ProfileMenu } from "../molecules/ProfileMenu";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 export const Navbar = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export const Navbar = () => {
           >
             {/* Dinamic home button */}
             <IconButton color="inherit" onClick={handleHomeClick}>
-              <img src="/home.svg" width={24} alt="Home" />
+              <img src={PUBLIC_ASSETS.home} width={24} alt="Home" />
             </IconButton>
 
             {/* 3. Conditional Rendering of the Login Button */}
