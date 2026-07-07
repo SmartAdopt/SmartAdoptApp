@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // <-- NEW: TanStack Core Imports
 
@@ -20,6 +20,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+const Router =
+  window.location.protocol === "file:" ? HashRouter : BrowserRouter;
 
 export default function App() {
   return (
@@ -30,9 +32,9 @@ export default function App() {
           <PetProvider>
             {" "}
             {/* <-- NEW: Integrated custom client database provider */}
-            <BrowserRouter>
+            <Router>
               <AppRouter />
-            </BrowserRouter>
+            </Router>
           </PetProvider>
         </AuthProvider>
       </ThemeProvider>
