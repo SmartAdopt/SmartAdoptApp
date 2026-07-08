@@ -76,26 +76,23 @@ export const dashboardService = {
   },
 
   async getNotifications(): Promise<Notification[]> {
-    return [
-      {
-        id: "1",
-        titulo: "Nueva coincidencia",
-        descripcion: "Max coincide con tus preferencias.",
-        fecha: "Hace 2 horas",
-      },
-      {
-        id: "2",
-        titulo: "Solicitud actualizada",
-        descripcion: "Tu solicitud fue revisada.",
-        fecha: "Hace 1 día",
-      },
-      {
-        id: "3",
-        titulo: "Nueva mascota",
-        descripcion: "Se agregó una mascota cercana.",
-        fecha: "Hace 2 días",
-      },
-    ];
+    const data = localStorage.getItem("smartadopt_notifications");
+    return data ? JSON.parse(data) : [];
+  },
+
+  async addNotification(titulo: string, descripcion: string): Promise<void> {
+    const notifications = await this.getNotifications();
+    const newNotification: Notification = {
+      id: `notif_${Date.now()}`,
+      titulo,
+      descripcion,
+      fecha: "Justo ahora",
+    };
+    notifications.unshift(newNotification); // add to top
+    localStorage.setItem(
+      "smartadopt_notifications",
+      JSON.stringify(notifications),
+    );
   },
 
   async getEvents(): Promise<Event[]> {

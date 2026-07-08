@@ -37,7 +37,7 @@ export const AdopterExplore = () => {
   } = useQuery<AIProfileResponse[]>({
     queryKey: ["adopterExplorePets"],
     queryFn: petsService.getRawPetsDatabase,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data to ensure adopted pets disappear
   });
 
   // Filter only available pets for the adopter view

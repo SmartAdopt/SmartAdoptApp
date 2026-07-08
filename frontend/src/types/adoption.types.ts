@@ -9,4 +9,7 @@ export interface AdoptionRequest {
   progressPercentage: number;
   updateMessage: string;
   nextStep: string;
+  adopterName?: string;
+  adopterEmail?: string;
+  adopterPhone?: string;
 }

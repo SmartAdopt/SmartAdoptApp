@@ -17,8 +17,17 @@ export const NotificationItem = ({
     <Box
       sx={{
         py: 2,
-        borderBottom: "1px solid",
+        px: 2,
+        mb: 2,
+        borderRadius: 2,
+        border: "1px solid",
         borderColor: "grey.200",
+        transition: "all 0.2s ease-in-out",
+        "&:hover": {
+          bgcolor: "grey.50",
+          transform: "translateY(-2px)",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        },
       }}
     >
       <Typography fontWeight={600} gutterBottom>

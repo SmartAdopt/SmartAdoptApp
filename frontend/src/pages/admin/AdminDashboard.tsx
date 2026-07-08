@@ -93,7 +93,7 @@ export const AdminDashboard = () => {
             description="Ver adopciones exitosas"
             icon={<CheckCircleOutlineIcon fontSize="large" />}
             buttonColor="warning"
-            onClick={() => console.log("Lista Adoptados")}
+            onClick={() => navigate("/admin/pets/adopted")}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
