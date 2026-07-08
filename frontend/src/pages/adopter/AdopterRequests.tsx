@@ -24,6 +24,7 @@ import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import type { AdoptionRequest } from "../../types/adoption.types";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 type RequestWithPet = AdoptionRequest & { pet: AIProfileResponse };
 
@@ -192,7 +193,7 @@ export const AdopterRequests = () => {
           </Box>
         ) : (
           requests.map((request) => {
-            const petImage = request.pet.pet.pet_image_url || "/dog.svg";
+            const petImage = request.pet.pet.pet_image_url || PUBLIC_ASSETS.dog;
             const petName = request.pet.pet.name;
             const breed =
               request.pet.pet.animal_breed.length > 1
@@ -233,7 +234,7 @@ export const AdopterRequests = () => {
                         objectFit: "cover",
                       }}
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        e.currentTarget.src = "/dog.svg";
+                        e.currentTarget.src = PUBLIC_ASSETS.dog;
                       }}
                     />
                   </Grid>

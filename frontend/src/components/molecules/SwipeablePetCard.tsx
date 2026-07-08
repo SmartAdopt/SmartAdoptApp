@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 import "./SwipeablePetCard.css";
 
 // ==========================================
@@ -138,7 +139,7 @@ export const SwipeablePetCard = ({
             fetchPriority="high"
             onLoad={handleImageLoad}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "/dog.svg";
+              (e.target as HTMLImageElement).src = PUBLIC_ASSETS.dog;
               setImageLoaded(true);
             }}
           />

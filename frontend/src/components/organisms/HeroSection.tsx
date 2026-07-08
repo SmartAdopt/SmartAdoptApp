@@ -2,6 +2,7 @@
 
 import { Box, Typography, Container } from "@mui/material";
 import { CategoryButton } from "../molecules/CategoryButton";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 // Placeholder image matching the vibe of the prototype
 const HERO_BG_URL =
@@ -70,12 +71,12 @@ export const HeroSection = () => {
       >
         <CategoryButton
           title="Perros"
-          icon={<img src="/dog.svg" width={32} />}
+          icon={<img src={PUBLIC_ASSETS.dog} width={32} />}
           color="primary"
         />
         <CategoryButton
           title="Gatos"
-          icon={<img src="/cat.svg" width={32} />}
+          icon={<img src={PUBLIC_ASSETS.cat} width={32} />}
           color="success"
         />
       </Box>

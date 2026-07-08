@@ -1,14 +1,17 @@
-const withBaseUrl = (assetPath: string): string => {
-  const normalizedAssetPath = assetPath.replace(/^\/+/, "");
-  return `${import.meta.env.BASE_URL}${normalizedAssetPath}`;
-};
+import adopt from "../assets/adopt.svg";
+import cat from "../assets/cat.svg";
+import dog from "../assets/dog.svg";
+import google from "../assets/google.svg";
+import heart from "../assets/heart.svg";
+import home from "../assets/home.svg";
+// logo is hardcoded as base64 below to fix Electron parsing issues
 
 export const PUBLIC_ASSETS = {
-  adopt: withBaseUrl("adopt.svg"),
-  cat: withBaseUrl("cat.svg"),
-  dog: withBaseUrl("dog.svg"),
-  google: withBaseUrl("google.svg"),
-  heart: withBaseUrl("heart.svg"),
-  home: withBaseUrl("home.svg"),
-  logo: withBaseUrl("logo.svg"),
+  adopt,
+  cat,
+  dog,
+  google,
+  heart,
+  home,
+  logo: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPg0KPHN2ZyBmaWxsPSIjMDAwMDAwIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9Ii0xIDAgMTkgMTkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgY2xhc3M9ImNmLWljb24tc3ZnIj48cGF0aCBkPSJNMTYuNDE3IDkuNTc5QTcuOTE3IDcuOTE3IDAgMSAxIDguNSAxLjY2MmE3LjkxNyA3LjkxNyAwIDAgMSA3LjkxNyA3LjkxN3ptLTExLjI5My4yNTJBMS4zMSAxLjMxIDAgMCAwIDUuNjQ4IDguMWMtLjI2Ny0uNzYtLjkzNC0xLjIyLTEuNDktMS4wMjRhMS4zMSAxLjMxIDAgMCAwLS41MjQgMS43M2MuMjY3Ljc2MS45MzQgMS4yMiAxLjQ5IDEuMDI1em02LjY2NC43NDdhNC42MDYgNC42MDYgMCAwIDAtNi41MTggMCAxLjk0NSAxLjk0NSAwIDAgMCAyLjc1IDIuNzUuNzIuNzIgMCAwIDEgMS4wMTcgMCAxLjk0NSAxLjk0NSAwIDAgMCAyLjc1LTIuNzV6TTUuODQgNi45ODZjLjA4Ny45MTguNyAxLjYxIDEuMzcyIDEuNTQ3LjY3LS4wNjQgMS4xNDMtLjg2IDEuMDU3LTEuNzc3LS4wODctLjkxNy0uNzAxLTEuNjEtMS4zNzItMS41NDYtLjY3LjA2My0xLjE0NC44NTktMS4wNTcgMS43NzZ6bTQuMDAzIDEuNTQ3Yy42NzEuMDYzIDEuMjg1LS42MyAxLjM3Mi0xLjU0Ny4wODctLjkxNy0uMzg2LTEuNzEzLTEuMDU3LTEuNzc2LS42Ny0uMDY0LTEuMjg1LjYyOS0xLjM3MiAxLjU0Ni0uMDg2LjkxOC4zODcgMS43MTMgMS4wNTcgMS43Nzd6TTEyLjkgNy4wNzZjLS41NTYtLjE5NS0xLjIyMy4yNjMtMS40OSAxLjAyNGExLjMxIDEuMzEgMCAwIDAgLjUyNCAxLjczYy41NTYuMTk2IDEuMjIzLS4yNjMgMS40OS0xLjAyNGExLjMxIDEuMzEgMCAwIDAtLjUyNC0xLjczeiIvPjwvc3ZnPg==",
 } as const;

@@ -25,6 +25,7 @@ import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { favoritesService } from "../../services/favorites.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 // ==========================================
 // FAVORITE PET CARD — Compact card for the grid
@@ -66,7 +67,7 @@ const FavoritePetCard = ({
         alt={petName}
         sx={{ height: 220, objectFit: "cover" }}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-          e.currentTarget.src = "/dog.svg";
+          e.currentTarget.src = PUBLIC_ASSETS.dog;
         }}
       />
 
