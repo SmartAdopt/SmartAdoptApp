@@ -33,14 +33,24 @@ export const NotificationsPanel = () => {
         Notificaciones
       </Typography>
 
-      {notifications.map((notification) => (
-        <NotificationItem
-          key={notification.id}
-          titulo={notification.titulo}
-          descripcion={notification.descripcion}
-          fecha={notification.fecha}
-        />
-      ))}
+      {notifications.length === 0 ? (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ py: 2, textAlign: "center" }}
+        >
+          No tienes notificaciones por el momento.
+        </Typography>
+      ) : (
+        notifications.map((notification) => (
+          <NotificationItem
+            key={notification.id}
+            titulo={notification.titulo}
+            descripcion={notification.descripcion}
+            fecha={notification.fecha}
+          />
+        ))
+      )}
     </Paper>
   );
 };

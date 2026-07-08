@@ -43,20 +43,40 @@ export const AdminRequestsPage = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null,
   );
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const fetchRequests = async () => {
+    setIsLoading(true);
+    try {
+      const data = await adoptionRequestsService.getRequestsWithPetData();
+      setRequests(data);
+    } catch (error) {
+      console.error("Failed to load requests", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const data = await adoptionRequestsService.getRequestsWithPetData();
-        setRequests(data);
-      } catch (error) {
-        console.error("Failed to load requests", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRequests();
   }, []);
+
+  const handleAction = async (status: "approved" | "rejected") => {
+    if (!selectedRequestId) return;
+    setIsUpdating(true);
+    try {
+      await adoptionRequestsService.updateRequestStatus(
+        selectedRequestId,
+        status,
+      );
+      await fetchRequests();
+    } catch (error) {
+      console.error("Error updating request", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Stats
   const pendingCount = requests.filter(
@@ -71,7 +91,7 @@ export const AdminRequestsPage = () => {
     if (filter !== "all" && req.status !== filter) return false;
 
     // Search by pet name
-    if (searchQuery) {
+    if (searchQuery && req.pet && req.pet.pet) {
       const petName = req.pet.pet.name.toLowerCase();
       return petName.includes(searchQuery.toLowerCase());
     }
@@ -332,10 +352,21 @@ export const AdminRequestsPage = () => {
               </Typography>
             ) : (
               filteredRequests.map((req) => {
+                if (!req || !req.pet || !req.pet.pet) return null;
+
                 const isSelected = selectedRequestId === req.id;
                 const isApproved = req.status === "approved";
-                const statusLabel = isApproved ? "Aprobada" : "Pendiente";
-                const statusColor = isApproved ? "success" : "primary";
+                const isRejected = req.status === "rejected";
+                const statusLabel = isApproved
+                  ? "Aprobada"
+                  : isRejected
+                    ? "Rechazada"
+                    : "Pendiente";
+                const statusColor: "success" | "error" | "primary" = isApproved
+                  ? "success"
+                  : isRejected
+                    ? "error"
+                    : "primary";
 
                 return (
                   <Card
@@ -459,10 +490,10 @@ export const AdminRequestsPage = () => {
                       <Box
                         component="img"
                         src={
-                          selectedRequest.pet.pet.pet_image_url ||
+                          selectedRequest.pet?.pet?.pet_image_url ||
                           PUBLIC_ASSETS.dog
                         }
-                        alt={selectedRequest.pet.pet.name}
+                        alt={selectedRequest.pet?.pet?.name || "Mascota"}
                         sx={{
                           width: 60,
                           height: 60,
@@ -475,10 +506,10 @@ export const AdminRequestsPage = () => {
                       />
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>
-                          {selectedRequest.pet.pet.name}
+                          {selectedRequest.pet?.pet?.name || "Desconocida"}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          ID: {selectedRequest.pet.id}
+                          ID: {selectedRequest.pet?.id || "N/A"}
                         </Typography>
                       </Box>
                     </Box>
@@ -509,12 +540,16 @@ export const AdminRequestsPage = () => {
                       label={
                         selectedRequest.status === "approved"
                           ? "Aprobada"
-                          : "En Revisión"
+                          : selectedRequest.status === "rejected"
+                            ? "Rechazada"
+                            : "En Revisión"
                       }
                       color={
                         selectedRequest.status === "approved"
                           ? "success"
-                          : "primary"
+                          : selectedRequest.status === "rejected"
+                            ? "error"
+                            : "primary"
                       }
                       sx={{ fontWeight: 600, borderRadius: 2, mb: 3 }}
                     />
@@ -559,11 +594,29 @@ export const AdminRequestsPage = () => {
                 <Box
                   sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
                 >
-                  <Button variant="outlined" color="error">
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleAction("rejected")}
+                    disabled={
+                      isUpdating || selectedRequest.status !== "under_review"
+                    }
+                  >
                     Rechazar
                   </Button>
-                  <Button variant="contained" color="success">
-                    Aprobar Adopción
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleAction("approved")}
+                    disabled={
+                      isUpdating || selectedRequest.status !== "under_review"
+                    }
+                  >
+                    {isUpdating ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      "Aprobar Adopción"
+                    )}
                   </Button>
                 </Box>
               </Box>
