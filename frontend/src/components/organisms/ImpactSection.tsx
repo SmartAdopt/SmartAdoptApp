@@ -1,6 +1,7 @@
 // src/components/organisms/ImpactSection.tsx
 
 import { Box, Container, Typography, Grid } from "@mui/material";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 export const ImpactSection = () => {
   return (
@@ -37,7 +38,7 @@ export const ImpactSection = () => {
                   mb: 2,
                 }}
               >
-                <img src="/adopt.svg" width={24} />
+                <img src={PUBLIC_ASSETS.adopt} width={24} />
               </Box>
               <Typography variant="h3" color="primary.main" fontWeight={700}>
                 100
@@ -66,7 +67,7 @@ export const ImpactSection = () => {
                   mb: 2,
                 }}
               >
-                <img src="/logo.svg" width={24} />
+                <img src={PUBLIC_ASSETS.logo} width={24} />
               </Box>
               <Typography variant="h3" color="success.main" fontWeight={700}>
                 95%

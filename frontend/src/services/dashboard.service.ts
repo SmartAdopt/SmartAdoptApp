@@ -1,8 +1,7 @@
 // services/dashboard.service.ts
 
-import dogImage from "../assets/placeholders/dog.svg";
-import catImage from "../assets/placeholders/cat.svg";
 import articleImage from "../assets/placeholders/article.svg";
+import { PUBLIC_ASSETS } from "../utils/publicAssets";
 
 import type {
   Pet,
@@ -21,7 +20,7 @@ export const dashboardService = {
         edad: "3 años",
         genero: "Macho",
         ubicacion: "Quito",
-        imagen: dogImage,
+        imagen: PUBLIC_ASSETS.dog,
       },
       {
         id: "2",
@@ -30,7 +29,7 @@ export const dashboardService = {
         edad: "2 años",
         genero: "Hembra",
         ubicacion: "Cuenca",
-        imagen: catImage,
+        imagen: PUBLIC_ASSETS.cat,
       },
       {
         id: "3",
@@ -39,7 +38,7 @@ export const dashboardService = {
         edad: "4 años",
         genero: "Macho",
         ubicacion: "Loja",
-        imagen: dogImage,
+        imagen: PUBLIC_ASSETS.dog,
       },
     ];
   },

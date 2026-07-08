@@ -29,5 +29,6 @@ To test the compiled desktop application:
 ```bash
 cd frontend
 npm run build
+npm run build:electron:local
 npx electron .
 ```

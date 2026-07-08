@@ -1,6 +1,7 @@
 // src/pages/admin/AdminRequestsPage.tsx
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -21,15 +22,18 @@ import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
   PersonOutline as PersonOutlineIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import type { AdoptionRequest } from "../../types/adoption.types";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 type RequestWithPet = AdoptionRequest & { pet: AIProfileResponse };
 
 export const AdminRequestsPage = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "under_review" | "approved">(
@@ -89,6 +93,17 @@ export const AdminRequestsPage = () => {
 
   return (
     <AdminLayout>
+      {/* Header Actions */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/admin/dashboard")}
+          sx={{ color: "text.secondary", textTransform: "none" }}
+        >
+          Volver al Dashboard
+        </Button>
+      </Box>
+
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={800} gutterBottom>
@@ -444,7 +459,8 @@ export const AdminRequestsPage = () => {
                       <Box
                         component="img"
                         src={
-                          selectedRequest.pet.pet.pet_image_url || "/dog.svg"
+                          selectedRequest.pet.pet.pet_image_url ||
+                          PUBLIC_ASSETS.dog
                         }
                         alt={selectedRequest.pet.pet.name}
                         sx={{
@@ -453,7 +469,9 @@ export const AdminRequestsPage = () => {
                           borderRadius: 2,
                           objectFit: "cover",
                         }}
-                        onError={(e) => (e.currentTarget.src = "/dog.svg")}
+                        onError={(e) =>
+                          (e.currentTarget.src = PUBLIC_ASSETS.dog)
+                        }
                       />
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>

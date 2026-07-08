@@ -34,7 +34,9 @@ storybook-static/
 
 # Electron and Vite build
 dist-electron/
+dist/
 release/
 releases/
 out/
 build/
+*.exe
