@@ -3,7 +3,7 @@ const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, "");
 const resolveRuntimeFallbackApiUrl = (): string => {
   if (typeof window !== "undefined" && window.location.protocol === "file:") {
     // Packaged Electron app loads from file://, so relative /api would break.
-    return "http://localhost:8000/api";
+    return "http://localhost:8000";
   }
 
   return "/api";

@@ -2,6 +2,7 @@
 
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import type { ReactNode } from "react";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 // Sub-component (Molecule) defined here for simplicity,
 // but could be moved to src/components/molecules if reused.
@@ -65,7 +66,7 @@ export const HowItWorksSection = () => {
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
           <StepCard
-            icon={<img src="/heart.svg" width={28} />}
+            icon={<img src={PUBLIC_ASSETS.heart} width={28} />}
             iconBg="#E0E7FF" // Light blue
             title="Emparejamiento Inteligente"
             description="El análisis de compatibilidad con IA asegura la coincidencia perfecta entre adoptantes y mascotas según estilo de vida y preferencias."
@@ -73,7 +74,7 @@ export const HowItWorksSection = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <StepCard
-            icon={<img src="/heart.svg" width={28} />}
+            icon={<img src={PUBLIC_ASSETS.heart} width={28} />}
             iconBg="#DCFCE7" // Light green
             title="Proceso Verificado"
             description="Verificación de identidad y evaluaciones exhaustivas de idoneidad protegen a los animales y aseguran adopciones exitosas."
@@ -81,7 +82,7 @@ export const HowItWorksSection = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <StepCard
-            icon={<img src="/heart.svg" width={28} />}
+            icon={<img src={PUBLIC_ASSETS.heart} width={28} />}
             iconBg="#FEF3C7" // Light orange/yellow
             title="Seguimiento en Tiempo Real"
             description="Rastrea el estado de las solicitudes, recibe actualizaciones instantáneas y gestiona todo el proceso de adopción en un solo lugar."

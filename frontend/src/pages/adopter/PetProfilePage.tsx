@@ -27,6 +27,7 @@ import { petsService } from "../../services/pets.service";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 import { useState } from "react";
 
 export const PetProfilePage = () => {
@@ -182,7 +183,7 @@ export const PetProfilePage = () => {
           {/* Main Image */}
           <Box
             component="img"
-            src={petImage || "/dog.svg"}
+            src={petImage || PUBLIC_ASSETS.dog}
             alt={petName}
             sx={{
               width: "100%",
@@ -193,7 +194,7 @@ export const PetProfilePage = () => {
               bgcolor: "grey.100",
             }}
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-              e.currentTarget.src = "/dog.svg";
+              e.currentTarget.src = PUBLIC_ASSETS.dog;
             }}
           />
 

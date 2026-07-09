@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom"; // <-- Fix 1: Added useNavigate
 import { SocialButton } from "../atoms/SocialButton";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/apiBaseUrl";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 interface OAuthTokenPayload {
   access_token?: string;
@@ -127,7 +128,7 @@ export const SocialLoginGroup = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <SocialButton
-          icon={<img src="/google.svg" width={20} alt="Google" />}
+          icon={<img src={PUBLIC_ASSETS.google} width={20} alt="Google" />}
           label="Continuar con Google"
           onClick={handleGoogleLogin}
         />

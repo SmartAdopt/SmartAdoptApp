@@ -6,30 +6,36 @@ import {
   Typography,
   Card,
   Grid,
-  Chip,
-  LinearProgress,
   Button,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Divider,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
   FavoriteBorder as FavoriteBorderIcon,
-  Event as EventIcon,
-  Update as UpdateIcon,
-  ChatBubbleOutline as ChatBubbleOutlineIcon,
-  Visibility as VisibilityIcon,
+  Close as CloseIcon,
+  Pets as PetsIcon,
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import type { AdoptionRequest } from "../../types/adoption.types";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { AdopterRequestCard } from "../../components/molecules/AdopterRequestCard";
 
-type RequestWithPet = AdoptionRequest & { pet: AIProfileResponse };
+export type RequestWithPet = AdoptionRequest & { pet: AIProfileResponse };
 
 export const AdopterRequests = () => {
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<RequestWithPet | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -180,7 +186,7 @@ export const AdopterRequests = () => {
       </Grid>
 
       {/* Requests List */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 6, pb: 6 }}>
         {requests.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8 }}>
             <Typography variant="h6" color="text.secondary">
@@ -191,247 +197,151 @@ export const AdopterRequests = () => {
             </Button>
           </Box>
         ) : (
-          requests.map((request) => {
-            const petImage = request.pet.pet.pet_image_url || "/dog.svg";
-            const petName = request.pet.pet.name;
-            const breed =
-              request.pet.pet.animal_breed.length > 1
-                ? request.pet.pet.animal_breed[1]
-                : request.pet.pet.animal_breed[0];
-            const age = request.pet.pet.age;
-            const size =
-              request.pet.pet.weight_kg && request.pet.pet.weight_kg > 15
-                ? "Grande"
-                : "Pequeño"; // Simple heuristic for size if not explicitly available
-
-            const isApproved = request.status === "approved";
-            const statusColor = isApproved ? "success" : "primary";
-            const statusLabel = isApproved ? "Approved" : "Under Review";
-
-            return (
-              <Card
-                key={request.id}
-                elevation={0}
-                sx={{
-                  borderRadius: 4,
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                  overflow: "hidden",
-                }}
-              >
-                <Grid container>
-                  {/* Pet Image */}
-                  <Grid item xs={12} sm={4} md={3}>
-                    <Box
-                      component="img"
-                      src={petImage}
-                      alt={petName}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        minHeight: { xs: 200, sm: 320 },
-                        objectFit: "cover",
-                      }}
-                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        e.currentTarget.src = "/dog.svg";
-                      }}
-                    />
-                  </Grid>
-
-                  {/* Request Details */}
-                  <Grid item xs={12} sm={8} md={9}>
-                    <Box sx={{ p: 4 }}>
-                      {/* Header (Name + Status) */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          mb: 1,
-                        }}
-                      >
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                        >
-                          <Typography variant="h5" fontWeight={700}>
-                            {petName}
-                          </Typography>
-                          <Chip
-                            label={statusLabel}
-                            size="small"
-                            color={statusColor}
-                            sx={{ fontWeight: 600, borderRadius: 2 }}
-                          />
-                        </Box>
-                        {isApproved ? (
-                          <CheckCircleOutlineIcon color="success" />
-                        ) : (
-                          <AccessTimeIcon color="primary" />
-                        )}
-                      </Box>
-
-                      {/* Sub Details */}
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 3 }}
-                      >
-                        {breed} • {age} {age === 1 ? "año" : "años"} • {size}
-                      </Typography>
-
-                      {/* Progress Bar */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          mb: 1,
-                        }}
-                      >
-                        <Typography variant="subtitle2" fontWeight={700}>
-                          Progreso de Solicitud
-                        </Typography>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          {request.progressPercentage}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={request.progressPercentage}
-                        color={statusColor}
-                        sx={{ height: 8, borderRadius: 4, mb: 3 }}
+          <>
+            {/* Pendientes */}
+            <Box>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+                Solicitudes Pendientes
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {requests.filter((r) => r.status === "under_review").length ===
+                0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No tienes solicitudes pendientes.
+                  </Typography>
+                ) : (
+                  requests
+                    .filter((r) => r.status === "under_review")
+                    .map((r) => (
+                      <AdopterRequestCard
+                        key={r.id}
+                        request={r}
+                        onViewDetails={setSelectedRequest}
                       />
+                    ))
+                )}
+              </Box>
+            </Box>
 
-                      {/* Dates */}
-                      <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={6}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <EventIcon color="action" fontSize="small" />
-                            <Box>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                display="block"
-                              >
-                                Enviado
-                              </Typography>
-                              <Typography variant="body2" fontWeight={500}>
-                                {new Date(
-                                  request.dateSubmitted,
-                                ).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <UpdateIcon color="action" fontSize="small" />
-                            <Box>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                display="block"
-                              >
-                                Última Actualización
-                              </Typography>
-                              <Typography variant="body2" fontWeight={500}>
-                                {new Date(
-                                  request.lastUpdate,
-                                ).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-                      </Grid>
-
-                      {/* Update Message Box */}
-                      <Box
-                        sx={{
-                          bgcolor: "primary.50",
-                          border: "1px solid",
-                          borderColor: "primary.100",
-                          borderRadius: 3,
-                          p: 2,
-                          mb: 3,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          <ChatBubbleOutlineIcon
-                            color="primary"
-                            fontSize="small"
-                          />
-                          <Typography variant="subtitle2" fontWeight={700}>
-                            Actualización del Equipo SmartAdopt
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {request.updateMessage}
-                        </Typography>
-                      </Box>
-
-                      {/* Footer Actions */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          borderTop: "1px solid",
-                          borderColor: "grey.100",
-                          pt: 3,
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            Próximo Paso
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            {request.nextStep}
-                          </Typography>
-                        </Box>
-                        <Button
-                          variant="outlined"
-                          color="inherit"
-                          startIcon={<VisibilityIcon />}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            borderColor: "grey.300",
-                          }}
-                        >
-                          Ver Detalles
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Card>
-            );
-          })
+            {/* Finalizadas */}
+            <Box>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+                Solicitudes Finalizadas
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {requests.filter((r) => r.status !== "under_review").length ===
+                0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No tienes solicitudes finalizadas.
+                  </Typography>
+                ) : (
+                  requests
+                    .filter((r) => r.status !== "under_review")
+                    .map((r) => (
+                      <AdopterRequestCard
+                        key={r.id}
+                        request={r}
+                        onViewDetails={setSelectedRequest}
+                      />
+                    ))
+                )}
+              </Box>
+            </Box>
+          </>
         )}
       </Box>
+
+      {/* Details Dialog */}
+      <Dialog
+        open={Boolean(selectedRequest)}
+        onClose={() => setSelectedRequest(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3, p: 1 },
+        }}
+      >
+        {selectedRequest && (
+          <>
+            <DialogTitle
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PetsIcon color="primary" />
+                <Typography variant="h6" fontWeight={700}>
+                  Detalles de la Solicitud
+                </Typography>
+              </Box>
+              <IconButton onClick={() => setSelectedRequest(null)} size="small">
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Mascota: {selectedRequest.pet.pet.name}
+              </Typography>
+
+              <Box sx={{ my: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <strong>Fecha de inicio del proceso:</strong>{" "}
+                  {new Date(selectedRequest.dateSubmitted).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <strong>Última actualización:</strong>{" "}
+                  {new Date(selectedRequest.lastUpdate).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <strong>Estado:</strong>{" "}
+                  {selectedRequest.status === "approved"
+                    ? "Aprobada"
+                    : selectedRequest.status === "rejected"
+                      ? "Rechazada"
+                      : "En Revisión"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <strong>Próximo Paso:</strong> {selectedRequest.nextStep}
+                </Typography>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography
+                variant="subtitle2"
+                fontWeight={700}
+                gutterBottom
+                color="primary"
+              >
+                Mensaje de SmartAdopt
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  bgcolor: "grey.50",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                }}
+              >
+                {selectedRequest.updateMessage}
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button
+                onClick={() => setSelectedRequest(null)}
+                variant="contained"
+                disableElevation
+              >
+                Cerrar
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </AdopterLayout>
   );
 };

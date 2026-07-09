@@ -25,6 +25,7 @@ import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { favoritesService } from "../../services/favorites.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
 // ==========================================
 // FAVORITE PET CARD — Compact card for the grid
@@ -46,6 +47,7 @@ const FavoritePetCard = ({
       : profile.pet.animal_breed[0];
   const petImage = profile.pet.pet_image_url;
   const petGender = profile.pet.gender === "male" ? "Macho" : "Hembra";
+  const isAdopted = profile.status === "adopted";
 
   return (
     <Card
@@ -58,17 +60,41 @@ const FavoritePetCard = ({
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        opacity: isAdopted ? 0.75 : 1,
       }}
     >
-      <CardMedia
-        component="img"
-        image={petImage}
-        alt={petName}
-        sx={{ height: 220, objectFit: "cover" }}
-        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-          e.currentTarget.src = "/dog.svg";
-        }}
-      />
+      <Box sx={{ position: "relative" }}>
+        <CardMedia
+          component="img"
+          image={petImage}
+          alt={petName}
+          sx={{ height: 220, objectFit: "cover" }}
+          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+            e.currentTarget.src = PUBLIC_ASSETS.dog;
+          }}
+        />
+        {isAdopted && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: "rgba(255,255,255,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Chip
+              label="Adoptado"
+              color="success"
+              sx={{ fontWeight: "bold" }}
+            />
+          </Box>
+        )}
+      </Box>
 
       <CardContent
         sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}
@@ -109,6 +135,7 @@ const FavoritePetCard = ({
           <Button
             fullWidth
             variant="contained"
+            disabled={isAdopted}
             onClick={() => navigate(`/adopter/pet/${profile.id}`)}
           >
             Ver Perfil

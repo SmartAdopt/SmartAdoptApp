@@ -1,6 +1,8 @@
 import type { AdoptionRequest } from "../types/adoption.types";
 import { petsService } from "./pets.service";
 import type { AIProfileResponse } from "../types/pets.types";
+import { dashboardService } from "./dashboard.service";
+import { adoptedPetsService } from "./adoptedPets.service";
 
 const LOCAL_STORAGE_KEY = "smartadopt_adoption_requests";
 
@@ -29,6 +31,21 @@ export const adoptionRequestsService = {
       throw new Error("Ya has enviado una solicitud para esta mascota.");
     }
 
+    const userStr = localStorage.getItem("user");
+    let adopterName = "Adoptante (Tú)";
+    let adopterEmail = "";
+    let adopterPhone = "";
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        adopterName = user.name || adopterName;
+        adopterEmail = user.email || "";
+        adopterPhone = user.phone_number || "";
+      } catch {
+        // ignore JSON parse error
+      }
+    }
+
     const newRequest: AdoptionRequest = {
       id: `req_${Date.now()}`,
       petId,
@@ -39,6 +56,9 @@ export const adoptionRequestsService = {
       updateMessage:
         "Your application looks great! We're currently reviewing your references.",
       nextStep: "Pending reference check completion",
+      adopterName,
+      adopterEmail,
+      adopterPhone,
     };
 
     requests.push(newRequest);
@@ -85,5 +105,71 @@ export const adoptionRequestsService = {
     await delay(300);
     const requests = adoptionRequestsService._getLocalRequests();
     return requests.some((req) => req.petId === petId);
+  },
+
+  /**
+   * Updates the status of an adoption request (e.g. approve or reject).
+   */
+  updateRequestStatus: async (
+    requestId: string,
+    status: "approved" | "rejected",
+  ): Promise<void> => {
+    await delay(500);
+
+    const requests = adoptionRequestsService._getLocalRequests();
+    const requestIndex = requests.findIndex((req) => req.id === requestId);
+
+    if (requestIndex === -1) {
+      throw new Error("Request not found");
+    }
+
+    const request = requests[requestIndex];
+    request.status = status;
+    request.progressPercentage = 100;
+    request.nextStep = "Finalizada";
+    request.lastUpdate = new Date().toISOString();
+
+    let notificationTitle: string;
+    let notificationDesc: string;
+
+    if (status === "approved") {
+      request.updateMessage =
+        "¡Felicidades! Tu solicitud ha sido aprobada. Nos pondremos en contacto pronto para finalizar el proceso.";
+      notificationTitle = "¡Solicitud Aprobada!";
+      notificationDesc = "Tu solicitud de adopción ha sido aprobada.";
+
+      // Add to adopted pets list
+      try {
+        const allPets = await petsService.getRawPetsDatabase();
+        const petData = allPets.find((p) => p.id === request.petId);
+        if (petData) {
+          const nameToUse = request.adopterName || "Adoptante (Tú)";
+          adoptedPetsService.addAdoptedPet(
+            petData,
+            nameToUse,
+            request.adopterEmail,
+            request.adopterPhone,
+          );
+          try {
+            await petsService.updatePet(request.petId, { status: "adopted" });
+          } catch (updateErr) {
+            console.error("Error updating pet status", updateErr);
+          }
+        }
+      } catch (error) {
+        console.error("Error adding adopted pet", error);
+      }
+    } else {
+      request.updateMessage =
+        "Lo sentimos, tu solicitud no ha sido aprobada en esta ocasión. Te animamos a seguir buscando.";
+      notificationTitle = "Solicitud Rechazada";
+      notificationDesc = "Tu solicitud de adopción no fue aprobada.";
+    }
+
+    // Save updated request
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(requests));
+
+    // Dispatch notification
+    await dashboardService.addNotification(notificationTitle, notificationDesc);
   },
 };

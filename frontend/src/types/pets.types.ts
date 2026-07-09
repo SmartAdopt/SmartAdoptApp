@@ -73,4 +73,5 @@ export interface PetUpdatePayload {
   title?: string;
   tags?: string[];
   emotional_description?: string;
+  status?: string;
 }
