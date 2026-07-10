@@ -67,7 +67,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/login"; // Force redirect to clear memory
+    window.location.hash = "/login";
+    window.location.reload(); // Force redirect to clear memory
   };
 
   const value = {
