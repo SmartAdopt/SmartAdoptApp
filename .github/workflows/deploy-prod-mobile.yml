@@ -33,7 +33,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies (Capacitor CLI + Android platform)
+        run: npm ci
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -46,8 +51,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor Android project
-        working-directory: frontend
-        run: npx cap sync android
+        run: npm run android:sync
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -59,7 +63,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Decode and validate production keystore
-        working-directory: frontend/android/app
+        working-directory: android/app
         env:
           PROD_BASE64: ${{ secrets.ANDROID_KEYSTORE_PROD_BASE64 }}
           PROD_PASS: ${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}
@@ -68,11 +72,11 @@ jobs:
           keytool -list -v -keystore prod-release.keystore -storepass "$PROD_PASS" -storetype JKS
 
       - name: Grant execute permission to gradlew
-        working-directory: frontend/android
+        working-directory: android
         run: chmod +x gradlew
 
       - name: Build Prod release APK
-        working-directory: frontend/android
+        working-directory: android
         env:
           PROD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}
           PROD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS_PROD }}
@@ -85,7 +89,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID_PROD }} 
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: prod-testers
-          file: frontend/android/app/build/outputs/apk/prod/release/app-prod-release.apk
+          file: android/app/build/outputs/apk/prod/release/app-prod-release.apk
           releaseNotes: |
             Build Producción
             Commit: ${{ github.sha }}
@@ -95,5 +99,5 @@ jobs:
         with:
           tag_name: mobile-${{ github.sha }}
           name: "Production Mobile Build ${{ github.sha }}"
-          files: frontend/android/app/build/outputs/apk/prod/release/app-prod-release.apk
+          files: android/app/build/outputs/apk/prod/release/app-prod-release.apk
           token: ${{ secrets.GH_PAT }}
