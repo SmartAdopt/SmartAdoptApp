@@ -15,12 +15,12 @@ export const profileService = {
    * The JWT Bearer token is attached automatically by the apiClient interceptor.
    */
   updateProfile: async (
-    data: UpdateProfileApiRequest,
+    data: UpdateProfileApiRequest
   ): Promise<UpdateProfileApiResponse> => {
     try {
       const response = await apiClient.put<UpdateProfileApiResponse>(
         "/adopter/profile",
-        data,
+        data
       );
       return response.data;
     } catch (error) {
@@ -34,7 +34,7 @@ export const profileService = {
    */
   changePassword: async (
     currentPassword: string,
-    newPassword: string,
+    newPassword: string
   ): Promise<UpdateProfileApiResponse> => {
     try {
       const response = await apiClient.put<UpdateProfileApiResponse>(
@@ -42,7 +42,7 @@ export const profileService = {
         {
           current_password: currentPassword,
           new_password: newPassword,
-        },
+        }
       );
       return response.data;
     } catch (error) {

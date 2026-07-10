@@ -52,7 +52,7 @@ export const AdopterSuitability = () => {
 
   useEffect(() => {
     const available = realPets.filter(
-      (pet) => pet.status?.toLowerCase() !== "adopted",
+      (pet) => pet.status?.toLowerCase() !== "adopted"
     );
     const shuffled = [...available].sort(() => 0.5 - Math.random());
     // eslint-disable-next-line react-hooks/set-state-in-effect

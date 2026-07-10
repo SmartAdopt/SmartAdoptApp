@@ -204,7 +204,7 @@ export const AdopterProfile = () => {
     try {
       await profileService.changePassword(
         data.currentPassword,
-        data.newPassword,
+        data.newPassword
       );
       setPasswordDialogOpen(false);
       resetPassword();

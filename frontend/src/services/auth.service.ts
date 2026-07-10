@@ -17,7 +17,7 @@ export const authService = {
     try {
       const response = await apiClient.post<LoginApiResponse>(
         "/auth/login",
-        credentials,
+        credentials
       );
 
       // Save both tokens in LocalStorage
@@ -32,12 +32,12 @@ export const authService = {
   },
 
   register: async (
-    userData: RegisterApiRequest,
+    userData: RegisterApiRequest
   ): Promise<RegisterApiResponse> => {
     try {
       const response = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        userData,
+        userData
       );
       return response.data;
     } catch (error) {

@@ -83,9 +83,7 @@ export const PetProfilePage = () => {
       refetchHasRequested();
     } catch (error) {
       setSnackbarMessage(
-        error instanceof Error
-          ? error.message
-          : "Error al enviar la solicitud.",
+        error instanceof Error ? error.message : "Error al enviar la solicitud."
       );
       setSnackbarOpen(true);
     } finally {
@@ -410,8 +408,8 @@ export const PetProfilePage = () => {
                 {isSubmitting
                   ? "Enviando..."
                   : hasRequested
-                    ? "Solicitud enviada"
-                    : "Solicitar Adopción"}
+                  ? "Solicitud enviada"
+                  : "Solicitar Adopción"}
               </Button>
               <Button
                 variant="outlined"

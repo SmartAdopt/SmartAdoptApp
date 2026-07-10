@@ -91,7 +91,7 @@ export const dashboardService = {
     notifications.unshift(newNotification); // add to top
     localStorage.setItem(
       "smartadopt_notifications",
-      JSON.stringify(notifications),
+      JSON.stringify(notifications)
     );
   },
 

@@ -7,7 +7,7 @@ from fastapi import (
     Response,
     Security,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import json
@@ -192,26 +192,29 @@ def login(
 
 
 @router.get("/login/google")
-async def login_google(request: Request, role: str = "adopter"):
+async def login_google(request: Request, role: str = "adopter", platform: Optional[str] = None):
     # Redirect to Google OAuth login
     #   role: Optional role for auto-registration (default: adopter)
-    logger.info(f"GET /auth/login/google - OAuth login request with role: {role}")
+    #   platform: Client platform type (e.g., 'mobile')
+    logger.info(f"GET /auth/login/google - OAuth login request with role: {role}, platform: {platform}")
     try:
+        if platform:
+            request.session["platform"] = platform
+            
         oauth = get_google_oauth()
 
-        # Dynamically build the redirect URI based on environment
-        env = os.environ.get("ENV", "development")
-        scheme = request.headers.get("x-forwarded-proto", "http")
+        # Dynamically build the redirect URI based on the request host/scheme
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
         host = request.headers.get(
             "x-forwarded-host", request.headers.get("host", request.url.netloc)
         )
 
-        if env in ["qa", "production"]:
-            redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+        # If the request host is localhost or has port 8000 (direct backend access),
+        # we don't append /api. Otherwise (Nginx), we append /api.
+        if "localhost" in host or "127.0.0.1" in host or ":8000" in host:
+            redirect_uri = f"{scheme}://{host}/auth/google/callback"
         else:
-            redirect_uri = (
-                "http://smartadoptlocal.programacionwebuce.net/api/auth/google/callback"
-            )
+            redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
 
         logger.info(f"Redirecting to Google OAuth with redirect URI: {redirect_uri}")
         return await oauth.google.authorize_redirect(request, redirect_uri)
@@ -280,6 +283,17 @@ async def google_callback(
             "phone_number": user_response.get("phone_number"),
             "role": user_response.get("role"),
         }
+
+        # Check for platform=mobile
+        platform = request.session.pop("platform", None)
+        if platform == "mobile":
+            import urllib.parse
+            query_params = urllib.parse.urlencode({
+                k: v for k, v in response_data.items() if v is not None
+            })
+            deep_link = f"net.programacionwebuce.smartadopt://oauth-callback?{query_params}"
+            logger.info("OAuth callback - Redirecting to mobile deep link")
+            return RedirectResponse(url=deep_link)
 
         # Determine frontend origin dynamically for postMessage
         env = os.environ.get("ENV", "development")
