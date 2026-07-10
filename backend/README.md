@@ -865,7 +865,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
       "pet": {
         "profile_id": "PR1",
         "title": "Buddy: Your new best friend",
-        "tags": ["#Adoptable", "#LoyalFriend"],
+        "tags": ["#Peludo", "#Juguetón"],
         "emotional_description": "Buddy is a special being looking for a loving home...",
         "status": "in_process",
         "creation_date": "2026-06-18T05:53:30.061000",
@@ -990,7 +990,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
       "pet": {
         "profile_id": "PR1",
         "title": "Buddy: Your new best friend",
-        "tags": ["#Adoptable", "#LoyalFriend"],
+        "tags": ["#Peludo", "#Juguetón"],
         "emotional_description": "Buddy is a special being...",
         "status": "available",
         "creation_date": "2026-06-18T05:53:30.061000",
@@ -1202,7 +1202,7 @@ Content-Type: application/json
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your new best friend",
-    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
     "emotional_description": "Buddy is a special being looking for a loving home...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -1252,7 +1252,7 @@ Content-Type: application/json
   "special_conditions": ["Needs daily exercise"],
   "brief_description": "Active dog looking for an active family",
   "title": "Buddy: Your active companion",
-  "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+  "tags": ["#Peludo", "#Juguetón", "#Explorador"],
   "emotional_description": "Buddy is an energetic dog looking for an active family..."
 }
 ```
@@ -1264,7 +1264,7 @@ Content-Type: application/json
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your active companion",
-    "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+    "tags": ["#Peludo", "#Juguetón", "#Explorador"],
     "emotional_description": "Buddy is an energetic dog looking for an active family...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -1306,7 +1306,7 @@ Authorization: Bearer <jwt_token>
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your new best friend",
-    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
     "emotional_description": "Buddy is a special being looking for a loving home...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -1344,7 +1344,7 @@ Authorization: Bearer <jwt_token>
     {
       "profile_id": "PR1",
       "title": "Buddy: Your new best friend",
-      "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+      "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
       "emotional_description": "Buddy is a special being looking for a loving home...",
       "status": "available",
       "creation_date": "2026-06-18T05:53:30.061000",

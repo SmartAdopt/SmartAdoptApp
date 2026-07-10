@@ -32,7 +32,7 @@ _test_email_counter = 0
 TEST_PET_PROFILE = {
     "_id": "PR1",
     "title": "Friendly Dog",
-    "tags": ["#Adoptable", "#Friendly"],
+    "tags": ["#Peludo", "#Juguetón"],
     "emotional_description": "A very friendly dog looking for a home.",
     "status": "available",
     "creation_date": datetime.now(),
