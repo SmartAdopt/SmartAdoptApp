@@ -192,15 +192,19 @@ def login(
 
 
 @router.get("/login/google")
-async def login_google(request: Request, role: str = "adopter", platform: Optional[str] = None):
+async def login_google(
+    request: Request, role: str = "adopter", platform: Optional[str] = None
+):
     # Redirect to Google OAuth login
     #   role: Optional role for auto-registration (default: adopter)
     #   platform: Client platform type (e.g., 'mobile')
-    logger.info(f"GET /auth/login/google - OAuth login request with role: {role}, platform: {platform}")
+    logger.info(
+        f"GET /auth/login/google - OAuth login request with role: {role}, platform: {platform}"
+    )
     try:
         if platform:
             request.session["platform"] = platform
-            
+
         oauth = get_google_oauth()
 
         # Dynamically build the redirect URI based on the request host/scheme
@@ -288,10 +292,13 @@ async def google_callback(
         platform = request.session.pop("platform", None)
         if platform == "mobile":
             import urllib.parse
-            query_params = urllib.parse.urlencode({
-                k: v for k, v in response_data.items() if v is not None
-            })
-            deep_link = f"net.programacionwebuce.smartadopt://oauth-callback?{query_params}"
+
+            query_params = urllib.parse.urlencode(
+                {k: v for k, v in response_data.items() if v is not None}
+            )
+            deep_link = (
+                f"net.programacionwebuce.smartadopt://oauth-callback?{query_params}"
+            )
             logger.info("OAuth callback - Redirecting to mobile deep link")
             return RedirectResponse(url=deep_link)
 
