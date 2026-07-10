@@ -6,11 +6,19 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@commitlint/cli": "^21.1.0",
     "@commitlint/config-conventional": "^21.1.0",
     "husky": "^9.1.7"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:frontend": "npm --prefix frontend run build",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "assets:generate": "capacitor-assets generate --android"
   }
 }

@@ -37,14 +37,14 @@ React / Vite source (src/)
      .apk  (installable package)
 ```
 
-The Android project lives at `frontend/android/` and is a standard Gradle project that Capacitor manages automatically whenever you run `npx cap sync android`.
+The Android project lives at `android/` (at the repository root level) and is a standard Gradle project that Capacitor manages automatically whenever you run `npx cap sync android`.
 
 ---
 
 ## 2. Project Structure
 
 ```
-frontend/
+SmartAdoptApp/
 ├── android/                         # Native Android project (managed by Capacitor)
 │   ├── app/
 │   │   ├── build.gradle             # App-level Gradle config (flavors, signing, deps)
@@ -63,9 +63,11 @@ frontend/
 │   ├── gradlew / gradlew.bat        # Gradle wrapper scripts
 │   ├── settings.gradle              # Module includes
 │   └── variables.gradle             # Shared SDK versions and dependency versions
-├── capacitor.config.ts              # Capacitor CLI configuration
-├── package.json                     # Frontend dependencies (includes @capacitor/*)
-└── src/                             # React application source
+├── frontend/
+│   ├── capacitor.config.ts          # Capacitor CLI configuration (deprecated, use root level)
+│   ├── package.json                 # Frontend dependencies (includes @capacitor/*)
+│   └── src/                         # React application source
+├── capacitor.config.ts              # Capacitor CLI configuration (root level)
 ```
 
 ---
@@ -89,7 +91,7 @@ Before running the app on Android you need the following tools installed:
 
 ## 4. Capacitor Configuration
 
-**File:** [`frontend/capacitor.config.ts`](./capacitor.config.ts)
+**File:** [`capacitor.config.ts`](../capacitor.config.ts)
 
 ```ts
 import type { CapacitorConfig } from '@capacitor/cli';
@@ -97,20 +99,20 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'net.programacionwebuce.smartadopt',   // Base package name (Production)
   appName: 'SmartAdopt',
-  webDir: 'dist'                                 // Output directory of `npm run build`
+  webDir: 'frontend/dist'                        // Output directory of `npm run build` (relative to capacitor.config.ts location)
 };
 
 export default config;
 ```
 
 - **`appId`** is the base Android package name. Build flavors add a suffix for non-production environments (e.g. `.local`, `.qa`).
-- **`webDir`** tells Capacitor where to find the compiled web bundle to copy into the Android `assets/` folder.
+- **`webDir`** tells Capacitor where to find the compiled web bundle to copy into the Android `assets/` folder. It is relative to the location of `capacitor.config.ts` (now at the repository root).
 
 ---
 
 ## 5. Android Build Flavors
 
-The Android project defines **three product flavors** under a single `environment` dimension in [`app/build.gradle`](./android/app/build.gradle):
+The Android project defines **three product flavors** under a single `environment` dimension in [`app/build.gradle`](../../android/app/build.gradle):
 
 | Flavor | Application ID | Version Suffix | Signing | Purpose |
 |--------|---------------|----------------|---------|---------|
@@ -156,12 +158,14 @@ This runs `tsc -b && vite build` and outputs the compiled assets to `frontend/di
 
 ### Step 3 — Sync the Android project
 
+From the repository root directory:
+
 ```bash
 npx cap sync android
 ```
 
 This command:
-1. Copies the `dist/` bundle into `android/app/src/main/assets/public/`.
+1. Copies the `frontend/dist/` bundle into `android/app/src/main/assets/public/`.
 2. Updates native plugins.
 3. Generates/updates `capacitor.settings.gradle` and `capacitor.build.gradle`.
 
@@ -171,11 +175,11 @@ This command:
 npx cap open android
 ```
 
-This opens the `frontend/android/` folder in Android Studio as a native Gradle project.
+This opens the `android/` folder (at the repository root) in Android Studio as a native Gradle project.
 
 Alternatively, you can open it manually:
 - Launch **Android Studio**
-- Choose **Open** → navigate to `frontend/android/`
+- Choose **Open** → navigate to `android/` (at repository root)
 
 ### Step 5 — Select the run configuration
 
@@ -189,17 +193,25 @@ In Android Studio:
 
 ### Step 6 — Iterating during development
 
-Every time you change React source code, repeat steps 2 and 3 before running again from Android Studio:
+Every time you change React source code, repeat steps 2 and 3 from the repository root:
 
 ```bash
-npm run build && npx cap sync android
+cd frontend && npm run build && cd .. && npx cap sync android
+```
+
+Or from the frontend directory:
+
+```bash
+npm run build
+cd ..
+npx cap sync android
 ```
 
 ---
 
 ## 7. CI/CD — QA Pipeline
 
-**Workflow file:** [`.github/workflows/deploy-qa-mobile.yml`](../.github/workflows/deploy-qa-mobile.yml)
+**Workflow file:** [`.github/workflows/deploy-qa-mobile.yml`](../../.github/workflows/deploy-qa-mobile.yml)
 
 ### Trigger
 
@@ -221,9 +233,9 @@ Only one QA mobile job runs at a time. A new push cancels any in-progress build 
         │
 4. npm run build  ──► VITE_API_URL=https://smartadoptqa.programacionwebuce.net/api
         │
-5. npx cap sync android  (copy dist/ → android assets)
+5. npx cap sync android  (copy frontend/dist/ → android assets)
         │
-6. Set up JDK 17 (Temurin)
+6. Set up JDK 21 (Temurin)
         │
 7. Set up Android SDK
         │
@@ -241,7 +253,7 @@ Only one QA mobile job runs at a time. A new push cancels any in-progress build 
 ### Output APK path
 
 ```
-frontend/android/app/build/outputs/apk/qa/release/app-qa-release.apk
+android/app/build/outputs/apk/qa/release/app-qa-release.apk
 ```
 
 ### Firebase Distribution
@@ -264,7 +276,7 @@ It is retained for **14 days** and can be downloaded from the **Actions** tab of
 
 ## 8. CI/CD — Production Pipeline
 
-**Workflow file:** [`.github/workflows/deploy-prod-mobile.yml`](../.github/workflows/deploy-prod-mobile.yml)
+**Workflow file:** [`.github/workflows/deploy-prod-mobile.yml`](../../.github/workflows/deploy-prod-mobile.yml)
 
 ### Trigger
 
@@ -286,9 +298,9 @@ Production builds are **never cancelled** mid-flight (`cancel-in-progress: false
         │
 4. npm run build  ──► VITE_API_URL=https://smartadoptprod.programacionwebuce.net/api
         │
-5. npx cap sync android  (copy dist/ → android assets)
+5. npx cap sync android  (copy frontend/dist/ → android assets)
         │
-6. Set up JDK 17 (Temurin)
+6. Set up JDK 21 (Temurin)
         │
 7. Set up Android SDK
         │
@@ -306,7 +318,7 @@ Production builds are **never cancelled** mid-flight (`cancel-in-progress: false
 ### Output APK path
 
 ```
-frontend/android/app/build/outputs/apk/prod/release/app-prod-release.apk
+android/app/build/outputs/apk/prod/release/app-prod-release.apk
 ```
 
 ### Firebase Distribution
@@ -405,16 +417,17 @@ The Production APK is attached to every GitHub Release:
 
 | File | Description |
 |------|-------------|
-| `frontend/capacitor.config.ts` | Capacitor app ID, name, and web bundle directory |
-| `frontend/android/app/build.gradle` | Android build config: flavors, signing configs, SDK versions, dependencies |
-| `frontend/android/variables.gradle` | Shared Gradle variables (SDK levels, library versions) |
-| `frontend/android/build.gradle` | Root Gradle file: classpath plugins (AGP, google-services) |
-| `frontend/android/settings.gradle` | Module includes (`:app`, `:capacitor-cordova-android-plugins`) |
-| `frontend/android/capacitor.settings.gradle` | Auto-generated — links `capacitor-android` library from `node_modules` |
-| `frontend/android/app/capacitor.build.gradle` | Auto-generated — Java compile options and Capacitor plugin deps |
-| `frontend/android/app/google-services.json` | Firebase configuration for QA and Production package names |
-| `frontend/android/app/src/main/AndroidManifest.xml` | App manifest: permissions (`INTERNET`), activity config |
-| `frontend/android/gradle.properties` | Gradle JVM args and AndroidX flag |
+| `capacitor.config.ts` | Capacitor app ID, name, and web bundle directory (root level) |
+| `frontend/capacitor.config.ts` | Legacy Capacitor config (deprecated, use root level) |
+| `android/app/build.gradle` | Android build config: flavors, signing configs, SDK versions, dependencies |
+| `android/variables.gradle` | Shared Gradle variables (SDK levels, library versions) |
+| `android/build.gradle` | Root Gradle file: classpath plugins (AGP, google-services) |
+| `android/settings.gradle` | Module includes (`:app`, `:capacitor-cordova-android-plugins`) |
+| `android/capacitor.settings.gradle` | Auto-generated — links `capacitor-android` library from `node_modules` |
+| `android/app/capacitor.build.gradle` | Auto-generated — Java compile options and Capacitor plugin deps |
+| `android/app/google-services.json` | Firebase configuration for QA and Production package names |
+| `android/app/src/main/AndroidManifest.xml` | App manifest: permissions (`INTERNET`), activity config |
+| `android/gradle.properties` | Gradle JVM args and AndroidX flag |
 | `.github/workflows/deploy-qa-mobile.yml` | CI pipeline: builds and distributes the QA APK |
 | `.github/workflows/deploy-prod-mobile.yml` | CI pipeline: builds and distributes the Production APK |
 
