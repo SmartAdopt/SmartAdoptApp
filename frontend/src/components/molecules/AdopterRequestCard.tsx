@@ -47,13 +47,13 @@ export const AdopterRequestCard = ({
   const statusColor: "success" | "error" | "primary" = isApproved
     ? "success"
     : isRejected
-      ? "error"
-      : "primary";
+    ? "error"
+    : "primary";
   const statusLabel = isApproved
     ? "Aprobada"
     : isRejected
-      ? "Rechazada"
-      : "En Revisión";
+    ? "Rechazada"
+    : "En Revisión";
 
   if (isFinalized) {
     return (

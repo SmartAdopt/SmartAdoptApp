@@ -24,7 +24,7 @@ export const adoptedPetsService = {
     petData: AIProfileResponse,
     familyName: string,
     email?: string,
-    phone?: string,
+    phone?: string
   ): void => {
     const pets = adoptedPetsService.getAdoptedPets();
 

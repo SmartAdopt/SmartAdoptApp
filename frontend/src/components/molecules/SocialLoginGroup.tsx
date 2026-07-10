@@ -49,7 +49,7 @@ export const SocialLoginGroup = () => {
       window.open(
         url,
         "Google OAuth",
-        `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`,
+        `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
       );
     }
   };
