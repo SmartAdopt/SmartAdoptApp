@@ -11,10 +11,10 @@ export const favoritesService = {
    * Add a pet to the user's favorites
    */
   addFavorite: async (
-    petProfileId: string
+    petProfileId: string,
   ): Promise<FavoriteAddApiResponse> => {
     const response = await apiClient.post<FavoriteAddApiResponse>(
-      `/adopter/favorites/${petProfileId}`
+      `/adopter/favorites/${petProfileId}`,
     );
     return response.data;
   },
@@ -31,7 +31,7 @@ export const favoritesService = {
    */
   listFavoritesWithPets: async (): Promise<FavoriteListApiResponse> => {
     const response = await apiClient.get<FavoriteListApiResponse>(
-      "/adopter/favorites/"
+      "/adopter/favorites/",
     );
 
     // The backend returns `profile_id`, but the frontend AIProfileResponse expects `id`.

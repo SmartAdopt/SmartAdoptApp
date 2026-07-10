@@ -31,7 +31,7 @@ import {
 export const AdminAdoptedPetsPage: React.FC = () => {
   const navigate = useNavigate();
   const [adoptedPets] = React.useState<AdoptedPet[]>(() =>
-    adoptedPetsService.getAdoptedPets()
+    adoptedPetsService.getAdoptedPets(),
   );
 
   return (

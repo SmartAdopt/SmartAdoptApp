@@ -58,7 +58,7 @@ const getSpeciesLabel = (animalBreed: string[]): string => {
 // HELPER: Status badge color and label
 // ==========================================
 const getStatusConfig = (
-  status: string
+  status: string,
 ): { label: string; bgColor: string; textColor: string } => {
   switch (status?.toLowerCase()) {
     case "available":
@@ -391,7 +391,7 @@ export const AdminPetListPage = () => {
           break;
       }
     },
-    [selectedPet]
+    [selectedPet],
   );
 
   const cancelEditing = useCallback(() => {
@@ -1057,7 +1057,7 @@ export const AdminPetListPage = () => {
                                   height: 24,
                                 }}
                               />
-                            )
+                            ),
                           )}
                         </Box>
                       </Box>
@@ -1134,7 +1134,7 @@ export const AdminPetListPage = () => {
                           day: "numeric",
                           month: "numeric",
                           year: "numeric",
-                        }
+                        },
                       )}
                     </Typography>
                   </Box>

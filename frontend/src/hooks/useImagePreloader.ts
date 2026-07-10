@@ -60,7 +60,7 @@ const preloadImage = (url: string): Promise<HTMLImageElement> => {
 export const useImagePreloader = (
   imageUrls: string[],
   currentIndex: number,
-  lookaheadCount: number = 3
+  lookaheadCount: number = 3,
 ) => {
   const abortRef = useRef(false);
 
@@ -71,7 +71,7 @@ export const useImagePreloader = (
     const startIdx = Math.max(0, currentIndex);
     const endIdx = Math.min(
       imageUrls.length,
-      currentIndex + lookaheadCount + 1
+      currentIndex + lookaheadCount + 1,
     );
     const urlsToPreload = imageUrls.slice(startIdx, endIdx);
 

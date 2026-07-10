@@ -101,7 +101,7 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
       (prev) =>
         isCurrentlyFavorited
           ? prev.filter((id) => id !== petId) // Remove
-          : [...prev, petId] // Add
+          : [...prev, petId], // Add
     );
 
     // 2. Backend synchronization
@@ -121,7 +121,7 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
         (prev) =>
           isCurrentlyFavorited
             ? [...prev, petId] // Add back
-            : prev.filter((id) => id !== petId) // Remove again
+            : prev.filter((id) => id !== petId), // Remove again
       );
     }
   };

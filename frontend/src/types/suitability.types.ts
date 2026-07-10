@@ -332,7 +332,7 @@ const emergencyPlanReverseMap = reverseMap(emergencyPlanMap);
 // ============================================================
 
 export const mapSurveyToBackendRequest = (
-  data: SuitabilitySurveyData
+  data: SuitabilitySurveyData,
 ): BackendAdoptionFormRequest => {
   // Parse children ages if any
   let childrenAgesList: number[] | undefined = undefined;
@@ -385,7 +385,7 @@ export const mapSurveyToBackendRequest = (
 // ============================================================
 
 export const mapBackendResponseToSurvey = (
-  data: AdoptionFormGetResponse
+  data: AdoptionFormGetResponse,
 ): SuitabilitySurveyData => {
   return {
     cityNeighborhood: data.neighborhood,

@@ -43,20 +43,20 @@ export const AdopterExplore = () => {
   // Filter only available pets for the adopter view
   const availablePets = useMemo(
     () => pets.filter((pet) => pet.status?.toLowerCase() !== "adopted"),
-    [pets]
+    [pets],
   );
 
   // Extract all image URLs for the batch preloader
   const allImageUrls = useMemo(
     () => availablePets.map((pet) => pet.pet.pet_image_url).filter(Boolean),
-    [availablePets]
+    [availablePets],
   );
 
   // Batch preload images: current + next N cards
   const { isImageReady } = useImagePreloader(
     allImageUrls,
     currentIndex,
-    IMAGE_LOOKAHEAD
+    IMAGE_LOOKAHEAD,
   );
 
   // Handler for "Pass" — advance to the next card

@@ -8,12 +8,7 @@ interface AdminActionCardProps {
   title: string;
   description: string;
   buttonColor:
-    | "primary"
-    | "success"
-    | "warning"
-    | "secondary"
-    | "info"
-    | "error";
+    "primary" | "success" | "warning" | "secondary" | "info" | "error";
   buttonText?: string;
   onClick: () => void;
 }

@@ -38,11 +38,11 @@ export const AdminRequestsPage = () => {
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "under_review" | "approved">(
-    "all"
+    "all",
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
-    null
+    null,
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -53,9 +53,8 @@ export const AdminRequestsPage = () => {
     if (!selectedRequest) return;
     setIsGeneratingPdf(true);
     try {
-      const { generateCertificate } = await import(
-        "../../utils/certificateGenerator"
-      );
+      const { generateCertificate } =
+        await import("../../utils/certificateGenerator");
       await generateCertificate(selectedRequest, selectedRequest.pet);
     } catch (error) {
       console.error("Failed to generate certificate", error);
@@ -87,7 +86,7 @@ export const AdminRequestsPage = () => {
     try {
       await adoptionRequestsService.updateRequestStatus(
         selectedRequestId,
-        status
+        status,
       );
       await fetchRequests();
     } catch (error) {
@@ -99,7 +98,7 @@ export const AdminRequestsPage = () => {
 
   // Stats
   const pendingCount = requests.filter(
-    (r) => r.status === "under_review"
+    (r) => r.status === "under_review",
   ).length;
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const totalCount = requests.length;
@@ -377,13 +376,13 @@ export const AdminRequestsPage = () => {
                 const statusLabel = isApproved
                   ? "Aprobada"
                   : isRejected
-                  ? "Rechazada"
-                  : "Pendiente";
+                    ? "Rechazada"
+                    : "Pendiente";
                 const statusColor: "success" | "error" | "primary" = isApproved
                   ? "success"
                   : isRejected
-                  ? "error"
-                  : "primary";
+                    ? "error"
+                    : "primary";
 
                 return (
                   <Card
@@ -540,7 +539,7 @@ export const AdminRequestsPage = () => {
                     </Typography>
                     <Typography variant="body1" fontWeight={500} sx={{ mb: 3 }}>
                       {new Date(
-                        selectedRequest.dateSubmitted
+                        selectedRequest.dateSubmitted,
                       ).toLocaleDateString()}
                     </Typography>
                   </Grid>
@@ -558,15 +557,15 @@ export const AdminRequestsPage = () => {
                         selectedRequest.status === "approved"
                           ? "Aprobada"
                           : selectedRequest.status === "rejected"
-                          ? "Rechazada"
-                          : "En Revisión"
+                            ? "Rechazada"
+                            : "En Revisión"
                       }
                       color={
                         selectedRequest.status === "approved"
                           ? "success"
                           : selectedRequest.status === "rejected"
-                          ? "error"
-                          : "primary"
+                            ? "error"
+                            : "primary"
                       }
                       sx={{ fontWeight: 600, borderRadius: 2, mb: 3 }}
                     />

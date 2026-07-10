@@ -16,7 +16,7 @@ async function fetchImageAsBase64(url: string): Promise<string> {
 
 export const generateCertificate = async (
   request: AdoptionRequest,
-  petData: AIProfileResponse
+  petData: AIProfileResponse,
 ) => {
   // A4 Landscape is 297 x 210 mm
   const doc = new jsPDF({
@@ -97,7 +97,7 @@ export const generateCertificate = async (
     } catch (error) {
       console.warn(
         "Failed to load pet image for certificate, falling back to text-only:",
-        error
+        error,
       );
     }
   }

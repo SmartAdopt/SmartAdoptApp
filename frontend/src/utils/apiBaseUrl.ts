@@ -12,5 +12,7 @@ const resolveRuntimeFallbackApiUrl = (): string => {
 const envApiUrl = import.meta.env.VITE_API_URL?.trim();
 
 export const API_BASE_URL = trimTrailingSlash(
-  envApiUrl && envApiUrl.length > 0 ? envApiUrl : resolveRuntimeFallbackApiUrl()
+  envApiUrl && envApiUrl.length > 0
+    ? envApiUrl
+    : resolveRuntimeFallbackApiUrl(),
 );

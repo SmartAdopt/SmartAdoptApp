@@ -8,7 +8,7 @@ import type { PetRegistrationRequest, PetFormData } from "../types/pets.types";
  */
 export const adaptPetFormToBackend = (
   formData: PetFormData,
-  uploadedImageUrl: string
+  uploadedImageUrl: string,
 ): PetRegistrationRequest => {
   return {
     name: formData.nombre,

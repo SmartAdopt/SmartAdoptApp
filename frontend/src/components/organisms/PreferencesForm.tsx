@@ -35,14 +35,14 @@ export const PreferencesForm = () => {
 
   const handlePetTypeChange = (
     _: React.MouseEvent<HTMLElement>,
-    newValue: string
+    newValue: string,
   ) => {
     if (newValue) setPreferences((prev) => ({ ...prev, petType: newValue }));
   };
 
   const handleSpaceChange = (
     _: React.MouseEvent<HTMLElement>,
-    newValue: string
+    newValue: string,
   ) => {
     if (newValue) setPreferences((prev) => ({ ...prev, homeSpace: newValue }));
   };

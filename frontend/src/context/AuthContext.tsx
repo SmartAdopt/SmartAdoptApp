@@ -21,7 +21,7 @@ interface AuthContextType {
 // Tell Vite's Fast Refresh to ignore the non-component export warning here
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
