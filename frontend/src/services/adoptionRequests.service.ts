@@ -94,7 +94,7 @@ export const adoptionRequestsService = {
     return mergedData.sort(
       (a, b) =>
         new Date(b.dateSubmitted).getTime() -
-        new Date(a.dateSubmitted).getTime(),
+        new Date(a.dateSubmitted).getTime()
     );
   },
 
@@ -112,7 +112,7 @@ export const adoptionRequestsService = {
    */
   updateRequestStatus: async (
     requestId: string,
-    status: "approved" | "rejected",
+    status: "approved" | "rejected"
   ): Promise<void> => {
     await delay(500);
 
@@ -148,7 +148,7 @@ export const adoptionRequestsService = {
             petData,
             nameToUse,
             request.adopterEmail,
-            request.adopterPhone,
+            request.adopterPhone
           );
           try {
             await petsService.updatePet(request.petId, { status: "adopted" });

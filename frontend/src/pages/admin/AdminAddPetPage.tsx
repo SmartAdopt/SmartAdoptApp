@@ -173,7 +173,7 @@ export const AdminAddPetPage = () => {
           errorMessage = detail
             .map(
               (err: { loc?: string[]; msg?: string }) =>
-                `${err.loc?.join(".")} - ${err.msg}`,
+                `${err.loc?.join(".")} - ${err.msg}`
             )
             .join(" | ");
         } else if (detail.message) {
@@ -540,8 +540,8 @@ export const AdminAddPetPage = () => {
                                     } else {
                                       field.onChange(
                                         field.value.filter(
-                                          (v) => v !== vaccineKey,
-                                        ),
+                                          (v) => v !== vaccineKey
+                                        )
                                       );
                                     }
                                   }}

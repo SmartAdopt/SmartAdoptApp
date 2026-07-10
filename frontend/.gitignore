@@ -39,4 +39,5 @@ release/
 releases/
 out/
 build/
+!build/icon.ico
 *.exe

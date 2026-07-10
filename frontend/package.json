@@ -67,6 +67,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^10.0.1",
     "@storybook/addon-a11y": "^10.4.6",
     "@storybook/react": "^10.4.6",

@@ -66,7 +66,7 @@ export const useGoogleOAuthDeepLink = () => {
             }
           }
         }
-      },
+      }
     );
 
     return () => {

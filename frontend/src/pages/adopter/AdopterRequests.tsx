@@ -35,7 +35,7 @@ export const AdopterRequests = () => {
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithPet | null>(
-    null,
+    null
   );
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -43,8 +43,9 @@ export const AdopterRequests = () => {
     if (!selectedRequest) return;
     setIsGeneratingPdf(true);
     try {
-      const { generateCertificate } =
-        await import("../../utils/certificateGenerator");
+      const { generateCertificate } = await import(
+        "../../utils/certificateGenerator"
+      );
       await generateCertificate(selectedRequest, selectedRequest.pet);
     } catch (error) {
       console.error("Failed to generate certificate", error);
@@ -68,7 +69,7 @@ export const AdopterRequests = () => {
   }, []);
 
   const pendingCount = requests.filter(
-    (r) => r.status === "under_review",
+    (r) => r.status === "under_review"
   ).length;
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const totalCount = requests.length;
@@ -315,8 +316,8 @@ export const AdopterRequests = () => {
                   {selectedRequest.status === "approved"
                     ? "Aprobada"
                     : selectedRequest.status === "rejected"
-                      ? "Rechazada"
-                      : "En Revisión"}
+                    ? "Rechazada"
+                    : "En Revisión"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   <strong>Próximo Paso:</strong> {selectedRequest.nextStep}

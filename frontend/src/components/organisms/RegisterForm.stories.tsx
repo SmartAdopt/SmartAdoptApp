@@ -73,7 +73,7 @@ export const RegisterError: Story = {
     (Story) => {
       // Mock the service to reject with a specific error
       authService.register = fn().mockRejectedValue(
-        new Error("El correo electrónico ya está registrado."),
+        new Error("El correo electrónico ya está registrado.")
       );
       return <Story />;
     },
