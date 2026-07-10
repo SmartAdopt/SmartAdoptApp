@@ -34,7 +34,11 @@ import { AdminPetListPage } from "../pages/admin/AdminPetListPage";
 import { AdminLegalInfoPage } from "../pages/admin/AdminLegalInfoPage";
 import { AdminAdoptedPetsPage } from "../pages/admin/AdminAdoptedPetsPage";
 
+import { useGoogleOAuthDeepLink } from "../hooks/useGoogleOAuthDeepLink";
+
 export const AppRouter = () => {
+  useGoogleOAuthDeepLink();
+
   return (
     <Routes>
       {/* PUBLIC ROUTES */}
