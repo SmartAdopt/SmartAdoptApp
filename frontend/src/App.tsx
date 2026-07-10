@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { BrowserRouter, HashRouter } from "react-router-dom";
+import { HashRouter as Router } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // <-- NEW: TanStack Core Imports
 
@@ -20,8 +20,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-const Router =
-  window.location.protocol === "file:" ? HashRouter : BrowserRouter;
 
 export default function App() {
   return (

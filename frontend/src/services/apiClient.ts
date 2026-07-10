@@ -107,7 +107,8 @@ apiClient.interceptors.response.use(
         // If refresh fails (e.g., refresh token expired after 7 days)
         processQueue(refreshError as Error, null);
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.hash = "/login";
+        window.location.reload();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

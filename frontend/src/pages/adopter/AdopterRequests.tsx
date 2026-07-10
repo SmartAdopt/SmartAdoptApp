@@ -21,6 +21,7 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Close as CloseIcon,
   Pets as PetsIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
@@ -36,6 +37,21 @@ export const AdopterRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<RequestWithPet | null>(
     null,
   );
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleDownloadCertificate = async () => {
+    if (!selectedRequest) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { generateCertificate } =
+        await import("../../utils/certificateGenerator");
+      await generateCertificate(selectedRequest, selectedRequest.pet);
+    } catch (error) {
+      console.error("Failed to generate certificate", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -330,7 +346,26 @@ export const AdopterRequests = () => {
                 {selectedRequest.updateMessage}
               </Typography>
             </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
+            <DialogActions sx={{ p: 2, justifyContent: "space-between" }}>
+              {selectedRequest.status === "approved" ? (
+                <Button
+                  onClick={handleDownloadCertificate}
+                  variant="outlined"
+                  color="primary"
+                  disabled={isGeneratingPdf}
+                  startIcon={
+                    isGeneratingPdf ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <DownloadIcon />
+                    )
+                  }
+                >
+                  {isGeneratingPdf ? "Generando..." : "Descargar Certificado"}
+                </Button>
+              ) : (
+                <Box />
+              )}
               <Button
                 onClick={() => setSelectedRequest(null)}
                 variant="contained"

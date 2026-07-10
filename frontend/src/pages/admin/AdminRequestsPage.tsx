@@ -23,6 +23,7 @@ import {
   FilterList as FilterListIcon,
   PersonOutline as PersonOutlineIcon,
   ArrowBack as ArrowBackIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
@@ -44,6 +45,23 @@ export const AdminRequestsPage = () => {
     null,
   );
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const selectedRequest = requests.find((r) => r.id === selectedRequestId);
+
+  const handleDownloadCertificate = async () => {
+    if (!selectedRequest) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { generateCertificate } =
+        await import("../../utils/certificateGenerator");
+      await generateCertificate(selectedRequest, selectedRequest.pet);
+    } catch (error) {
+      console.error("Failed to generate certificate", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -98,8 +116,6 @@ export const AdminRequestsPage = () => {
 
     return true;
   });
-
-  const selectedRequest = requests.find((r) => r.id === selectedRequestId);
 
   if (isLoading) {
     return (
@@ -592,32 +608,60 @@ export const AdminRequestsPage = () => {
                 </Box>
 
                 <Box
-                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    justifyContent: "space-between",
+                  }}
                 >
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => handleAction("rejected")}
-                    disabled={
-                      isUpdating || selectedRequest.status !== "under_review"
-                    }
-                  >
-                    Rechazar
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleAction("approved")}
-                    disabled={
-                      isUpdating || selectedRequest.status !== "under_review"
-                    }
-                  >
-                    {isUpdating ? (
-                      <CircularProgress size={24} color="inherit" />
-                    ) : (
-                      "Aprobar Adopción"
-                    )}
-                  </Button>
+                  {selectedRequest.status === "approved" ? (
+                    <Button
+                      onClick={handleDownloadCertificate}
+                      variant="outlined"
+                      color="primary"
+                      disabled={isGeneratingPdf}
+                      startIcon={
+                        isGeneratingPdf ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <DownloadIcon />
+                        )
+                      }
+                    >
+                      {isGeneratingPdf
+                        ? "Generando..."
+                        : "Descargar Certificado"}
+                    </Button>
+                  ) : (
+                    <Box />
+                  )}
+
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleAction("rejected")}
+                      disabled={
+                        isUpdating || selectedRequest.status !== "under_review"
+                      }
+                    >
+                      Rechazar
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      onClick={() => handleAction("approved")}
+                      disabled={
+                        isUpdating || selectedRequest.status !== "under_review"
+                      }
+                    >
+                      {isUpdating ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        "Aprobar Adopción"
+                      )}
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             )}
