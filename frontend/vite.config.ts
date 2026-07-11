@@ -5,7 +5,10 @@ import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 
 export default defineConfig({
-  base: './',
+  // Web builds (Docker/QA) use absolute base so deep SPA routes
+  // (/adopter/explore) resolve assets at /assets/... instead of /adopter/assets/...
+  // Electron builds keep relative './' for file:// loading.
+  base: process.env.VITE_WEB_ONLY === 'true' ? '/' : './',
   plugins: [
     react(),
     ...(process.env.VITE_WEB_ONLY === 'true'
