@@ -77,6 +77,10 @@ class ApplicationResponse(BaseModel):
     created_at: datetime = Field(
         ..., description="Date and time of application creation"
     )
+    needs_manual_review: bool = Field(
+        False,
+        description="Flag indicating if the application requires manual review (AI evaluation failed)",
+    )
 
     # Validate that application_id is not empty
     @field_validator("application_id")
@@ -141,6 +145,10 @@ class ApplicationWithPetResponse(BaseModel):
     created_at: datetime = Field(
         ..., description="Date and time of application creation"
     )
+    needs_manual_review: bool = Field(
+        False,
+        description="Flag indicating if the application requires manual review (AI evaluation failed)",
+    )
     pet: Optional[Dict[str, Any]] = Field(
         None, description="Pet profile data embedded in response"
     )
@@ -185,6 +193,24 @@ class ApplicationWithPetResponse(BaseModel):
             )
             raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
         logger.debug(f"Status validation passed: {v}")
+        return v.lower()
+
+
+class ApplicationStatusUpdate(BaseModel):
+    # Schema for updating an application's status (admin)
+    status: str = Field(
+        ..., description="New application status: approved or rejected"
+    )
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        valid_statuses = ["approved", "rejected"]
+        if v.lower() not in valid_statuses:
+            logger.warning(
+                f"Status must be one of: {', '.join(valid_statuses)}, got: {v}"
+            )
+            raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
         return v.lower()
 
 

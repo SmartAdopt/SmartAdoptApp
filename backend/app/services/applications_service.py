@@ -1,7 +1,7 @@
 # Application service
 
 # Typing imports
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime
 
 # Model imports
@@ -114,9 +114,20 @@ async def create_application(
             f"main: {ai_result['main_score']}/{ai_result['main_max_score']}, "
             f"logistics: {ai_result['logistics_education_score']}/{ai_result['logistics_education_max_score']}"
         )
+        needs_manual_review = False
     except Exception as e:
-        logger.error(f"AI evaluation failed: {str(e)}")
-        raise ValueError("Failed to evaluate adoption compatibility")
+        logger.error(f"AI evaluation failed, defaulting to manual review: {str(e)}")
+        ai_result = {
+            "total_score": 0,
+            "total_max_score": 15,
+            "main_score": 0,
+            "main_max_score": 11,
+            "logistics_education_score": 0,
+            "logistics_education_max_score": 4,
+            "breakdown": [],
+            "justification": "Evaluación automática no disponible — requiere revisión manual",
+        }
+        needs_manual_review = True
 
     # Generate application ID
     try:
@@ -146,6 +157,7 @@ async def create_application(
         ai_breakdown=ai_result.get("breakdown", []),
         status="pending",
         created_at=datetime.now(),
+        needs_manual_review=needs_manual_review,
     )
 
     # Convert model to dict for MongoDB
@@ -164,6 +176,7 @@ async def create_application(
         "ai_justification": application_model.ai_justification,
         "status": application_model.status,
         "created_at": application_model.created_at,
+        "needs_manual_review": application_model.needs_manual_review,
     }
 
     # Insert into MongoDB
@@ -192,67 +205,64 @@ async def create_application(
     return application_document
 
 
-async def list_applications(mongo_db, user_id: int) -> List[Dict[str, Any]]:
-    # List all applications for a user with embedded pet profile data
-    logger.info(f"Listing adoption applications for user_id: {user_id}")
+async def review_application(
+    db, application_id: str, status: str, admin_id: int
+) -> Dict[str, Any]:
+    # Review (approve/reject) a single application. Syncs the linked pet
+    # profile status: in_process -> adopted / available.
+    logger.info(f"Reviewing application {application_id} with status: {status} by admin: {admin_id}")
 
     try:
-        applications_collection = mongo_db["applications"]
-        profiles_collection = mongo_db["pet_profiles"]
+        applications_collection = db["applications"]
+        app = await applications_collection.find_one({"_id": application_id})
+        if not app:
+            logger.warning(f"Application not found: {application_id}")
+            raise ValueError("Application not found")
 
-        # Fetch all applications for this user
-        applications = await applications_collection.find({"user_id": user_id}).to_list(
-            length=None
+        # Block re-review only if already properly reviewed (has reviewed_by)
+        if app.get("reviewed_by") is not None and app.get("status") != "pending":
+            logger.warning(f"Application {application_id} already reviewed with status: {app.get('status')}")
+            raise ValueError(f"Application already reviewed. Current status: {app.get('status')}")
+
+        # Check pet status before approving to prevent double-adoption
+        pet_profile_id = app.get("pet_profile_id")
+        profiles_collection = None
+        if pet_profile_id:
+            profiles_collection = db["pet_profiles"]
+            pet = await profiles_collection.find_one({"_id": pet_profile_id})
+            if pet and pet.get("status") == "adopted" and status == "approved":
+                logger.warning(f"Cannot approve application {application_id} because pet {pet_profile_id} is already adopted")
+                raise ValueError("Cannot approve application: Pet is already adopted")
+
+        # Update application
+        await applications_collection.update_one(
+            {"_id": application_id},
+            {"$set": {
+                "status": status,
+                "reviewed_by": admin_id,
+                "reviewed_at": datetime.now(),
+                "last_updated": datetime.now(),
+            }},
         )
 
-        logger.info(f"Found {len(applications)} applications for user_id: {user_id}")
-
-        # Enrich each application with pet profile data
-        result = []
-        for app in applications:
-            # Fetch pet profile data
-            pet_raw = await profiles_collection.find_one(
-                {"_id": app.get("pet_profile_id")}
+        # Sync linked pet profile: approved -> adopted, rejected -> available
+        if pet_profile_id and profiles_collection is not None:
+            pet_status = "adopted" if status == "approved" else "available"
+            await profiles_collection.update_one(
+                {"_id": pet_profile_id},
+                {"$set": {"status": pet_status, "last_updated": datetime.now()}},
             )
+            logger.info(f"Pet {pet_profile_id} status updated to '{pet_status}'")
 
-            # Clean pet data (remove MongoDB _id to avoid duplication with id field)
-            pet = None
-            if pet_raw:
-                pet = {
-                    "profile_id": pet_raw.get("_id"),
-                    "title": pet_raw.get("title"),
-                    "tags": pet_raw.get("tags"),
-                    "emotional_description": pet_raw.get("emotional_description"),
-                    "status": pet_raw.get("status"),
-                    "creation_date": pet_raw.get("creation_date"),
-                    "pet": pet_raw.get("pet"),
-                }
+        logger.info(f"Application {application_id} reviewed successfully")
 
-            # Build enriched application object
-            enriched_app = {
-                "application_id": app.get("_id"),
-                "pet_profile_id": app.get("pet_profile_id"),
-                "total_score": app.get("total_score"),
-                "total_max_score": app.get("total_max_score"),
-                "main_score": app.get("main_score"),
-                "main_max_score": app.get("main_max_score"),
-                "logistics_education_score": app.get("logistics_education_score"),
-                "logistics_education_max_score": app.get(
-                    "logistics_education_max_score"
-                ),
-                "ai_breakdown": app.get("ai_breakdown"),
-                "ai_justification": app.get("ai_justification"),
-                "status": app.get("status"),
-                "created_at": app.get("created_at"),
-                "pet": pet,
-            }
-
-            result.append(enriched_app)
-
-        logger.info(
-            f"Retrieved {len(result)} applications with pet data for user_id: {user_id}"
-        )
-        return result
+        return {
+            "message": "Application reviewed successfully",
+            "application_id": application_id,
+            "status": status,
+        }
+    except ValueError:
+        raise
     except Exception as e:
-        logger.error(f"Failed to list applications: {str(e)}")
-        raise ValueError("Failed to list adoption applications")
+        logger.error(f"Failed to review application: {str(e)}")
+        raise ValueError("Failed to review application")

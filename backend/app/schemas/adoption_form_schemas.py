@@ -554,3 +554,63 @@ class AdoptionFormUpdateRequest(BaseModel):
             raise ValueError("Address must be at least 5 characters long")
         logger.debug(f"Address validation passed for: {v}")
         return v.strip()
+
+
+class AdoptionFormReviewRequest(BaseModel):
+    # Schema for admin review of adoption forms
+    status: str = Field(..., description="Review status: approved or rejected")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        logger.debug(f"Validating review status: {v}")
+        valid_statuses = ["approved", "rejected"]
+        if v not in valid_statuses:
+            logger.warning(f"Review status validation failed for: {v}")
+            raise ValueError(
+                f"Status must be one of: {', '.join(valid_statuses)}"
+            )
+        logger.debug(f"Review status validation passed for: {v}")
+        return v
+
+
+class AdoptionFormAdminResponse(BaseModel):
+    # Schema for admin response with adoption form data including review status
+    form_id: str = Field(..., description="Unique identifier for the adoption form")
+    user_id: int = Field(..., description="User ID who submitted the form")
+    # I. Candidate Information
+    neighborhood: str = Field(..., description="City or neighborhood where the user lives")
+    address: str = Field(..., description="Full address of the user")
+    employment_status: str = Field(..., description="Employment status")
+    employment_status_other: Optional[str] = Field(None, description="Other employment status specification")
+    housing_type: str = Field(..., description="Housing type")
+    housing_type_other: Optional[str] = Field(None, description="Other housing type specification")
+    has_natural_space: bool = Field(..., description="Whether the user has natural space nearby")
+    # II. Coexistence and Experience
+    has_pets: bool = Field(..., description="Whether the user currently has pets")
+    current_pets_details: Optional[str] = Field(None, description="Details about current pets")
+    household_energy: str = Field(..., description="Household energy level")
+    has_children: bool = Field(..., description="Whether there are children in the household")
+    children_ages: Optional[List[int]] = Field(None, description="Ages of children in the household")
+    long_term_commitment: bool = Field(..., description="Commitment to long-term care")
+    # III. Pet Preferences
+    preferred_species: str = Field(..., description="Preferred species")
+    preferred_gender: str = Field(..., description="Preferred gender")
+    preferred_energy: str = Field(..., description="Preferred energy level")
+    # IV. Logistics and Education
+    daily_time_dedication: str = Field(..., description="Daily time dedication")
+    sleeping_location: str = Field(..., description="Where the pet will sleep")
+    sleeping_location_other: Optional[str] = Field(None, description="Other sleeping location specification")
+    behavior_approach: str = Field(..., description="Approach to behavior problems")
+    behavior_approach_other: Optional[str] = Field(None, description="Other behavior approach specification")
+    emergency_plan: str = Field(..., description="Emergency plan")
+    emergency_plan_other: Optional[str] = Field(None, description="Other emergency plan specification")
+    # V. Final Motivation
+    motivation: str = Field(..., description="User's motivation for adoption")
+    # Metadata
+    submission_date: datetime = Field(..., description="Date and time of form submission")
+    last_updated: datetime = Field(..., description="Date and time of last update")
+    # Review fields
+    status: str = Field(..., description="Form status: pending, approved, or rejected")
+    reviewed_by: Optional[int] = Field(None, description="Admin user ID who reviewed the form")
+    reviewed_at: Optional[datetime] = Field(None, description="Date and time of review")

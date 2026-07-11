@@ -1,7 +1,7 @@
 # Adoption form service
 
 # Schema imports
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # Model imports
 from app.models.adoption_form.adoption_form import AdoptionForm
@@ -138,6 +138,10 @@ async def register_adoption_form(db, form_data: Dict[str, Any]) -> Dict[str, Any
         # Metadata
         "submission_date": form_model.submission_date,
         "last_updated": form_model.last_updated,
+        # Review fields
+        "status": form_model.status,
+        "reviewed_by": form_model.reviewed_by,
+        "reviewed_at": form_model.reviewed_at,
     }
 
     # Insert into MongoDB
@@ -169,8 +173,41 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
 
         logger.info(f"Adoption form retrieved successfully for user_id: {user_id}")
 
-        # Remove MongoDB _id from response
+        # Remove MongoDB _id, reviewed_by, reviewed_at, status from response
         form.pop("_id", None)
+        form.pop("reviewed_by", None)
+        form.pop("reviewed_at", None)
+        form.pop("status", None)
+
+        # Embed related applications
+        applications_collection = db["applications"]
+        form_id = form.get("form_id")
+        if form_id:
+            applications = await applications_collection.find(
+                {"form_id": form_id}
+            ).to_list(length=None)
+            form["applications"] = [
+                {
+                    "application_id": app.get("_id"),
+                    "pet_profile_id": app.get("pet_profile_id"),
+                    "total_score": app.get("total_score"),
+                    "total_max_score": app.get("total_max_score"),
+                    "main_score": app.get("main_score"),
+                    "main_max_score": app.get("main_max_score"),
+                    "logistics_education_score": app.get("logistics_education_score"),
+                    "logistics_education_max_score": app.get("logistics_education_max_score"),
+                    "ai_breakdown": app.get("ai_breakdown"),
+                    "ai_justification": app.get("ai_justification"),
+                    "status": app.get("status"),
+                    "created_at": app.get("created_at"),
+                    "needs_manual_review": app.get("needs_manual_review", False),
+                    "reviewed_by": app.get("reviewed_by"),
+                    "reviewed_at": app.get("reviewed_at"),
+                }
+                for app in applications
+            ]
+        else:
+            form["applications"] = []
 
         return form
     except Exception as e:
@@ -335,3 +372,114 @@ async def update_adoption_form(
     if updated_form is None:
         raise ValueError("Failed to retrieve updated form")
     return updated_form
+
+
+async def get_all_forms(
+    db, status_filter: Optional[str] = None, pet_name_filter: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    # Get all adoption forms with optional status and pet name filters (admin only)
+    # Returns each form with its review status and the qualification
+    # (AI scores) of its linked applications embedded.
+    logger.info(
+        f"Retrieving all adoption forms with status filter: {status_filter}, "
+        f"pet_name filter: {pet_name_filter}"
+    )
+
+    try:
+        forms_collection = db["adoption_forms"]
+        applications_collection = db["applications"]
+        pet_profiles_collection = db["pet_profiles"]
+
+        # Note: `status` filters the embedded applications (each application
+        # has its own status: approved/pending/rejected), not the form's
+        # status. We fetch all forms and narrow them by application status
+        # further below so both `?status=approved` and `?status=pending`
+        # return the matching applications grouped under their form.
+        query = {}
+
+        # Retrieve forms
+        cursor = forms_collection.find(query)
+        forms = await cursor.to_list(length=None)
+
+        # No forms -> return empty list (standard for list endpoints)
+        if not forms:
+            logger.info("No adoption forms found")
+            return []
+
+        result = []
+        for form in forms:
+            form_id = form.get("_id")
+
+            # Find applications for this form (there could be multiple)
+            applications = await applications_collection.find(
+                {"form_id": form_id}
+            ).to_list(length=None)
+
+            # Embed qualification info from each linked application
+            embedded_applications = []
+            for app in applications:
+                pet_profile_id = app.get("pet_profile_id")
+                pet_name = None
+                if pet_profile_id is not None:
+                    pet_profile = await pet_profiles_collection.find_one(
+                        {"_id": pet_profile_id}
+                    )
+                    if pet_profile:
+                        pet_name = (pet_profile.get("pet") or {}).get("name")
+
+                embedded_applications.append({
+                    "application_id": app.get("_id"),
+                    "pet_profile_id": pet_profile_id,
+                    "pet_name": pet_name,
+                    "total_score": app.get("total_score"),
+                    "total_max_score": app.get("total_max_score"),
+                    "main_score": app.get("main_score"),
+                    "main_max_score": app.get("main_max_score"),
+                    "logistics_education_score": app.get("logistics_education_score"),
+                    "logistics_education_max_score": app.get("logistics_education_max_score"),
+                    "ai_breakdown": app.get("ai_breakdown"),
+                    "ai_justification": app.get("ai_justification"),
+                    "status": app.get("status"),
+                    "created_at": app.get("created_at"),
+                    "needs_manual_review": app.get("needs_manual_review", False),
+                    "reviewed_by": app.get("reviewed_by"),
+                    "reviewed_at": app.get("reviewed_at"),
+                })
+
+            # If a status filter is provided, keep only the applications
+            # whose status matches exactly (case-insensitive). This mirrors
+            # the pet_name behaviour: the form is dropped if none match.
+            if status_filter:
+                needle = status_filter.lower()
+                matching_applications = [
+                    app for app in embedded_applications
+                    if app.get("status") and app["status"].lower() == needle
+                ]
+                # Drop the whole form if none of its applications match
+                if not matching_applications:
+                    continue
+                embedded_applications = matching_applications
+
+            # If a pet name filter is provided, keep only the applications
+            # whose pet name matches (contains, case-insensitive)
+            if pet_name_filter:
+                needle = pet_name_filter.lower()
+                matching_applications = [
+                    app for app in embedded_applications
+                    if app.get("pet_name") and needle in app["pet_name"].lower()
+                ]
+                # Drop the whole form if none of its applications match
+                if not matching_applications:
+                    continue
+                embedded_applications = matching_applications
+
+            # Build the form response (remove Mongo _id, reviewed_by, reviewed_at, status) and embed applications
+            form_response = {k: v for k, v in form.items() if k not in ("_id", "reviewed_by", "reviewed_at", "status")}
+            form_response["applications"] = embedded_applications
+            result.append(form_response)
+
+        logger.info(f"Retrieved {len(result)} adoption forms")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to retrieve adoption forms: {str(e)}")
+        raise ValueError("Failed to retrieve adoption forms")

@@ -197,6 +197,10 @@ jobs:
             BACKBLAZE_APPLICATION_KEY=${{ secrets.PROD_BACKBLAZE_APPLICATION_KEY }}
             BACKBLAZE_BUCKET_NAME=${{ secrets.PROD_BACKBLAZE_BUCKET_NAME }}
             HF_TOKEN=${{ secrets.PROD_HF_TOKEN }}
+            LLAMA_BASE_URL=${{ secrets.PROD_LLAMA_BASE_URL }}
+            LLAMA_MODEL=${{ secrets.PROD_LLAMA_MODEL }}
+            LLAMA_API_KEY=${{ secrets.PROD_GROQ_API_KEY }}
+            LLAMA_JSON_MODE=${{ secrets.PROD_LLAMA_JSON_MODE }}
             DOZZLE_EXTERNAL_PORT=${{ secrets.PROD_DOZZLE_EXTERNAL_PORT }}
             DOZZLE_PORT=${{ secrets.PROD_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.PROD_DOZZLE_USERNAME }}

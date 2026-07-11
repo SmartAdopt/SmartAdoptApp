@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
 
 # Database imports
 from app.database.mongo.mongo_db import get_mongo_db
@@ -8,6 +9,7 @@ from app.schemas.adoption_form_schemas import (
     AdoptionFormRequest,
     AdoptionFormResponse,
     AdoptionFormUpdateRequest,
+    AdoptionFormReviewRequest,
 )
 
 # Service imports
@@ -15,7 +17,9 @@ from app.services.adoption_form_service import (
     register_adoption_form,
     get_adoption_form_by_user,
     update_adoption_form,
+    get_all_forms,
 )
+from app.services.applications_service import review_application
 
 # JWT utils import
 from app.utils.jwt.jwt_utils import verify_token
@@ -106,6 +110,11 @@ async def get_my_adoption_form_route(
                 detail={"message": "No adoption form found for this user"},
             )
 
+        # Remove review fields from adopter response (security: don't show admin review info)
+        form.pop("status", None)
+        form.pop("reviewed_by", None)
+        form.pop("reviewed_at", None)
+
         return form
     except HTTPException:
         raise
@@ -159,6 +168,102 @@ async def update_my_adoption_form_route(
         raise
     except Exception as e:
         logger.error(f"Unexpected error during adoption form update: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.get("/admin", status_code=status.HTTP_200_OK)
+async def get_all_adoption_forms_admin(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    form_status: Optional[str] = None,
+    pet_name: Optional[str] = Query(default=None, alias="pet_name"),
+    db=Depends(get_mongo_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to get all adoption forms with optional status filter (admin only)
+    # Accept both `?status=` (via alias) and the legacy `?form_status=` params
+    logger.info("GET /adoption-forms/admin - Get all adoption forms request")
+
+    # Verify user role is admin
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "admin":
+        logger.warning(
+            f"Adoption forms list denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Admin role required"},
+        )
+
+    try:
+        # Call service to get all forms with optional status filter
+        resolved_status = status_filter or form_status
+        forms = await get_all_forms(
+            db, status_filter=resolved_status, pet_name_filter=pet_name
+        )
+        if not forms:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "No adoption forms found"},
+            )
+        # Count each application individually, even if they belong to the
+        # same user/form (a form can group multiple pet applications)
+        applications_count = sum(len(f.get("applications", [])) for f in forms)
+        return {"forms": forms, "applications_count": applications_count}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.warning(f"Adoption forms retrieval failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during adoption forms retrieval: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.put("/{application_id}/review", status_code=status.HTTP_200_OK)
+async def review_adoption_form(
+    application_id: str,
+    review_data: AdoptionFormReviewRequest,
+    db=Depends(get_mongo_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to review an adoption application (admin only)
+    logger.info(f"PUT /adoption-forms/{application_id}/review - Review application request")
+
+    # Verify user role is admin
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "admin":
+        logger.warning(
+            f"Application review denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Admin role required"},
+        )
+
+    try:
+        # Get admin_id from token
+        admin_id = int(token_payload["sub"])
+        # Call service to review the application
+        result = await review_application(db, application_id, review_data.status, admin_id)
+
+        return result
+    except ValueError as e:
+        logger.warning(f"Application review failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during application review: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},

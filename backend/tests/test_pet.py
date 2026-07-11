@@ -308,8 +308,8 @@ def test_list_pets_success(client):
     token = get_admin_token()
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
-    # The list might fail due to MongoDB mock issues, so we accept 200 or 500
-    assert response.status_code in [200, 500]
+    # The list might be empty (404) or fail due to MongoDB mock issues
+    assert response.status_code in [200, 404, 500]
 
 
 def test_list_pets_without_admin_role(client):
@@ -326,6 +326,36 @@ def test_list_pets_without_admin_role(client):
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
     # Should return 403 Forbidden for non-admin/non-adopter user
+    assert response.status_code == 403
+    data = response.json()
+    assert "Access denied. Admin or Adopter role required" in str(data)
+
+
+def test_list_pets_filtered_by_status(client):
+    """Test pet listing filtered by status=adopted (Happy path)"""
+    token = get_admin_token()
+    response = client.get(
+        "/pets/?status=adopted", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    # The list might be empty (404) or fail due to MongoDB mock issues
+    assert response.status_code in [200, 404, 500]
+
+
+def test_list_pets_filtered_without_role(client):
+    """Test status-filtered pet listing without admin/adopter role (Negative path)"""
+    payload = {
+        "sub": "3",
+        "role": "user",
+        "exp": datetime.utcnow() + timedelta(minutes=30),
+        "iat": datetime.utcnow(),
+    }
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    response = client.get(
+        "/pets/?status=adopted", headers={"Authorization": f"Bearer {token}"}
+    )
+
     assert response.status_code == 403
     data = response.json()
     assert "Access denied. Admin or Adopter role required" in str(data)
@@ -485,8 +515,8 @@ def test_list_pets_with_ai_structure(client):
     token = get_admin_token()
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
-    # Accept 200 or 500 (MongoDB mock issues)
-    assert response.status_code in [200, 500]
+    # Accept 200, 404 (empty) or 500 (MongoDB mock issues)
+    assert response.status_code in [200, 404, 500]
 
     if response.status_code == 200:
         data = response.json()
