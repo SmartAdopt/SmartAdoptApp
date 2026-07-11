@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 
 export default defineConfig({
-  base: './',
+  base: process.env.VITE_WEB_ONLY === 'true' ? '/' : './',
   plugins: [
     react(),
     ...(process.env.VITE_WEB_ONLY === 'true'
