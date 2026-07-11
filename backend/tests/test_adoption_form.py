@@ -150,9 +150,8 @@ def test_review_adoption_form_success(client):
     }
     pet_profile = {"_id": "PR1", "pet": {"name": "Max"}}
 
-    app.dependency_overrides[get_mongo_db] = lambda: _make_mock_db(
-        [], [app_doc], pet_profile
-    )
+    mock_db = _make_mock_db([], [app_doc], pet_profile)
+    app.dependency_overrides[get_mongo_db] = lambda: mock_db
 
     response = client.put(
         "/adoption-forms/AP1/review",
@@ -160,8 +159,6 @@ def test_review_adoption_form_success(client):
         headers={"Authorization": f"Bearer {_admin_token()}"},
     )
 
-    # Get the db mock to verify assertions
-    mock_db = app.dependency_overrides[get_mongo_db]()
     app.dependency_overrides.pop(get_mongo_db, None)
 
     assert response.status_code == 200
