@@ -35,7 +35,9 @@ export const SocialLoginGroup = () => {
 
     // If baseUrl is relative (e.g., "/api"), it won't work on mobile
     if (Capacitor.isNativePlatform() && baseUrl.startsWith("/")) {
-      console.warn("API_BASE_URL is relative. OAuth might fail on mobile. Ensure VITE_API_URL is set correctly during build.");
+      console.warn(
+        "API_BASE_URL is relative. OAuth might fail on mobile. Ensure VITE_API_URL is set correctly during build."
+      );
       // Fallback to a reasonable default if possible, or keep it to show the error
     }
 
@@ -49,7 +51,9 @@ export const SocialLoginGroup = () => {
       if (url.startsWith("/")) {
         // This is a emergency fallback if VITE_API_URL was missing
         // In a real production app, this should be caught by build-time env validation
-        console.error("Cannot open relative URL in native browser. Redirecting to current origin as fallback.");
+        console.error(
+          "Cannot open relative URL in native browser. Redirecting to current origin as fallback."
+        );
         url = window.location.origin + url;
       }
 
