@@ -1,14 +1,26 @@
 // src/components/organisms/HeroSection.tsx
+// JAMstack — Markup Layer
+// Content is imported from a static JSON file and bundled at build time by Vite.
+// This decouples content from presentation, simulating a Headless CMS approach.
 
 import { Box, Typography, Container } from "@mui/material";
 import { CategoryButton } from "../molecules/CategoryButton";
 import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 
-// Placeholder image matching the vibe of the prototype
-const HERO_BG_URL =
-  "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80";
+// Static JSON import — Vite inlines this at build time (pre-rendered markup).
+import landingData from "../../content/landing.json";
+
+// Type-safe mapping from the JSON assetKey strings to the actual asset imports.
+const assetMap: Record<string, string> = {
+  dog: PUBLIC_ASSETS.dog,
+  cat: PUBLIC_ASSETS.cat,
+  adopt: PUBLIC_ASSETS.adopt,
+  logo: PUBLIC_ASSETS.logo,
+};
 
 export const HeroSection = () => {
+  const { hero } = landingData;
+
   return (
     <Box
       sx={{
@@ -24,7 +36,7 @@ export const HeroSection = () => {
           width: "100%",
           height: "60vh",
           minHeight: 450,
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url(${HERO_BG_URL})`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url(${hero.backgroundImageUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",
@@ -48,19 +60,19 @@ export const HeroSection = () => {
               },
             }}
           >
-            Encuentra a tu Nuevo Mejor Amigo y Adopta una Mascota
+            {hero.title}
           </Typography>
           <Typography
             variant="h6"
             color="grey.200"
             sx={{ fontWeight: 400, mb: 2 }}
           >
-            Miles de perros, gatos y otros animales esperan por ti
+            {hero.subtitle}
           </Typography>
         </Container>
       </Box>
 
-      {/* Overlapping Category Buttons */}
+      {/* Overlapping Category Buttons — driven by static JSON data */}
       <Box
         sx={{
           display: "flex",
@@ -69,16 +81,20 @@ export const HeroSection = () => {
           zIndex: 2,
         }}
       >
-        <CategoryButton
-          title="Perros"
-          icon={<img src={PUBLIC_ASSETS.dog} width={32} />}
-          color="primary"
-        />
-        <CategoryButton
-          title="Gatos"
-          icon={<img src={PUBLIC_ASSETS.cat} width={32} />}
-          color="success"
-        />
+        {hero.categories.map((category) => (
+          <CategoryButton
+            key={category.id}
+            title={category.title}
+            icon={
+              <img
+                src={assetMap[category.assetKey]}
+                width={32}
+                alt={category.title}
+              />
+            }
+            color={category.color as "primary" | "success"}
+          />
+        ))}
       </Box>
     </Box>
   );
