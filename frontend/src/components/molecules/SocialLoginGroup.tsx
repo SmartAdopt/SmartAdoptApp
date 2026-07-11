@@ -31,7 +31,7 @@ export const SocialLoginGroup = () => {
   const handleGoogleLogin = async () => {
     // 1. Define the backend OAuth URL
     // Ensure the URL is absolute for Capacitor Browser
-    let baseUrl = API_BASE_URL;
+    const baseUrl = API_BASE_URL;
 
     // If baseUrl is relative (e.g., "/api"), it won't work on mobile
     if (Capacitor.isNativePlatform() && baseUrl.startsWith("/")) {

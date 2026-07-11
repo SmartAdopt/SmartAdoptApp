@@ -11,7 +11,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import json
-import os
 from datetime import datetime
 from jose import jwt, ExpiredSignatureError, JWTError
 
