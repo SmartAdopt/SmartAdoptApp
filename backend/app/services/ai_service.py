@@ -1,23 +1,15 @@
 import json
 
 import requests
-from huggingface_hub import InferenceClient
 from PIL import Image
 from io import BytesIO
 from transformers import BlipForConditionalGeneration, BlipProcessor
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 
 from app.config import settings
 from app.utils.logger.logger_config import logger
 
-# load huggingface token
-hf_token = settings.HF_TOKEN
-if hf_token:
-    logger.info("HF_TOKEN is configured for Hugging Face Hub")
-else:
-    logger.warning("HF_TOKEN not set - using unauthenticated requests")
-
-# Load AI models at startup
+# Load BLIP models locally (image captioning)
 logger.info("Loading BLIP models...")
 blip_processor = BlipProcessor.from_pretrained(
     "Salesforce/blip-image-captioning-base"
@@ -27,12 +19,50 @@ blip_model = BlipForConditionalGeneration.from_pretrained(
 )  # nosec B615
 logger.info("BLIP models loaded successfully")
 
-logger.info("Loading Llama 3 8B client...")
-llama_client = InferenceClient(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",
-    token=hf_token,
-)
-logger.info("Llama 3 8B client loaded successfully")
+# LLM (Llama) configuration - provider agnostic (Groq, HF router, ...).
+# Switch provider via LLAMA_BASE_URL, switch model via LLAMA_MODEL.
+LLAMA_BASE_URL = settings.LLAMA_BASE_URL.rstrip("/")
+LLAMA_MODEL = settings.LLAMA_MODEL
+LLAMA_API_KEY = settings.LLAMA_API_KEY
+
+
+def _call_llama(
+    messages: List[Dict[str, str]],
+    max_tokens: int = 500,
+    temperature: float = 0.3,
+    retries: int = 2,
+) -> str:
+    # OpenAI-compatible chat completion. Works with Groq, HF router, ...).
+    url = f"{LLAMA_BASE_URL}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    if LLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {LLAMA_API_KEY}"
+    payload = {
+        "model": LLAMA_MODEL,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    # Request structured JSON output when the provider supports it (Groq/OpenAI)
+    if settings.LLAMA_JSON_MODE:
+        payload["response_format"] = {"type": "json_object"}
+
+    last_err: Optional[Exception] = None
+    for attempt in range(1, retries + 1):
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=90)  # type: ignore[arg-type]
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+            # Strip markdown code fences if the model wrapped the JSON
+            if content.startswith("```"):
+                content = content.split("```", 2)[1]
+                if content.lower().startswith("json"):
+                    content = content[4:]
+            return content.strip()
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            logger.warning(f"LLM call failed (attempt {attempt}/{retries}): {e}")
+    raise last_err if last_err else RuntimeError("LLM call failed")
 
 
 async def describe_image_with_blip(image_url: str) -> str:
@@ -78,7 +108,7 @@ async def describe_image_with_blip(image_url: str) -> str:
 async def enrich_profile_with_llama(
     pet_data: Dict[str, Any], blip_description: str
 ) -> Dict[str, Any]:
-    logger.info("Enriching pet profile with Llama 3 8B")
+    logger.info("Enriching pet profile with the LLM")
 
     # Validate inputs
     if not pet_data:
@@ -90,7 +120,7 @@ async def enrich_profile_with_llama(
         raise ValueError("BLIP description cannot be empty")
 
     try:
-        # Create prompt for Llama 3 8B
+        # Build the LLM prompt
         prompt = f"""You are a creative pet adoption assistant. Create a unique and engaging pet profile based on the following information:
             Pet Name: {pet_data.get('name')}
             Animal Breed: {', '.join(pet_data.get('animal_breed', []))}
@@ -144,23 +174,20 @@ async def enrich_profile_with_llama(
         """
 
         # Log the prompt for debugging
-        logger.info(f"Sending prompt to Llama 3 8B (length: {len(prompt)} chars)")
+        logger.info(f"Sending prompt to the LLM (length: {len(prompt)} chars)")
 
-        # Generate response using chat_completion
+        # Generate response using the configured LLM provider
         messages = [{"role": "user", "content": prompt}]
-        result = llama_client.chat_completion(messages, max_tokens=500, temperature=0.3)
-
-        # Access the content
-        content = result.choices[0].message.content
+        content = _call_llama(messages, max_tokens=800, temperature=0.3)
 
         # Log the raw content for debugging
-        logger.info(f"Raw response from Llama 3 8B: {content}")
+        logger.info(f"Raw response from the LLM: {content}")
 
         # Parse JSON response
         try:
             # Intentamos encontrar el JSON si el modelo puso texto antes
             if content is None:
-                raise ValueError("Llama 3 8B returned None content")
+                raise ValueError("LLM returned None content")
             json_start = content.find("{")
             json_end = content.rfind("}") + 1
 
@@ -185,20 +212,20 @@ async def enrich_profile_with_llama(
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {str(e)}")
             logger.error(f"Response content: {content}")
-            raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
+            raise ValueError(f"Invalid JSON format in LLM response: {str(e)}")
 
-        logger.info("Llama 3 8B enrichment completed successfully")
+        logger.info("LLM enrichment completed successfully")
         return enriched_data
     except Exception as e:
-        logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
+        logger.error(f"Failed to enrich profile with the LLM: {str(e)}")
         raise Exception("Failed to enrich profile")
 
 
 async def evaluate_adoption_application(
     form_data: Dict[str, Any], pet_data: Dict[str, Any]
 ) -> Dict[str, Any]:
-    # Evaluate cross-compatibility between adopter form and pet data using Llama 3 8B
-    logger.info("Evaluating adoption application with Llama 3 8B")
+    # Evaluate cross-compatibility between adopter form and pet data
+    logger.info("Evaluating adoption application with the LLM")
 
     # Validate inputs
     if not form_data:
@@ -247,7 +274,7 @@ async def evaluate_adoption_application(
             "emotional_description": pet_data.get("emotional_description"),
         }
 
-        # Create prompt for Llama 3 8B
+        # Build the LLM prompt
         prompt = f"""You are an adoption compatibility evaluator. Your task is to evaluate whether an adopter is compatible with a specific pet based on the adopter's form and the pet's profile.
 
     IMPORTANT: The evaluation and justification text fields MUST be written entirely in Spanish.
@@ -348,25 +375,20 @@ async def evaluate_adoption_application(
 
         # Log the prompt for debugging
         logger.info(
-            f"Sending evaluation prompt to Llama 3 8B (length: {len(prompt)} chars)"
+            f"Sending evaluation prompt to the LLM (length: {len(prompt)} chars)"
         )
 
-        # Generate response using chat_completion
+        # Generate response using the configured LLM provider
         messages = [{"role": "user", "content": prompt}]
-        result = llama_client.chat_completion(
-            messages, max_tokens=2500, temperature=0.3
-        )
-
-        # Parse the response content
-        content = result.choices[0].message.content
+        content = _call_llama(messages, max_tokens=2500, temperature=0.3)
 
         # Log the raw content for debugging
-        logger.info(f"Raw evaluation response from Llama 3 8B: {content}")
+        logger.info(f"Raw evaluation response from the LLM: {content}")
 
         # Extract JSON from response using brace depth tracking
         try:
             if content is None:
-                raise ValueError("Llama 3 8B returned None content")
+                raise ValueError("LLM returned None content")
 
             json_start = content.find("{")
 
@@ -406,7 +428,7 @@ async def evaluate_adoption_application(
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {str(e)}")
             logger.error(f"Response content: {content}")
-            raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
+            raise ValueError(f"Invalid JSON format in LLM response: {str(e)}")
 
         # Validate required fields in response
         required_fields = [

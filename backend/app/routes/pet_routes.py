@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
 
 # Database imports
 from app.database.mongo.mongo_db import get_mongo_db
@@ -195,10 +196,12 @@ async def regenerate_profile_route(
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_pets_route(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
     db=Depends(get_mongo_db),
     token_payload: dict = Depends(verify_token),
 ):
-    # Endpoint to list all pets (requires admin or adopter role)
+    # Endpoint to list pets (requires admin or adopter role)
+    # No status -> general listing (all pets); status provided -> filtered
     logger.info("GET /pets/ - List pets request")
 
     # Verify user role is admin or adopter
@@ -213,10 +216,17 @@ async def list_pets_route(
         )
 
     try:
-        # Call service to list pets
-        pets = await list_pets(db)
+        # Call service to list pets (filtered by status only when provided)
+        pets = await list_pets(db, status_filter=status_filter)
+        if not pets:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "No pets found"},
+            )
         # Return response
         return {"pets": pets, "count": len(pets)}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Unexpected error during pet listing: {str(e)}")
         raise HTTPException(

@@ -1280,6 +1280,113 @@ def test_update_my_adoption_form_no_form(client, db_session):
 Validates that users without a form receive an appropriate error response when trying to update.
 * **HTTP 400 (Bad Request):** Indicates no form exists for the user to update.
 
+### i) Functional Test: Review Application Success (Admin)
+```python
+def test_review_adoption_form_success(client, db_session):
+    # Setup admin user and token
+    # Override mock to return pending application
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 200
+    assert data["message"] == "Application reviewed successfully"
+    assert data["review_result"]["status"] == "approved"
+    assert data["review_result"]["application_id"] == "AP1"
+```
+**Purpose:** 
+Validates the Happy Path of reviewing an application by an admin.
+* **HTTP 200 (OK):** Indicates successful review.
+* **State Change:** Verifies the application's status is updated and linked pet is properly handled.
+
+### j) Negative Test: Review Already Reviewed Application
+```python
+def test_review_adoption_form_already_reviewed(client, db_session):
+    # Override mock to return an already reviewed application
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "rejected"}
+    )
+    
+    assert response.status_code == 400
+```
+**Purpose:** 
+Prevents re-reviewing applications that have already been approved or rejected.
+* **HTTP 400 (Bad Request):** Indicates invalid state transition.
+
+### k) Negative Test: Review Application Not Found
+```python
+def test_review_adoption_form_not_found(client, db_session):
+    # Override mock to return None
+    response = client.put(
+        "/adoption-forms/AP999/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 404
+```
+**Purpose:** 
+Validates that reviewing a non-existent application returns an appropriate error.
+
+### l) Negative Test: Review Application Unauthorized Role
+```python
+def test_review_adoption_form_unauthorized_role(client, db_session):
+    # Setup adopter user and token
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only users with the `admin` role can review applications.
+
+### m) Functional Test: Get All Adoption Forms Admin (Matches)
+```python
+def test_get_all_adoption_forms_admin_pet_name_match(client, db_session):
+    # Setup admin user and token
+    response = client.get(
+        "/adoption-forms/admin?pet_name=Firulais",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+```
+**Purpose:** 
+Validates that admins can list and filter all adoption forms in the system.
+
+### n) Functional Test: Get All Adoption Forms Admin (No Matches)
+```python
+def test_get_all_adoption_forms_admin_pet_name_no_match(client, db_session):
+    # Setup admin user and token
+    response = client.get(
+        "/adoption-forms/admin?pet_name=UnknownPet",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    assert data["count"] == 0
+```
+**Purpose:** 
+Validates that the admin list endpoint returns correctly when no forms match the filters.
+
+### o) Negative Test: Get All Adoption Forms Unauthorized Role
+```python
+def test_get_all_adoption_forms_admin_requires_admin_role(client, db_session):
+    # Setup adopter user and token
+    response = client.get(
+        "/adoption-forms/admin",
+        headers={"Authorization": f"Bearer {adopter_token}"}
+    )
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only users with the `admin` role can list all adoption forms in the system.
+
 ### Running Specific Tests
 To run only the adoption form tests:
 ```bash

@@ -23,6 +23,7 @@ class Application:
         ai_breakdown: Optional[List[Dict[str, Any]]] = None,
         status: str = "pending",
         created_at: Optional[datetime] = None,
+        needs_manual_review: bool = False,
     ):
         # Core identifiers
         self.application_id = application_id
@@ -41,6 +42,9 @@ class Application:
             total_max_score or main_max_score + logistics_education_max_score
         )
         self.ai_breakdown = ai_breakdown or []
+
+        # AI evaluation flag
+        self.needs_manual_review = needs_manual_review
 
         # Status and metadata
         self.status = status

@@ -41,6 +41,10 @@ class AdoptionForm:
         # Metadata
         submission_date: Optional[datetime] = None,
         last_updated: Optional[datetime] = None,
+        # Review fields
+        status: Optional[str] = None,
+        reviewed_by: Optional[int] = None,
+        reviewed_at: Optional[datetime] = None,
     ):
         # User reference (PostgreSQL User.user_id)
         self.user_id = user_id
@@ -82,3 +86,8 @@ class AdoptionForm:
         # Metadata
         self.submission_date = submission_date or datetime.now()
         self.last_updated = last_updated or datetime.now()
+
+        # Review fields
+        self.status = status or "pending"
+        self.reviewed_by = reviewed_by
+        self.reviewed_at = reviewed_at

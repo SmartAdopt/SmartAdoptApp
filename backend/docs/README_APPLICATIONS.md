@@ -1,6 +1,6 @@
 # Adoption Applications System
 
-This document describes the implementation of the adoption applications system in the SmartAdopt backend, including the cross-evaluation AI integration using Llama 3 8B.
+This document describes the implementation of the adoption applications system in the SmartAdopt backend, including the cross-evaluation AI integration using the LLM (provider-agnostic, configured via env vars).
 
 ## Overview
 
@@ -105,7 +105,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## AI Cross-Evaluation
 
-The `evaluate_adoption_application()` function in `app/services/ai_service.py` uses Llama 3 8B to evaluate 15 fields:
+The `evaluate_adoption_application()` function in `app/services/ai_service.py` uses the configured LLM to evaluate 15 fields:
 
 ### Evaluation Fields
 
@@ -228,6 +228,7 @@ class ApplicationResponse(BaseModel):
     pet_profile_id: str
     status: str
     created_at: datetime
+    needs_manual_review: bool = False
 ```
 
 ### ApplicationWithPetResponse
@@ -246,6 +247,7 @@ class ApplicationWithPetResponse(BaseModel):
     ai_justification: str
     status: str
     created_at: datetime
+    needs_manual_review: bool = False
     pet: Optional[Dict[str, Any]]
 ```
 
