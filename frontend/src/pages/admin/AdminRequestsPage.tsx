@@ -14,6 +14,10 @@ import {
   TextField,
   InputAdornment,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
@@ -24,6 +28,7 @@ import {
   PersonOutline as PersonOutlineIcon,
   ArrowBack as ArrowBackIcon,
   Download as DownloadIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
@@ -46,6 +51,7 @@ export const AdminRequestsPage = () => {
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const selectedRequest = requests.find((r) => r.id === selectedRequestId);
 
@@ -413,7 +419,7 @@ export const AdminRequestsPage = () => {
                     >
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>
-                          Adoptante Anónimo
+                          {req.adopterName || "Adoptante Anónimo"}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           para {req.pet.pet.name}
@@ -581,6 +587,20 @@ export const AdminRequestsPage = () => {
                     <Typography variant="body1" fontWeight={500} sx={{ mb: 3 }}>
                       {selectedRequest.nextStep}
                     </Typography>
+
+                    {/* AI Justification Button */}
+                    {selectedRequest.aiJustification && (
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        startIcon={<AutoAwesomeIcon />}
+                        onClick={() => setIsAiModalOpen(true)}
+                        sx={{ mt: 1, borderRadius: 2 }}
+                      >
+                        Ver Evaluación IA
+                      </Button>
+                    )}
                   </Grid>
                 </Grid>
 
@@ -669,6 +689,34 @@ export const AdminRequestsPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* AI Justification Modal */}
+      {selectedRequest && selectedRequest.aiJustification && (
+        <Dialog
+          open={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AutoAwesomeIcon color="secondary" />
+            Evaluación de Llama 3
+          </DialogTitle>
+          <DialogContent dividers>
+            <Typography
+              variant="body1"
+              sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+            >
+              {selectedRequest.aiJustification}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsAiModalOpen(false)} color="primary">
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </AdminLayout>
   );
 };

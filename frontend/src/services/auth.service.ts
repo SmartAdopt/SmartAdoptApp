@@ -60,4 +60,15 @@ export const authService = {
     }
     return new Error(defaultMessage);
   },
+
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error) {
+      console.warn(
+        "Backend logout failed, but local session will be cleared",
+        error
+      );
+    }
+  },
 };
