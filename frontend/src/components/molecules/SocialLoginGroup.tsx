@@ -30,13 +30,29 @@ export const SocialLoginGroup = () => {
 
   const handleGoogleLogin = async () => {
     // 1. Define the backend OAuth URL
-    // By default, we register OAuth users as "adopter".
-    // They can't register as admin via UI without explicit backend database insertion.
-    let url = `${API_BASE_URL}/auth/login/google?role=adopter`;
+    // Ensure the URL is absolute for Capacitor Browser
+    let baseUrl = API_BASE_URL;
+
+    // If baseUrl is relative (e.g., "/api"), it won't work on mobile
+    if (Capacitor.isNativePlatform() && baseUrl.startsWith("/")) {
+      console.warn("API_BASE_URL is relative. OAuth might fail on mobile. Ensure VITE_API_URL is set correctly during build.");
+      // Fallback to a reasonable default if possible, or keep it to show the error
+    }
+
+    let url = `${baseUrl}/auth/login/google?role=adopter`;
 
     // If we are on a native mobile platform, append &platform=mobile and use Capacitor Browser
     if (Capacitor.isNativePlatform()) {
       url += "&platform=mobile";
+
+      // Ensure the URL is absolute for the system browser/Chrome Custom Tabs
+      if (url.startsWith("/")) {
+        // This is a emergency fallback if VITE_API_URL was missing
+        // In a real production app, this should be caught by build-time env validation
+        console.error("Cannot open relative URL in native browser. Redirecting to current origin as fallback.");
+        url = window.location.origin + url;
+      }
+
       await Browser.open({ url });
     } else {
       // 2. Window features for a centered popup

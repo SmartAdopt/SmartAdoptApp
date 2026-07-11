@@ -303,16 +303,15 @@ async def google_callback(
             return RedirectResponse(url=deep_link)
 
         # Determine frontend origin dynamically for postMessage
-        env = os.environ.get("ENV", "development")
         scheme = request.headers.get("x-forwarded-proto", "http")
         host = request.headers.get(
             "x-forwarded-host", request.headers.get("host", request.url.netloc)
         )
 
-        if env in ["qa", "production"]:
-            frontend_origin = f"{scheme}://{host}"
-        else:
-            frontend_origin = "http://smartadoptlocal.programacionwebuce.net"
+        # Remove the 'api' subdomain if it exists to find the frontend root
+        # This allows it to work on smartadoptqa.net even if backend is at api.smartadoptqa.net
+        frontend_host = host.replace("api.", "")
+        frontend_origin = f"{scheme}://{frontend_host}"
 
         html_content = f"""
         <html>

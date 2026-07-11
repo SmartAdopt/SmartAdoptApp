@@ -22,8 +22,11 @@ export const useGoogleOAuthDeepLink = () => {
 
         if (url.includes("oauth-callback")) {
           // We received the OAuth callback from the backend!
-          // First, close the Chrome Custom Tab that was left open
-          await Browser.close();
+
+          // Small delay before closing to ensure the system handles the intent switch smoothly
+          setTimeout(async () => {
+            await Browser.close();
+          }, 500);
 
           // Parse the URL params
           // Fix hash router handling if needed, but URL() should parse correctly since it's a deep link
