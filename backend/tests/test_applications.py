@@ -472,5 +472,3 @@ class TestCreateApplication:
     def test_create_application_no_token(self, client):
         response = client.post("/applications/PR1")
         assert response.status_code == 401
-
-
