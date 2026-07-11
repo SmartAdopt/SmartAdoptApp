@@ -30,7 +30,7 @@ export const CommunityImpact = () => {
         <Grid item xs={12} md={4}>
           <StatCard
             titulo="Mascotas Adoptadas"
-            valor="1,245"
+            valor="+1000"
             icono={<PetsIcon sx={{ color: "primary.main" }} />}
           />
         </Grid>
@@ -46,7 +46,7 @@ export const CommunityImpact = () => {
         <Grid item xs={12} md={4}>
           <StatCard
             titulo="Usuarios Activos"
-            valor="5,321"
+            valor="+1000"
             icono={<GroupsIcon sx={{ color: "success.main" }} />}
           />
         </Grid>
