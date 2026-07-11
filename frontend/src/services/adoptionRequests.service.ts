@@ -55,7 +55,7 @@ export const adoptionRequestsService = {
 
     try {
       const response = await apiClient.get<ApplicationListResponse>(
-        "/applications/me"
+        "/adoption-forms/me"
       );
       return response.data.applications;
     } catch (error) {
@@ -79,7 +79,7 @@ export const adoptionRequestsService = {
     try {
       const myAppsResponse = await apiClient.get<{
         applications: Record<string, unknown>[];
-      }>("/applications/me");
+      }>("/adoption-forms/me");
       const myNewApp = myAppsResponse.data.applications.find(
         (app) => app.application_id === response.data.application_id
       );
