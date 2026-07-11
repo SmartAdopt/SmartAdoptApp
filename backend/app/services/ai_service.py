@@ -50,7 +50,7 @@ def _call_llama(
     last_err: Optional[Exception] = None
     for attempt in range(1, retries + 1):
         try:
-            resp = requests.post(url, headers=headers, json=payload, timeout=90)
+            resp = requests.post(url, headers=headers, json=payload, timeout=90)  # type: ignore[arg-type]
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
             # Strip markdown code fences if the model wrapped the JSON

@@ -397,7 +397,7 @@ async def get_all_forms(
         # status. We fetch all forms and narrow them by application status
         # further below so both `?status=approved` and `?status=pending`
         # return the matching applications grouped under their form.
-        query = {}
+        query: Dict[str, Any] = {}
 
         # Retrieve forms
         cursor = forms_collection.find(query)
