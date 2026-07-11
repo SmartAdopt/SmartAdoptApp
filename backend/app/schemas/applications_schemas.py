@@ -198,9 +198,7 @@ class ApplicationWithPetResponse(BaseModel):
 
 class ApplicationStatusUpdate(BaseModel):
     # Schema for updating an application's status (admin)
-    status: str = Field(
-        ..., description="New application status: approved or rejected"
-    )
+    status: str = Field(..., description="New application status: approved or rejected")
 
     @field_validator("status")
     @classmethod

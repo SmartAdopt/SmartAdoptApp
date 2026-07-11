@@ -195,7 +195,9 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
                     "main_score": app.get("main_score"),
                     "main_max_score": app.get("main_max_score"),
                     "logistics_education_score": app.get("logistics_education_score"),
-                    "logistics_education_max_score": app.get("logistics_education_max_score"),
+                    "logistics_education_max_score": app.get(
+                        "logistics_education_max_score"
+                    ),
                     "ai_breakdown": app.get("ai_breakdown"),
                     "ai_justification": app.get("ai_justification"),
                     "status": app.get("status"),
@@ -427,24 +429,30 @@ async def get_all_forms(
                     if pet_profile:
                         pet_name = (pet_profile.get("pet") or {}).get("name")
 
-                embedded_applications.append({
-                    "application_id": app.get("_id"),
-                    "pet_profile_id": pet_profile_id,
-                    "pet_name": pet_name,
-                    "total_score": app.get("total_score"),
-                    "total_max_score": app.get("total_max_score"),
-                    "main_score": app.get("main_score"),
-                    "main_max_score": app.get("main_max_score"),
-                    "logistics_education_score": app.get("logistics_education_score"),
-                    "logistics_education_max_score": app.get("logistics_education_max_score"),
-                    "ai_breakdown": app.get("ai_breakdown"),
-                    "ai_justification": app.get("ai_justification"),
-                    "status": app.get("status"),
-                    "created_at": app.get("created_at"),
-                    "needs_manual_review": app.get("needs_manual_review", False),
-                    "reviewed_by": app.get("reviewed_by"),
-                    "reviewed_at": app.get("reviewed_at"),
-                })
+                embedded_applications.append(
+                    {
+                        "application_id": app.get("_id"),
+                        "pet_profile_id": pet_profile_id,
+                        "pet_name": pet_name,
+                        "total_score": app.get("total_score"),
+                        "total_max_score": app.get("total_max_score"),
+                        "main_score": app.get("main_score"),
+                        "main_max_score": app.get("main_max_score"),
+                        "logistics_education_score": app.get(
+                            "logistics_education_score"
+                        ),
+                        "logistics_education_max_score": app.get(
+                            "logistics_education_max_score"
+                        ),
+                        "ai_breakdown": app.get("ai_breakdown"),
+                        "ai_justification": app.get("ai_justification"),
+                        "status": app.get("status"),
+                        "created_at": app.get("created_at"),
+                        "needs_manual_review": app.get("needs_manual_review", False),
+                        "reviewed_by": app.get("reviewed_by"),
+                        "reviewed_at": app.get("reviewed_at"),
+                    }
+                )
 
             # If a status filter is provided, keep only the applications
             # whose status matches exactly (case-insensitive). This mirrors
@@ -452,7 +460,8 @@ async def get_all_forms(
             if status_filter:
                 needle = status_filter.lower()
                 matching_applications = [
-                    app for app in embedded_applications
+                    app
+                    for app in embedded_applications
                     if app.get("status") and app["status"].lower() == needle
                 ]
                 # Drop the whole form if none of its applications match
@@ -465,7 +474,8 @@ async def get_all_forms(
             if pet_name_filter:
                 needle = pet_name_filter.lower()
                 matching_applications = [
-                    app for app in embedded_applications
+                    app
+                    for app in embedded_applications
                     if app.get("pet_name") and needle in app["pet_name"].lower()
                 ]
                 # Drop the whole form if none of its applications match
@@ -474,7 +484,11 @@ async def get_all_forms(
                 embedded_applications = matching_applications
 
             # Build the form response (remove Mongo _id, reviewed_by, reviewed_at, status) and embed applications
-            form_response = {k: v for k, v in form.items() if k not in ("_id", "reviewed_by", "reviewed_at", "status")}
+            form_response = {
+                k: v
+                for k, v in form.items()
+                if k not in ("_id", "reviewed_by", "reviewed_at", "status")
+            }
             form_response["applications"] = embedded_applications
             result.append(form_response)
 

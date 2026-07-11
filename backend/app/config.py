@@ -45,7 +45,9 @@ class Settings(BaseSettings):
     HF_TOKEN: str = ""  # Hugging Face API token
 
     # LLM (Llama) variables - provider agnostic (Groq, HF router, ...)
-    LLAMA_BASE_URL: str = ""  # OpenAI-compatible base URL (e.g. https://api.groq.com/openai/v1)
+    LLAMA_BASE_URL: str = (
+        ""  # OpenAI-compatible base URL (e.g. https://api.groq.com/openai/v1)
+    )
     LLAMA_MODEL: str = ""  # Model name (e.g. llama-3.1-8b-instant)
     LLAMA_API_KEY: str = ""  # API key / Bearer token for the LLM provider
     LLAMA_JSON_MODE: bool = True  # Request structured JSON output (Groq/OpenAI-style)

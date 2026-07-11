@@ -296,7 +296,11 @@ def _override_mongo_db(
 
     mock_applications = MagicMock()
     mock_applications.find_one = AsyncMock(
-        return_value=_build_app_document() if duplicate else (existing_apps[0] if existing_apps else None)
+        return_value=(
+            _build_app_document()
+            if duplicate
+            else (existing_apps[0] if existing_apps else None)
+        )
     )
     mock_applications.insert_one = AsyncMock()
     mock_applications.update_one = AsyncMock()

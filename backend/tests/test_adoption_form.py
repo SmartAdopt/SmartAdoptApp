@@ -163,19 +163,19 @@ def test_review_adoption_form_success(client):
     # Get the db mock to verify assertions
     mock_db = app.dependency_overrides[get_mongo_db]()
     app.dependency_overrides.pop(get_mongo_db, None)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Application reviewed successfully"
     assert data["application_id"] == "AP1"
     assert data["status"] == "approved"
-    
+
     # Verify that the applications collection update_one was called correctly
     apps_col = mock_db["applications"]
     assert apps_col.update_one.called
     call_args = apps_col.update_one.call_args[0]
     assert call_args[0] == {"_id": "AP1"}
-    
+
     set_obj = call_args[1]["$set"]
     assert set_obj["status"] == "approved"
     assert set_obj["reviewed_by"] == 99  # 99 is the admin_id from _admin_token()
@@ -193,9 +193,7 @@ def test_review_adoption_form_already_reviewed(client):
         "reviewed_at": datetime.now(),
     }
 
-    app.dependency_overrides[get_mongo_db] = lambda: _make_mock_db(
-        [], [app_doc], {}
-    )
+    app.dependency_overrides[get_mongo_db] = lambda: _make_mock_db([], [app_doc], {})
 
     response = client.put(
         "/adoption-forms/AP2/review",
@@ -211,9 +209,7 @@ def test_review_adoption_form_already_reviewed(client):
 
 def test_review_adoption_form_not_found(client):
     # Reviewing a non-existent application must fail
-    app.dependency_overrides[get_mongo_db] = lambda: _make_mock_db(
-        [], [], {}
-    )
+    app.dependency_overrides[get_mongo_db] = lambda: _make_mock_db([], [], {})
 
     response = client.put(
         "/adoption-forms/NOEXISTE/review",
@@ -238,6 +234,7 @@ def test_review_adoption_form_unauthorized_role(client):
     )
 
     assert response.status_code == 403
+
 
 def test_submit_adoption_form_missing_token(client):
     # Test submission without token (Negative path)
@@ -514,9 +511,11 @@ def _make_mock_db(forms, applications, pet_profile):
     forms_col.update_one = AsyncMock()
     apps_col = MagicMock()
     apps_col.find = MagicMock(return_value=_cursor(applications))
-    apps_col.find_one = AsyncMock(side_effect=lambda q: next(
-        (a for a in applications if a.get("_id") == q.get("_id")), None
-    ))
+    apps_col.find_one = AsyncMock(
+        side_effect=lambda q: next(
+            (a for a in applications if a.get("_id") == q.get("_id")), None
+        )
+    )
     apps_col.update_one = AsyncMock()
     apps_col.update_many = AsyncMock()
     profiles_col = MagicMock()

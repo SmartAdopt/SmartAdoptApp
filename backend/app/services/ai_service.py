@@ -32,7 +32,7 @@ def _call_llama(
     temperature: float = 0.3,
     retries: int = 2,
 ) -> str:
-    #OpenAI-compatible chat completion. Works with Groq, HF router, ...).
+    # OpenAI-compatible chat completion. Works with Groq, HF router, ...).
     url = f"{LLAMA_BASE_URL}/chat/completions"
     headers = {"Content-Type": "application/json"}
     if LLAMA_API_KEY:

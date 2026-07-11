@@ -236,7 +236,9 @@ async def review_adoption_form(
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to review an adoption application (admin only)
-    logger.info(f"PUT /adoption-forms/{application_id}/review - Review application request")
+    logger.info(
+        f"PUT /adoption-forms/{application_id}/review - Review application request"
+    )
 
     # Verify user role is admin
     user_role = token_payload.get("role", "").lower()
@@ -253,7 +255,9 @@ async def review_adoption_form(
         # Get admin_id from token
         admin_id = int(token_payload["sub"])
         # Call service to review the application
-        result = await review_application(db, application_id, review_data.status, admin_id)
+        result = await review_application(
+            db, application_id, review_data.status, admin_id
+        )
 
         return result
     except ValueError as e:

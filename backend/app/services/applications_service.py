@@ -210,7 +210,9 @@ async def review_application(
 ) -> Dict[str, Any]:
     # Review (approve/reject) a single application. Syncs the linked pet
     # profile status: in_process -> adopted / available.
-    logger.info(f"Reviewing application {application_id} with status: {status} by admin: {admin_id}")
+    logger.info(
+        f"Reviewing application {application_id} with status: {status} by admin: {admin_id}"
+    )
 
     try:
         applications_collection = db["applications"]
@@ -221,8 +223,12 @@ async def review_application(
 
         # Block re-review only if already properly reviewed (has reviewed_by)
         if app.get("reviewed_by") is not None and app.get("status") != "pending":
-            logger.warning(f"Application {application_id} already reviewed with status: {app.get('status')}")
-            raise ValueError(f"Application already reviewed. Current status: {app.get('status')}")
+            logger.warning(
+                f"Application {application_id} already reviewed with status: {app.get('status')}"
+            )
+            raise ValueError(
+                f"Application already reviewed. Current status: {app.get('status')}"
+            )
 
         # Check pet status before approving to prevent double-adoption
         pet_profile_id = app.get("pet_profile_id")
@@ -231,18 +237,22 @@ async def review_application(
             profiles_collection = db["pet_profiles"]
             pet = await profiles_collection.find_one({"_id": pet_profile_id})
             if pet and pet.get("status") == "adopted" and status == "approved":
-                logger.warning(f"Cannot approve application {application_id} because pet {pet_profile_id} is already adopted")
+                logger.warning(
+                    f"Cannot approve application {application_id} because pet {pet_profile_id} is already adopted"
+                )
                 raise ValueError("Cannot approve application: Pet is already adopted")
 
         # Update application
         await applications_collection.update_one(
             {"_id": application_id},
-            {"$set": {
-                "status": status,
-                "reviewed_by": admin_id,
-                "reviewed_at": datetime.now(),
-                "last_updated": datetime.now(),
-            }},
+            {
+                "$set": {
+                    "status": status,
+                    "reviewed_by": admin_id,
+                    "reviewed_at": datetime.now(),
+                    "last_updated": datetime.now(),
+                }
+            },
         )
 
         # Sync linked pet profile: approved -> adopted, rejected -> available
