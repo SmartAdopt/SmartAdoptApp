@@ -14,6 +14,13 @@ import {
   Chip,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -59,6 +66,8 @@ export const PetProfilePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [isCommitted, setIsCommitted] = useState(false);
 
   const isFavorite = id ? favoritePetIds.includes(id) : false;
 
@@ -72,10 +81,16 @@ export const PetProfilePage = () => {
     setSnackbarOpen(true);
   };
 
-  const handleRequestAdoption = async () => {
+  const handleOpenConfirmModal = () => {
     if (!id || hasRequested) return;
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmAdoption = async () => {
+    if (!id || hasRequested || !isCommitted) return;
 
     setIsSubmitting(true);
+    setConfirmModalOpen(false);
     try {
       await adoptionRequestsService.createRequest(id);
       setSnackbarMessage("¡Solicitud enviada con éxito!");
@@ -83,9 +98,7 @@ export const PetProfilePage = () => {
       refetchHasRequested();
     } catch (error) {
       setSnackbarMessage(
-        error instanceof Error
-          ? error.message
-          : "Error al enviar la solicitud.",
+        error instanceof Error ? error.message : "Error al enviar la solicitud."
       );
       setSnackbarOpen(true);
     } finally {
@@ -404,14 +417,14 @@ export const PetProfilePage = () => {
                 fullWidth
                 size="large"
                 disabled={hasRequested || isSubmitting}
-                onClick={handleRequestAdoption}
+                onClick={handleOpenConfirmModal}
                 sx={{ mb: 2, borderRadius: 2 }}
               >
                 {isSubmitting
                   ? "Enviando..."
                   : hasRequested
-                    ? "Solicitud enviada"
-                    : "Solicitar Adopción"}
+                  ? "Solicitud enviada"
+                  : "Solicitar Adopción"}
               </Button>
               <Button
                 variant="outlined"
@@ -508,6 +521,44 @@ export const PetProfilePage = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* Confirmation Modal */}
+      <Dialog
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+      >
+        <DialogTitle>Confirmar Solicitud de Adopción</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            ¿Estás seguro que deseas enviar una solicitud de adopción para{" "}
+            {petName}? Este animalito necesita un hogar amoroso y responsable.
+            Al continuar, aceptas iniciar el proceso de evaluación.
+          </DialogContentText>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isCommitted}
+                onChange={(e) => setIsCommitted(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Me comprometo a brindar un hogar seguro y amoroso"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmModalOpen(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmAdoption}
+            color="primary"
+            variant="contained"
+            disabled={!isCommitted || isSubmitting}
+          >
+            Confirmar Solicitud
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AdopterLayout>
   );
 };

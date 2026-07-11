@@ -21,6 +21,7 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Close as CloseIcon,
   Pets as PetsIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
@@ -34,8 +35,24 @@ export const AdopterRequests = () => {
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithPet | null>(
-    null,
+    null
   );
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleDownloadCertificate = async () => {
+    if (!selectedRequest) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { generateCertificate } = await import(
+        "../../utils/certificateGenerator"
+      );
+      await generateCertificate(selectedRequest, selectedRequest.pet);
+    } catch (error) {
+      console.error("Failed to generate certificate", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -52,7 +69,7 @@ export const AdopterRequests = () => {
   }, []);
 
   const pendingCount = requests.filter(
-    (r) => r.status === "under_review",
+    (r) => r.status === "under_review"
   ).length;
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const totalCount = requests.length;
@@ -299,8 +316,8 @@ export const AdopterRequests = () => {
                   {selectedRequest.status === "approved"
                     ? "Aprobada"
                     : selectedRequest.status === "rejected"
-                      ? "Rechazada"
-                      : "En Revisión"}
+                    ? "Rechazada"
+                    : "En Revisión"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   <strong>Próximo Paso:</strong> {selectedRequest.nextStep}
@@ -330,7 +347,26 @@ export const AdopterRequests = () => {
                 {selectedRequest.updateMessage}
               </Typography>
             </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
+            <DialogActions sx={{ p: 2, justifyContent: "space-between" }}>
+              {selectedRequest.status === "approved" ? (
+                <Button
+                  onClick={handleDownloadCertificate}
+                  variant="outlined"
+                  color="primary"
+                  disabled={isGeneratingPdf}
+                  startIcon={
+                    isGeneratingPdf ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <DownloadIcon />
+                    )
+                  }
+                >
+                  {isGeneratingPdf ? "Generando..." : "Descargar Certificado"}
+                </Button>
+              ) : (
+                <Box />
+              )}
               <Button
                 onClick={() => setSelectedRequest(null)}
                 variant="contained"

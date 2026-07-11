@@ -12,4 +12,5 @@ export interface AdoptionRequest {
   adopterName?: string;
   adopterEmail?: string;
   adopterPhone?: string;
+  aiJustification?: string;
 }

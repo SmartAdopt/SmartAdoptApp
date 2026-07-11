@@ -131,7 +131,11 @@ export const SwipeablePetCard = ({
           {!imageLoaded && <div className="tinder-card__image-skeleton" />}
           <img
             ref={imgRef}
-            className={`tinder-card__image ${imageLoaded ? "tinder-card__image--loaded" : "tinder-card__image--loading"}`}
+            className={`tinder-card__image ${
+              imageLoaded
+                ? "tinder-card__image--loaded"
+                : "tinder-card__image--loading"
+            }`}
             src={petImage}
             alt={petName}
             loading="eager"
@@ -191,7 +195,9 @@ export const SwipeablePetCard = ({
             Pass
           </button>
           <button
-            className={`tinder-card__btn tinder-card__btn--favorite ${isFavorite ? "tinder-card__btn--favorited" : ""}`}
+            className={`tinder-card__btn tinder-card__btn--favorite ${
+              isFavorite ? "tinder-card__btn--favorited" : ""
+            }`}
             onClick={handleFavorite}
             id="tinder-btn-favorite"
           >

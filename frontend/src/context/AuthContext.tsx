@@ -21,7 +21,7 @@ interface AuthContextType {
 // Tell Vite's Fast Refresh to ignore the non-component export warning here
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
@@ -62,12 +62,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     });
   };
 
-  const logoutUser = () => {
+  const logoutUser = async () => {
+    try {
+      const { authService } = await import("../services/auth.service");
+      await authService.logout();
+    } catch (e) {
+      console.warn(e);
+    }
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/login"; // Force redirect to clear memory
+    window.location.hash = "/login";
+    window.location.reload(); // Force redirect to clear memory
   };
 
   const value = {

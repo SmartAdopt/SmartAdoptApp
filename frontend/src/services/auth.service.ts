@@ -17,7 +17,7 @@ export const authService = {
     try {
       const response = await apiClient.post<LoginApiResponse>(
         "/auth/login",
-        credentials,
+        credentials
       );
 
       // Save both tokens in LocalStorage
@@ -32,12 +32,12 @@ export const authService = {
   },
 
   register: async (
-    userData: RegisterApiRequest,
+    userData: RegisterApiRequest
   ): Promise<RegisterApiResponse> => {
     try {
       const response = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        userData,
+        userData
       );
       return response.data;
     } catch (error) {
@@ -59,5 +59,16 @@ export const authService = {
       }
     }
     return new Error(defaultMessage);
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error) {
+      console.warn(
+        "Backend logout failed, but local session will be cleared",
+        error
+      );
+    }
   },
 };

@@ -1302,7 +1302,7 @@ This file contains 14 tests organized into 3 test classes, covering the complete
 TEST_PET_PROFILE = {
     "_id": "PR1",
     "title": "Friendly Dog",
-    "tags": ["#Adoptable", "#Friendly"],
+    "tags": ["#Peludo", "#Juguetón"],
     "emotional_description": "A very friendly dog looking for a home.",
     "status": "available",
     "creation_date": datetime.now(),

@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { Box, Divider, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // <-- Fix 1: Added useNavigate
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { SocialButton } from "../atoms/SocialButton";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/apiBaseUrl";
@@ -26,24 +28,30 @@ export const SocialLoginGroup = () => {
   // Cleanup: We removed Apple and Facebook buttons based on UI requirements.
   // We leave Google as the primary SSO method.
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     // 1. Define the backend OAuth URL
     // By default, we register OAuth users as "adopter".
     // They can't register as admin via UI without explicit backend database insertion.
-    const url = `${API_BASE_URL}/auth/login/google?role=adopter`;
+    let url = `${API_BASE_URL}/auth/login/google?role=adopter`;
 
-    // 2. Window features for a centered popup
-    const width = 500;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
+    // If we are on a native mobile platform, append &platform=mobile and use Capacitor Browser
+    if (Capacitor.isNativePlatform()) {
+      url += "&platform=mobile";
+      await Browser.open({ url });
+    } else {
+      // 2. Window features for a centered popup
+      const width = 500;
+      const height = 600;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
 
-    // 3. Open the Popup
-    window.open(
-      url,
-      "Google OAuth",
-      `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`,
-    );
+      // 3. Open the Popup
+      window.open(
+        url,
+        "Google OAuth",
+        `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+      );
+    }
   };
 
   // 4. Listen for the message from the backend callback

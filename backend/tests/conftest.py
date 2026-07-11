@@ -26,7 +26,7 @@ async def mock_describe_image_with_blip(image_url: str) -> str:
 async def mock_enrich_profile_with_llama(pet_data: dict, blip_description: str) -> dict:
     return {
         "title": "Test Pet",
-        "tags": ["#Adoptable", "#Test"],
+        "tags": ["#Juguetón", "#Test"],
         "emotional_description": "Test description",
     }
 

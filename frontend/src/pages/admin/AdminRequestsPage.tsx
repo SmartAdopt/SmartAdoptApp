@@ -14,6 +14,10 @@ import {
   TextField,
   InputAdornment,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
@@ -23,6 +27,8 @@ import {
   FilterList as FilterListIcon,
   PersonOutline as PersonOutlineIcon,
   ArrowBack as ArrowBackIcon,
+  Download as DownloadIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { adoptionRequestsService } from "../../services/adoptionRequests.service";
@@ -37,13 +43,32 @@ export const AdminRequestsPage = () => {
   const [requests, setRequests] = useState<RequestWithPet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "under_review" | "approved">(
-    "all",
+    "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
-    null,
+    null
   );
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const selectedRequest = requests.find((r) => r.id === selectedRequestId);
+
+  const handleDownloadCertificate = async () => {
+    if (!selectedRequest) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { generateCertificate } = await import(
+        "../../utils/certificateGenerator"
+      );
+      await generateCertificate(selectedRequest, selectedRequest.pet);
+    } catch (error) {
+      console.error("Failed to generate certificate", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -68,7 +93,7 @@ export const AdminRequestsPage = () => {
     try {
       await adoptionRequestsService.updateRequestStatus(
         selectedRequestId,
-        status,
+        status
       );
       await fetchRequests();
     } catch (error) {
@@ -80,7 +105,7 @@ export const AdminRequestsPage = () => {
 
   // Stats
   const pendingCount = requests.filter(
-    (r) => r.status === "under_review",
+    (r) => r.status === "under_review"
   ).length;
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const totalCount = requests.length;
@@ -98,8 +123,6 @@ export const AdminRequestsPage = () => {
 
     return true;
   });
-
-  const selectedRequest = requests.find((r) => r.id === selectedRequestId);
 
   if (isLoading) {
     return (
@@ -360,13 +383,13 @@ export const AdminRequestsPage = () => {
                 const statusLabel = isApproved
                   ? "Aprobada"
                   : isRejected
-                    ? "Rechazada"
-                    : "Pendiente";
+                  ? "Rechazada"
+                  : "Pendiente";
                 const statusColor: "success" | "error" | "primary" = isApproved
                   ? "success"
                   : isRejected
-                    ? "error"
-                    : "primary";
+                  ? "error"
+                  : "primary";
 
                 return (
                   <Card
@@ -396,7 +419,7 @@ export const AdminRequestsPage = () => {
                     >
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>
-                          Adoptante Anónimo
+                          {req.adopterName || "Adoptante Anónimo"}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           para {req.pet.pet.name}
@@ -523,7 +546,7 @@ export const AdminRequestsPage = () => {
                     </Typography>
                     <Typography variant="body1" fontWeight={500} sx={{ mb: 3 }}>
                       {new Date(
-                        selectedRequest.dateSubmitted,
+                        selectedRequest.dateSubmitted
                       ).toLocaleDateString()}
                     </Typography>
                   </Grid>
@@ -541,15 +564,15 @@ export const AdminRequestsPage = () => {
                         selectedRequest.status === "approved"
                           ? "Aprobada"
                           : selectedRequest.status === "rejected"
-                            ? "Rechazada"
-                            : "En Revisión"
+                          ? "Rechazada"
+                          : "En Revisión"
                       }
                       color={
                         selectedRequest.status === "approved"
                           ? "success"
                           : selectedRequest.status === "rejected"
-                            ? "error"
-                            : "primary"
+                          ? "error"
+                          : "primary"
                       }
                       sx={{ fontWeight: 600, borderRadius: 2, mb: 3 }}
                     />
@@ -564,6 +587,20 @@ export const AdminRequestsPage = () => {
                     <Typography variant="body1" fontWeight={500} sx={{ mb: 3 }}>
                       {selectedRequest.nextStep}
                     </Typography>
+
+                    {/* AI Justification Button */}
+                    {selectedRequest.aiJustification && (
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        startIcon={<AutoAwesomeIcon />}
+                        onClick={() => setIsAiModalOpen(true)}
+                        sx={{ mt: 1, borderRadius: 2 }}
+                      >
+                        Ver Evaluación IA
+                      </Button>
+                    )}
                   </Grid>
                 </Grid>
 
@@ -592,38 +629,94 @@ export const AdminRequestsPage = () => {
                 </Box>
 
                 <Box
-                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    justifyContent: "space-between",
+                  }}
                 >
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => handleAction("rejected")}
-                    disabled={
-                      isUpdating || selectedRequest.status !== "under_review"
-                    }
-                  >
-                    Rechazar
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleAction("approved")}
-                    disabled={
-                      isUpdating || selectedRequest.status !== "under_review"
-                    }
-                  >
-                    {isUpdating ? (
-                      <CircularProgress size={24} color="inherit" />
-                    ) : (
-                      "Aprobar Adopción"
-                    )}
-                  </Button>
+                  {selectedRequest.status === "approved" ? (
+                    <Button
+                      onClick={handleDownloadCertificate}
+                      variant="outlined"
+                      color="primary"
+                      disabled={isGeneratingPdf}
+                      startIcon={
+                        isGeneratingPdf ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <DownloadIcon />
+                        )
+                      }
+                    >
+                      {isGeneratingPdf
+                        ? "Generando..."
+                        : "Descargar Certificado"}
+                    </Button>
+                  ) : (
+                    <Box />
+                  )}
+
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleAction("rejected")}
+                      disabled={
+                        isUpdating || selectedRequest.status !== "under_review"
+                      }
+                    >
+                      Rechazar
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      onClick={() => handleAction("approved")}
+                      disabled={
+                        isUpdating || selectedRequest.status !== "under_review"
+                      }
+                    >
+                      {isUpdating ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        "Aprobar Adopción"
+                      )}
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             )}
           </Card>
         </Grid>
       </Grid>
+
+      {/* AI Justification Modal */}
+      {selectedRequest && selectedRequest.aiJustification && (
+        <Dialog
+          open={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AutoAwesomeIcon color="secondary" />
+            Evaluación de Llama 3
+          </DialogTitle>
+          <DialogContent dividers>
+            <Typography
+              variant="body1"
+              sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+            >
+              {selectedRequest.aiJustification}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsAiModalOpen(false)} color="primary">
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </AdminLayout>
   );
 };

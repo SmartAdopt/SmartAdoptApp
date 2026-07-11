@@ -39,7 +39,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );
 
 // Response Interceptor: Handle 401 and Token Refresh
@@ -87,7 +87,7 @@ apiClient.interceptors.response.use(
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
-          },
+          }
         );
 
         const newAccessToken = refreshResponse.data.access_token;
@@ -95,8 +95,9 @@ apiClient.interceptors.response.use(
         // Save the new tokens (only access_token is accessible to JS)
         localStorage.setItem("access_token", newAccessToken);
 
-        apiClient.defaults.headers.common["Authorization"] =
-          `Bearer ${newAccessToken}`;
+        apiClient.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${newAccessToken}`;
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         processQueue(null, newAccessToken);
@@ -106,8 +107,13 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // If refresh fails (e.g., refresh token expired after 7 days)
         processQueue(refreshError as Error, null);
-        localStorage.clear();
-        window.location.href = "/login";
+        localStorage.removeItem("user");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        if (window.location.hash !== "#/login") {
+          window.location.hash = "/login";
+          window.location.reload();
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -115,5 +121,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );

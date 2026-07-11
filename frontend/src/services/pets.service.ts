@@ -32,7 +32,7 @@ export const petsService = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      },
+      }
     );
 
     // Returns the public URL from the Backblaze bucket
@@ -44,11 +44,11 @@ export const petsService = {
    * Endpoint: POST /pets/register
    */
   registerPet: async (
-    payload: PetRegistrationRequest,
+    payload: PetRegistrationRequest
   ): Promise<PetRegistrationResponse> => {
     const response = await apiClient.post<PetRegistrationResponse>(
       "/pets/register",
-      payload,
+      payload
     );
     return response.data;
   },
@@ -73,11 +73,11 @@ export const petsService = {
    */
   updatePet: async (
     profileId: string,
-    data: Partial<PetUpdatePayload>,
+    data: Partial<PetUpdatePayload>
   ): Promise<PetRegistrationResponse> => {
     const response = await apiClient.put<PetRegistrationResponse>(
       `/pets/${profileId}`,
-      data,
+      data
     );
     return response.data;
   },
@@ -87,10 +87,10 @@ export const petsService = {
    * Endpoint: POST /pets/{profile_id}/regenerate
    */
   regenerateProfile: async (
-    profileId: string,
+    profileId: string
   ): Promise<PetRegistrationResponse> => {
     const response = await apiClient.post<PetRegistrationResponse>(
-      `/pets/${profileId}/regenerate`,
+      `/pets/${profileId}/regenerate`
     );
     return response.data;
   },

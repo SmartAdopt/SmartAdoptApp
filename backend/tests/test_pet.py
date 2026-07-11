@@ -67,7 +67,7 @@ def test_register_pet_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -203,7 +203,7 @@ def test_register_cat_pet_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Whiskers: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Whiskers is a special being looking for a loving home.",
             },
         ):
@@ -381,7 +381,7 @@ def test_register_pet_with_ai_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -401,7 +401,7 @@ def test_register_pet_with_ai_success(client):
     assert "profile" in data
     assert data["profile"]["id"].startswith("PR")  # Profile ID should start with PR
     assert data["profile"]["title"] == "Buddy: Your new best friend"
-    assert data["profile"]["tags"] == ["#Adoptable", "#LoyalFriend", "#ReadyForLove"]
+    assert data["profile"]["tags"] == ["#Peludo", "#Juguetón", "#AmigoPeludo"]
     # Check that emotional_description contains the expected text (not exact match)
     assert "Buddy" in data["profile"]["emotional_description"]
     assert "loving home" in data["profile"]["emotional_description"]
@@ -423,7 +423,7 @@ def test_regenerate_profile_success(client):
             "app.services.ai_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -446,7 +446,7 @@ def test_update_pet_with_ai_fields_success(client):
         "special_conditions": ["Needs daily exercise"],
         "brief_description": "Active dog looking for an active family",
         "title": "Buddy: Your active companion",
-        "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+        "tags": ["#Peludo", "#Juguetón", "#Explorador"],
         "emotional_description": "Buddy is an energetic dog looking for an active family.",
     }
 
@@ -466,7 +466,7 @@ def test_update_pet_partial_ai_fields(client):
 
     update_data = {
         "title": "Buddy: Your new title",
-        "tags": ["#Adoptable", "#NewTag"],
+        "tags": ["#Peludo", "#Juguetón"],
         "emotional_description": "New emotional description.",
     }
 

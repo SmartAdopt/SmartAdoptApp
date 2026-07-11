@@ -21,18 +21,18 @@ export const adoptionFormService = {
    * POST /adoption-forms/submit
    */
   submitForm: async (
-    data: BackendAdoptionFormRequest,
+    data: BackendAdoptionFormRequest
   ): Promise<AdoptionFormSubmitResponse> => {
     try {
       const response = await apiClient.post<AdoptionFormSubmitResponse>(
         "/adoption-forms/submit",
-        data,
+        data
       );
       return response.data;
     } catch (error) {
       throw adoptionFormService.handleApiError(
         error,
-        "Error al enviar el formulario de adopción",
+        "Error al enviar el formulario de adopción"
       );
     }
   },
@@ -44,8 +44,9 @@ export const adoptionFormService = {
    */
   getMyForm: async (): Promise<AdoptionFormGetResponse | null> => {
     try {
-      const response =
-        await apiClient.get<AdoptionFormGetResponse>("/adoption-forms/me");
+      const response = await apiClient.get<AdoptionFormGetResponse>(
+        "/adoption-forms/me"
+      );
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -53,7 +54,7 @@ export const adoptionFormService = {
       }
       throw adoptionFormService.handleApiError(
         error,
-        "Error al obtener el formulario de adopción",
+        "Error al obtener el formulario de adopción"
       );
     }
   },
@@ -63,18 +64,18 @@ export const adoptionFormService = {
    * PUT /adoption-forms/me
    */
   updateMyForm: async (
-    data: BackendAdoptionFormUpdateRequest,
+    data: BackendAdoptionFormUpdateRequest
   ): Promise<AdoptionFormUpdateResponse> => {
     try {
       const response = await apiClient.put<AdoptionFormUpdateResponse>(
         "/adoption-forms/me",
-        data,
+        data
       );
       return response.data;
     } catch (error) {
       throw adoptionFormService.handleApiError(
         error,
-        "Error al actualizar el formulario de adopción",
+        "Error al actualizar el formulario de adopción"
       );
     }
   },

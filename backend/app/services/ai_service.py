@@ -104,37 +104,27 @@ async def enrich_profile_with_llama(
             Vaccines: {', '.join(pet_data.get('vaccines_up_to_date', []))}
             Special Conditions: {', '.join(pet_data.get('special_conditions', []))if pet_data.get('special_conditions') else 'None'}
 
+            IMPORTANT: All generated content (title, tags, emotional_description) MUST be written entirely in Spanish.
+
             CRITICAL: The IMAGE DESCRIPTION and BRIEF DESCRIPTION are your PRIMARY sources for creating variety and uniqueness. Use specific details from both descriptions (colors, expressions, setting, actions, mood, personality traits) to make each profile completely different from others. Even pets with similar basic data should have vastly different profiles based on their unique descriptions.
 
-            IMPORTANT: Create a COHERENT profile that GENERALIZES characteristics from the basic data and descriptions. DO NOT include specific basic data (exact age, weight, sterilization status, vaccines) in title or tags - those details will be in a separate "more info" section. Instead, focus on personality, appearance, and emotional traits that make this pet special.
-
-            CRITICAL FOR EMOTIONAL DESCRIPTION: AVOID mentioning data that can change over time such as:
-            - Specific age (e.g., "2 years old", "young puppy")
-            - Specific weight (e.g., "5 kg", "small dog")
-            - Sterilization status (e.g., "already neutered", "spayed")
-            - Medical status (e.g., "up to date on vaccines", "dewormed")
-            
-            INSTEAD, focus on PERMANENT characteristics and preferences:
-            - Environment preferences (loves being indoors, enjoys garden walks, prefers cozy home, outdoor explorer)
-            - Personality traits (gentle, playful, calm, energetic, affectionate, independent)
-            - Behavioral patterns (enjoys cuddling, likes to explore, prefers quiet spaces, active companion)
-            - Physical traits from image (fluffy, spotted, golden, expressive eyes, elegant appearance)
-            - Emotional connection needs (loves attention, independent spirit, loyal companion)
+            IMPORTANT: DO NOT include specific basic data (exact age, weight, sterilization status, vaccines) in title, tags, or emotional description - those details will be in a separate "more info" section. Instead, focus on permanent traits: personality, appearance, environment preferences, and behavioral patterns that make this pet special.
 
             Create a unique profile with:
 
-            1. TITLE: MUST include the pet's name followed by a generalized description of their essence based on IMAGE DETAILS, BRIEF DESCRIPTION, and characteristics. Be creative and vary the style each time. Examples: "Buddy: The Young Adventure Companion", "Luna: Your Gentle Cuddle Expert", "Max: The Playful Guardian Ready for Love", "Bella: The Elegant Senior Lady", "Rocky: The Brave Explorer", "Daisy: The Sunshine Sweetheart"
+            1. TITLE: MUST include the pet's name followed by a generalized description of their essence based on IMAGE DETAILS, BRIEF DESCRIPTION, and characteristics. Be creative and vary the style each time. Examples: "Buddy: El Joven Compañero de Aventuras", "Luna: Tu Suave Experta en Mimos", "Max: El Guardián Juguetón Listo para Amar", "Bella: La Elegante Dama", "Rocky: El Valiente Explorador", "Daisy: La Dulce Rayo de Sol"
 
-            2. TAGS: 4-6 intelligent hashtags that GENERALIZE characteristics from IMAGE, BRIEF DESCRIPTION, and basic data:
-            - Extract specific traits from image and brief descriptions (#Fluffy, #Spotted, #Golden, #ExpressiveEyes)
-            - Generalize energy level from descriptions (#EnergeticSpirit, #CalmCompanion, #Playful, #GentleSoul)
-            - Generalize size/appearance from image (#SmallAndSweet, #FluffyFriend, #Elegant, #Majestic)
-            - Personality traits from brief description (#Playful, #GentleSoul, #Adventurous, #LoyalCompanion)
-            - Environment preferences from image (#IndoorLover, #OutdoorExplorer, #GardenFan, #HomeBody)
-            - Always include: #Adoptable #ReadyForHome
+            2. TAGS: 4-6 intelligent hashtags that GENERALIZE characteristics from IMAGE, BRIEF DESCRIPTION, and basic data. All tags MUST be in Spanish:
+            - Extract specific traits from image and brief descriptions (#Peludo, #Manchado, #Dorado, #OjosExpresivos)
+            - Generalize energy level from descriptions (#EspírituEnergético, #CompañeroTranquilo, #Juguetón, #AlmaGentil)
+            - Generalize size/appearance from image (#PequeñoYDulce, #AmigoPeludo, #Elegante, #Majestuoso)
+            - Personality traits from brief description (#Juguetón, #AlmaGentil, #Aventurero, #CompañeroFiel)
+            - Environment preferences from image (#AmanteDelHogar, #Explorador, #FanDelJardín, #Casero)
+
+            - CRITICAL: Do NOT use any English words in tags. ALL tags MUST be 100% Spanish.
             Make tags reflect the pet's personality and appearance, not their medical status.
 
-            3. EMOTIONAL DESCRIPTION: A heartfelt, unique description (80-120 words) that:
+            3. EMOTIONAL DESCRIPTION: A heartfelt, unique description in Spanish (80-120 words) that:
             - Uses the pet's name naturally
             - Heavily incorporates SPECIFIC details from both image and brief descriptions (colors, expressions, setting, actions, personality traits)
             - Describes their personality and appearance based on descriptions and characteristics
@@ -145,16 +135,10 @@ async def enrich_profile_with_llama(
             - FOCUS on permanent traits: environment preferences (indoor/outdoor), personality, behavioral patterns, physical appearance
             - IMPORTANT: If the image shows indoor/home-related elements (furniture, carpets, windows, living room, bedroom, etc.), describe that they enjoy spending time at home and are comfortable indoors. If the image shows outdoor elements (grass, trees, parks, streets, nature, etc.), describe that they enjoy spending time outdoors and love exploring outside.
 
-            REMEMBER: Be critical. NOT all fields should be 1. Score 0 wherever there's a genuine concern. A realistic evaluation has a mix of 1s and 0s.
-
-            IMPORTANT: The breakdown array MUST contain ALL 15 fields listed above (fields 1 through 15). Do not skip any field. Every single field must appear in the breakdown.
-
-            IMPORTANT: Calculate total_score by SUMMING all 15 field points. Calculate main_score by summing only fields 1-11. Calculate logistics_education_score by summing only fields 12-15.
-
-            You MUST respond ONLY with a JSON object with the following structure:
+            You MUST respond ONLY with a JSON object with the following structure. ALL string values MUST be in Spanish:
             {{
                 "title": "a catchy title for the profile",
-                "tags": ["#tag1", "#tag2", "#tag3", "#tag4"],
+                "tags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4"],
                 "emotional_description": "a heartfelt description"
             }}
         """
@@ -183,8 +167,21 @@ async def enrich_profile_with_llama(
             if json_start != -1 and json_end != -1:
                 json_str = content[json_start:json_end]
                 enriched_data = json.loads(json_str)
+                # Force-remove unwanted English tags
+                if "tags" in enriched_data and isinstance(enriched_data["tags"], list):
+                    enriched_data["tags"] = [
+                        t
+                        for t in enriched_data["tags"]
+                        if t.strip().lower()
+                        not in {
+                            "#adoptable",
+                            "#readyforhome",
+                            "#readyforlove",
+                            "#readytolove",
+                        }
+                    ]
             else:
-                raise ValueError("No se encontró un bloque JSON en la respuesta")
+                raise ValueError("No JSON block was found in the response")
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {str(e)}")
             logger.error(f"Response content: {content}")
@@ -192,9 +189,6 @@ async def enrich_profile_with_llama(
 
         logger.info("Llama 3 8B enrichment completed successfully")
         return enriched_data
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON response: {str(e)}")
-        raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
     except Exception as e:
         logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
         raise Exception("Failed to enrich profile")
@@ -255,6 +249,8 @@ async def evaluate_adoption_application(
 
         # Create prompt for Llama 3 8B
         prompt = f"""You are an adoption compatibility evaluator. Your task is to evaluate whether an adopter is compatible with a specific pet based on the adopter's form and the pet's profile.
+
+    IMPORTANT: The evaluation and justification text fields MUST be written entirely in Spanish.
 
     ADOPTER FORM DATA:
     - Neighborhood: {form_data.get('neighborhood')}
@@ -318,6 +314,10 @@ async def evaluate_adoption_application(
     14. behavior_approach: Score 0 if the adopter's approach is unlikely to work well with this pet's likely behavioral traits.
     15. emergency_plan: Score 0 if the emergency plan is unrealistic or doesn't consider this pet's specific needs.
 
+    IMPORTANT: Do NOT include any numeric scores, fractions (e.g. "4/15"), or quantitative ratings in the justification text. The scores are displayed separately.
+
+    IMPORTANT FOR EVALUATION FIELD: When points=1 (compatible), the evaluation text MUST be exactly "Compatible". Only write a brief explanation in Spanish when points=0 (not compatible), describing why it's incompatible.
+
     You MUST respond ONLY with a JSON object with the following structure:
     {{
     "total_score": integer (sum of ALL compatible fields, 0-15),
@@ -327,8 +327,8 @@ async def evaluate_adoption_application(
     "logistics_education_score": integer (sum of compatible logistics fields from section IV, 0-4),
     "logistics_education_max_score": 4,
     "breakdown": [
-        {{"section": "I. Candidate Information", "field": "employment_status", "label": "Employment Status", "answer": "{_safe(form_data.get('employment_status'))}", "evaluation": "Brief explanation of why this is or is not compatible with the pet", "points": 0 or 1, "max_points": 1}},
-        {{"section": "I. Candidate Information", "field": "housing_type", "label": "Housing Type", "answer": "{_safe(form_data.get('housing_type'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
+        {{"section": "I. Candidate Information", "field": "employment_status", "label": "Employment Status", "answer": "{_safe(form_data.get('employment_status'))}","evaluation": "Compatible", "points": 1, "max_points": 1}},
+        {{"section": "I. Candidate Information", "field": "housing_type", "label": "Housing Type", "answer": "{_safe(form_data.get('housing_type'))}", "evaluation": "Compatible", "points": 1, "max_points": 1}},
         {{"section": "I. Candidate Information", "field": "has_natural_space", "label": "Has Natural Space", "answer": "{'Yes' if form_data.get('has_natural_space') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
         {{"section": "II. Coexistence and Experience", "field": "has_pets", "label": "Has Pets", "answer": "{'Yes' if form_data.get('has_pets') else 'No'}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
         {{"section": "II. Coexistence and Experience", "field": "household_energy", "label": "Household Energy", "answer": "{_safe(form_data.get('household_energy'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
@@ -343,8 +343,7 @@ async def evaluate_adoption_application(
         {{"section": "IV. Logistics and Education", "field": "behavior_approach", "label": "Behavior Approach", "answer": "{_safe(form_data.get('behavior_approach'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}},
         {{"section": "IV. Logistics and Education", "field": "emergency_plan", "label": "Emergency Plan", "answer": "{_safe(form_data.get('emergency_plan'))}", "evaluation": "...", "points": 0 or 1, "max_points": 1}}
     ],
-    "justification": "A detailed justification explaining the overall compatibility evaluation, highlighting key matches and concerns"
-    }}
+    "justification": "A detailed justification written in Spanish explaining the overall compatibility evaluation, highlighting the key matches and concerns found in the analysis".
     """
 
         # Log the prompt for debugging
@@ -488,9 +487,6 @@ async def evaluate_adoption_application(
 
         logger.info("Adoption application evaluation completed successfully")
         return evaluation_data
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON response: {str(e)}")
-        raise ValueError(f"Invalid JSON format in Llama 3 8B response: {str(e)}")
     except Exception as e:
         logger.error(f"Failed to evaluate adoption application: {str(e)}")
         raise Exception("Failed to evaluate adoption application")

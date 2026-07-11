@@ -30,6 +30,7 @@ function createWindow() {
     win = new BrowserWindow({
         width: 1024,
         height: 768,
+        icon: path.join(APP_ROOT, 'src', 'assets', 'icon-only.png'),
         webPreferences: {
             preload: path.join(APP_ROOT, 'dist-electron', 'preload.cjs'),
             contextIsolation: true,
