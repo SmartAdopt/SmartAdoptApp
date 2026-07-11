@@ -40,7 +40,7 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - **Authentication:** Bcrypt (password hashing) + JWT
 - **Validation:** Pydantic
 - **Cloud Storage:** Backblaze B2 (image upload)
-- **AI Integration:** BLIP + Llama 3 8B (eager loading at startup)
+- **AI Integration:** BLIP (local Transformers) + LLM provider-agnostic via OpenAI-compatible API (Groq / HF router)
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -89,7 +89,7 @@ SmartAdoptApp/
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
-│   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── ai_service.py           # AI service (BLIP + provider-agnostic LLM)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
 │   │   │   ├── applications_service.py # Adoption application service (MongoDB)
 │   │   │   ├── favorite_service.py    # Favorite service
@@ -107,7 +107,7 @@ SmartAdoptApp/
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
+│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + LLM provider-agnostic)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py              # Test configuration
 │   │   ├── test_auth.py             # Authentication tests
@@ -429,6 +429,12 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
+# ─── LLM (Llama) - provider agnostic (Groq / HF router) ─
+LLAMA_BASE_URL=https://api.groq.com/openai/v1
+LLAMA_MODEL=llama-3.1-8b-instant
+LLAMA_API_KEY=your_groq_api_key
+LLAMA_JSON_MODE=true
+
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
@@ -488,6 +494,12 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
+# ─── LLM (Llama) - provider agnostic (Groq / HF router) ─
+LLAMA_BASE_URL=https://api.groq.com/openai/v1
+LLAMA_MODEL=llama-3.1-8b-instant
+LLAMA_API_KEY=your_groq_api_key
+LLAMA_JSON_MODE=true
+
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
@@ -505,7 +517,7 @@ VITE_API_URL=http://localhost:8000
 
 ## GitHub Secrets (required)
 
-These secrets must be configured in the GitHub repository settings (Actions secrets). **8 secrets total**:
+These secrets must be configured in the GitHub repository settings (Actions secrets). **16 secrets total**:
 
 | Secret name | Used by | Purpose |
 |---|---|---|
@@ -517,6 +529,14 @@ These secrets must be configured in the GitHub repository settings (Actions secr
 | `PROD_EC2_HOST` | Production | Production EC2 public IP / hostname |
 | `PROD_EC2_USER` | Production | SSH user for production instance |
 | `PROD_EC2_SSH_KEY` | Production | Private SSH key for production instance |
+| `QA_LLAMA_BASE_URL` | QA | Groq / OpenAI-compatible endpoint URL |
+| `QA_LLAMA_MODEL` | QA | LLM model name (e.g. `llama-3.1-8b-instant`) |
+| `QA_LLAMA_JSON_MODE` | QA | `true` if provider supports `response_format` |
+| `QA_GROQ_API_KEY` | QA | Groq API key (or Bearer token for the LLM provider) |
+| `PROD_LLAMA_BASE_URL` | Production | Groq / OpenAI-compatible endpoint URL |
+| `PROD_LLAMA_MODEL` | Production | LLM model name |
+| `PROD_LLAMA_JSON_MODE` | Production | `true` if provider supports `response_format` |
+| `PROD_GROQ_API_KEY` | Production | Groq API key (or Bearer token) |
 
 ## EC2 setup (QA/Production)
 

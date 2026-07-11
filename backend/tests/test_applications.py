@@ -270,6 +270,7 @@ def _build_app_document(application_id="AP1", pet_profile_id="PR1", user_id=1):
         "ai_justification": MOCK_AI_RESULT["justification"],
         "status": "pending",
         "created_at": datetime.now(),
+        "needs_manual_review": False,
     }
 
 
@@ -282,6 +283,7 @@ def _override_mongo_db(
 ):
     mock_forms = MagicMock()
     mock_forms.find_one = AsyncMock(return_value=TEST_FORM if form_exists else None)
+    mock_forms.update_one = AsyncMock()
 
     mock_profiles = MagicMock()
     if pet_exists:
@@ -294,9 +296,14 @@ def _override_mongo_db(
 
     mock_applications = MagicMock()
     mock_applications.find_one = AsyncMock(
-        return_value=_build_app_document() if duplicate else None
+        return_value=(
+            _build_app_document()
+            if duplicate
+            else (existing_apps[0] if existing_apps else None)
+        )
     )
     mock_applications.insert_one = AsyncMock()
+    mock_applications.update_one = AsyncMock()
 
     app_list = existing_apps if existing_apps is not None else []
     mock_cursor = AsyncMock()
@@ -352,6 +359,28 @@ class TestCreateApplication:
         assert data["pet_profile_id"] == "PR1"
         assert data["status"] == "pending"
         assert "created_at" in data
+        assert data["needs_manual_review"] is False
+
+    def test_create_application_ai_failure(self, client, db_session):
+        user = _create_adopter_user(db_session)
+        token = _create_adopter_token(user.user_id)
+        _override_mongo_db()
+
+        with patch(
+            "app.services.applications_service.evaluate_adoption_application",
+            new_callable=AsyncMock,
+        ) as mock_ai:
+            mock_ai.side_effect = Exception("AI service unavailable")
+            response = client.post(
+                "/applications/PR1",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+
+        _clear_mongo_override()
+        assert response.status_code == 201
+        data = response.json()
+        assert data["message"] == "Adoption application created successfully"
+        assert data["needs_manual_review"] is True
 
     def test_create_application_no_form(self, client, db_session):
         user = _create_adopter_user(db_session)
@@ -442,77 +471,4 @@ class TestCreateApplication:
 
     def test_create_application_no_token(self, client):
         response = client.post("/applications/PR1")
-        assert response.status_code == 401
-
-
-class TestListApplications:
-
-    def test_list_applications_success(self, client, db_session):
-        user = _create_adopter_user(db_session)
-        token = _create_adopter_token(user.user_id)
-        app_doc = _build_app_document(user_id=user.user_id)
-        _override_mongo_db(existing_apps=[app_doc])
-
-        response = client.get(
-            "/applications/me",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-        _clear_mongo_override()
-        assert response.status_code == 200
-        data = response.json()
-        assert data["count"] == 1
-        assert len(data["applications"]) == 1
-        app = data["applications"][0]
-        assert app["application_id"] == "AP1"
-        assert app["pet_profile_id"] == "PR1"
-        assert app["total_score"] == MOCK_AI_RESULT["total_score"]
-        assert app["total_max_score"] == MOCK_AI_RESULT["total_max_score"]
-        assert app["main_score"] == MOCK_AI_RESULT["main_score"]
-        assert app["main_max_score"] == MOCK_AI_RESULT["main_max_score"]
-        assert (
-            app["logistics_education_score"]
-            == MOCK_AI_RESULT["logistics_education_score"]
-        )
-        assert (
-            app["logistics_education_max_score"]
-            == MOCK_AI_RESULT["logistics_education_max_score"]
-        )
-        assert len(app["ai_breakdown"]) == 15
-        assert app["ai_justification"] == MOCK_AI_RESULT["justification"]
-        assert app["status"] == "pending"
-        assert "created_at" in app
-        assert app["pet"] is not None
-        assert app["pet"]["profile_id"] == "PR1"
-        assert app["pet"]["title"] == "Friendly Dog"
-
-    def test_list_applications_empty(self, client, db_session):
-        user = _create_adopter_user(db_session)
-        token = _create_adopter_token(user.user_id)
-        _override_mongo_db(existing_apps=[])
-
-        response = client.get(
-            "/applications/me",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-        _clear_mongo_override()
-        assert response.status_code == 200
-        data = response.json()
-        assert data["count"] == 0
-        assert data["applications"] == []
-
-    def test_list_applications_unauthorized_role(self, client, db_session):
-        token = _create_admin_token()
-
-        response = client.get(
-            "/applications/me",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-        assert response.status_code == 403
-        assert "Access denied" in response.json()["detail"]["message"]
-
-    def test_list_applications_no_token(self, client):
-        response = client.get("/applications/me")
         assert response.status_code == 401

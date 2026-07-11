@@ -1,7 +1,7 @@
 # Pet service
 
 # Schema imports
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 # Backblaze service import
 from app.services.backblaze_service import get_image_url
@@ -80,21 +80,25 @@ async def register_pet(db, pet_data: Dict[str, Any]) -> Dict[str, Any]:
         logger.error(f"Failed to generate profile ID: {str(e)}")
         raise ValueError("Failed to generate profile ID")
 
-    # Call BLIP to describe image
+    # Call BLIP to describe image (non-fatal: continue without description on failure)
     try:
         blip_description = await describe_image_with_blip(image_url)
         logger.info(f"BLIP description obtained: {blip_description}")
     except Exception as e:
-        logger.error(f"Failed to get BLIP description: {str(e)}")
-        raise ValueError("Failed to generate image description")
+        logger.error(f"BLIP failed, continuing without image description: {str(e)}")
+        blip_description = ""
 
-    # Call Llama 3 8B to enrich profile
+    # Call the LLM to enrich profile (non-fatal: register with base profile on failure)
     try:
         enriched_data = await enrich_profile_with_llama(pet_data, blip_description)
-        logger.info("Llama 3 8B enrichment completed")
+        logger.info("LLM enrichment completed")
     except Exception as e:
-        logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
-        raise ValueError("Failed to enrich profile")
+        logger.error(f"LLM enrichment failed, using base profile: {str(e)}")
+        enriched_data = {
+            "title": pet_data["name"],
+            "tags": [],
+            "emotional_description": pet_data.get("brief_description", ""),
+        }
 
     # Create Pet model instance
     pet_model = Pet(
@@ -167,7 +171,7 @@ async def register_pet(db, pet_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def regenerate_profile(db, profile_id: str) -> Dict[str, Any]:
-    # Regenerate profile with AI (BLIP + Llama 3 8B)
+    # Regenerate AI content (BLIP caption + LLM enrichment)
     logger.info(f"Profile regeneration attempt for ID: {profile_id}")
 
     try:
@@ -196,12 +200,12 @@ async def regenerate_profile(db, profile_id: str) -> Dict[str, Any]:
             logger.error(f"Failed to get BLIP description: {str(e)}")
             raise ValueError("Failed to generate image description")
 
-        # Call Llama 3 8B to enrich profile
+        # Call the LLM to enrich profile
         try:
             enriched_data = await enrich_profile_with_llama(pet_data, blip_description)
-            logger.info("Llama 3 8B enrichment completed")
+            logger.info("LLM enrichment completed")
         except Exception as e:
-            logger.error(f"Failed to enrich profile with Llama 3 8B: {str(e)}")
+            logger.error(f"Failed to enrich profile with the LLM: {str(e)}")
             raise ValueError("Failed to enrich profile")
 
         # Update profile in MongoDB
@@ -332,15 +336,20 @@ async def update_pet(db, profile_id: str, pet_data: Dict[str, Any]) -> Dict[str,
     }
 
 
-async def list_pets(db) -> List[Dict[str, Any]]:
-    # List all profiles
-    logger.info("Listing all profiles")
+async def list_pets(db, status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    # List all profiles, optionally filtered by status
+    logger.info(f"Listing all profiles with status filter: {status_filter}")
 
     try:
         profiles_collection = db["pet_profiles"]
 
-        # Query all profiles from MongoDB
-        cursor = profiles_collection.find()
+        # Build query based on status filter
+        query = {}
+        if status_filter:
+            query["status"] = status_filter
+
+        # Query profiles from MongoDB
+        cursor = profiles_collection.find(query)
         profiles = []
         async for profile in cursor:
             # Convert MongoDB _id to string and remove it from response

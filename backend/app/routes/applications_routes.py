@@ -10,17 +10,10 @@ from app.database.mongo.mongo_db import get_mongo_db
 from app.utils.jwt.jwt_utils import verify_token
 
 # Schema imports
-from app.schemas.applications_schemas import (
-    ApplicationResponse,
-    ApplicationListResponse,
-    ApplicationWithPetResponse,
-)
+from app.schemas.applications_schemas import ApplicationResponse
 
 # Service imports
-from app.services.applications_service import (
-    create_application,
-    list_applications,
-)
+from app.services.applications_service import create_application
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -67,6 +60,7 @@ async def create_application_route(
             pet_profile_id=application["pet_profile_id"],
             status=application["status"],
             created_at=application["created_at"],
+            needs_manual_review=application.get("needs_manual_review", False),
         )
     except ValueError as e:
         logger.warning(f"Application creation failed: {str(e)}")
@@ -88,70 +82,6 @@ async def create_application_route(
         )
     except Exception as e:
         logger.error(f"Unexpected error during application creation: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "Internal server error"},
-        )
-
-
-@router.get(
-    "/me",
-    status_code=status.HTTP_200_OK,
-    summary="List My Applications",
-    description="List all adoption applications for the authenticated adopter with pet data",
-)
-async def list_my_applications_route(
-    token_payload: dict = Depends(verify_token),
-    mongo_db=Depends(get_mongo_db),
-):
-    # Endpoint to list the authenticated user's adoption applications
-    logger.info("GET /applications/me - List applications request")
-
-    # Verify user role is adopter
-    user_role = token_payload.get("role", "").lower()
-    if user_role != "adopter":
-        logger.warning(
-            f"Application listing denied for user: {token_payload.get('sub')} - role: {user_role}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"message": "Access denied. Adopter role required"},
-        )
-
-    try:
-        # Get user_id from token
-        user_id = int(token_payload["sub"])
-
-        # Call service to list applications with pet data
-        applications = await list_applications(mongo_db, user_id)
-
-        # Build response list
-        app_responses = []
-        for app in applications:
-            app_responses.append(
-                ApplicationWithPetResponse(
-                    application_id=app["application_id"],
-                    pet_profile_id=app["pet_profile_id"],
-                    total_score=app["total_score"],
-                    total_max_score=app["total_max_score"],
-                    main_score=app["main_score"],
-                    main_max_score=app["main_max_score"],
-                    logistics_education_score=app["logistics_education_score"],
-                    logistics_education_max_score=app["logistics_education_max_score"],
-                    ai_breakdown=app.get("ai_breakdown", []),
-                    ai_justification=app["ai_justification"],
-                    status=app["status"],
-                    created_at=app["created_at"],
-                    pet=app.get("pet"),
-                )
-            )
-
-        return ApplicationListResponse(
-            applications=app_responses,
-            count=len(app_responses),
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error during application listing: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "Internal server error"},

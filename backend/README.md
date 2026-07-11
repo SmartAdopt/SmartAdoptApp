@@ -63,7 +63,7 @@ backend/                 # FastAPI backend application
 │   │   │   ├── auth_service.py        # Authentication services
 │   │   │   ├── backblaze_service.py   # Backblaze B2 service
 │   │   │   ├── pet_service.py          # Pet management service
-│   │   │   ├── ai_service.py           # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── ai_service.py           # AI service (BLIP + LLM)
 │   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
 │   │   │   ├── applications_service.py # Adoption application service (MongoDB)
 │   │   │   ├── favorite_service.py    # Favorite service
@@ -81,7 +81,7 @@ backend/                 # FastAPI backend application
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
+│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + LLM)
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py              # Test configuration
 │   │   ├── test_auth.py             # Authentication tests
@@ -91,7 +91,10 @@ backend/                 # FastAPI backend application
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py              # Pet management tests
 │   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   ├── test_ai.py               # AI service tests (BLIP + LLM)
+│   │   ├── test_applications.py     # Adoption application tests
 │   │   ├── test_favorite_routes.py  # Favorite tests
+│   │   ├── test_google_oauth_utils.py # Google OAuth utility tests
 │   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
@@ -112,8 +115,8 @@ backend/                 # FastAPI backend application
 - **Redis** - Token storage and management
 - **b2sdk** - Backblaze B2 cloud storage integration
 - **requests** - HTTP library for external API calls
-- **huggingface-hub** - Hugging Face Hub client for Llama 3 8B
-- **transformers** - NLP library for BLIP and Llama 3 8B
+- **huggingface-hub** - Hugging Face Hub client for model downloads (BLIP)
+- **transformers** - NLP library for BLIP image captioning
 - **PIL (pillow)** - Image processing library
 - **itsdangerous** - Secure data signing for cookies
 - **loguru** - Structured logging library
@@ -217,6 +220,23 @@ python -m mypy backend/ --ignore-missing-imports
 
 ## Running Tests
 
+The project includes **12 test files** covering authentication, routes, services, and AI integration:
+
+| File | Coverage |
+|---|---|
+| `test_auth.py` | Authentication & registration |
+| `test_google_oauth.py` | Google OAuth login flow |
+| `test_google_oauth_utils.py` | Token decoding & verification utilities |
+| `test_admin_routes.py` | Admin CRUD endpoints |
+| `test_adopter_routes.py` | Adopter user management |
+| `test_adoption_form.py` | Adoption form submission & review |
+| `test_applications.py` | Adoption application lifecycle |
+| `test_pet.py` | Pet CRUD + AI enrichment |
+| `test_favorite_routes.py` | Favorite pets management |
+| `test_backblaze_routes.py` | Backblaze B2 media upload |
+| `test_ai.py` | AI service unit tests (BLIP caption, LLM call) |
+| `test_main.py` | Root health-check endpoint |
+
 ### Run All Tests
 ```bash
 # Run all backend tests
@@ -224,6 +244,12 @@ python -m pytest backend/tests/ -v
 
 # Run with coverage report
 python -m pytest backend/ --cov=backend --cov-report=term-missing
+
+# Run a specific test file
+python -m pytest backend/tests/test_applications.py -v
+
+# Run tests matching a keyword
+python -m pytest backend/tests/ -k "pet" -v
 ```
 
 
@@ -758,6 +784,92 @@ Updates the adoption form for the authenticated user. All fields are optional in
 
 ---
 
+## Admin Adoption Form Endpoints
+
+### List All Forms (Admin)
+
+**GET** `/adoption-forms/admin`
+
+Lists all adoption forms with their embedded applications. Supports filtering by pet name and application status.
+
+**Authorization:** `Admin` role required
+
+**Query Parameters**
+- `pet_name` (optional): Filter forms containing applications for a pet whose name matches (case-insensitive partial match)
+- `status` (optional): Filter applications within forms by status (`approved`, `rejected`, `pending`). Forms with no matching applications after filtering are excluded. Multiple statuses can be combined (e.g., `?status=approved&status=pending`).
+
+**Response (200 OK)**
+```json
+{
+  "forms": [
+    {
+      "_id": "AF1",
+      "user_id": 3,
+      "neighborhood": "Centro",
+      "address": "Calle 123",
+      "status": "approved",
+      "reviewed_by": 1,
+      "reviewed_at": "2026-07-10T12:00:00",
+      "applications": [
+        {
+          "application_id": "AP1",
+          "pet_profile_id": "PR3",
+          "pet_name": "Pepe",
+          "total_score": 12,
+          "main_score": 9,
+          "logistics_education_score": 3,
+          "ai_justification": "El adoptante demuestra...",
+          "needs_manual_review": false,
+          "status": "approved",
+          "created_at": "2026-07-10T10:00:00"
+        }
+      ]
+    }
+  ],
+  "applications_count": 1
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not `admin`
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Review Application (Admin)
+
+**PUT** `/adoption-forms/{application_id}/review`
+
+Reviews an adoption application, approving or rejecting it. An application can only be reviewed once (subsequent attempts return 400). Approving an application will also update the associated pet profile's status to `adopted`, while rejecting it will revert the pet's status to `available` if necessary.
+
+**Authorization:** `Admin` role required
+
+**Request Body**
+```json
+{
+  "status": "approved"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Application reviewed successfully",
+  "review_result": {
+    "application_id": "AP1",
+    "status": "approved"
+  }
+}
+```
+
+**Error Responses**
+- `400 Bad Request`: Application is not pending (already reviewed) or invalid state transition
+- `404 Not Found`: Application not found
+- `403 Forbidden`: User role is not `admin`
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
 ## Adoption Applications API Endpoints
 
 The adoption applications system allows adopters to apply for a specific pet and view their submitted applications. All endpoints require a valid JWT token with the `adopter` role.
@@ -796,7 +908,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - Pet status is updated to `in_process` on successful application
 
 **AI Cross-Evaluation:**
-- Uses Llama 3 8B to evaluate 15 fields across main criteria and logistics
+- Uses the LLM to evaluate 15 fields across main criteria and logistics
 - Each field scored 0 or 1 (max 15 total)
 - Main score: sum of 11 main fields (compatibility, housing, lifestyle, etc.)
 - Logistics score: sum of 4 logistics fields (transport, costs, time, paperwork)
@@ -1170,7 +1282,7 @@ Updates the foundation's information. All fields are optional in the update requ
 
 ## Pet Management System
 
-The application includes a comprehensive pet management system with AI-powered profile generation using BLIP and Llama 3 8B models.
+The application includes a comprehensive pet management system with AI-powered profile generation using BLIP (image captioning) and the LLM (text enrichment).
 
 ### Pet Registration with AI
 
@@ -1225,7 +1337,7 @@ Content-Type: application/json
 
 **AI Integration:**
 - BLIP model generates image description from pet photo
-- Llama 3 8B model enriches profile with engaging title, hashtags, and emotional description
+- The LLM enriches profile with engaging title, hashtags, and emotional description
 - All AI-generated content is stored in MongoDB `pet_profiles` collection
 
 **Validation Rules:**
@@ -1327,7 +1439,7 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Note:** This endpoint regenerates only the AI-generated fields (title, tags, emotional_description) using BLIP and Llama 3 8B. Pet fields remain unchanged.
+**Note:** This endpoint regenerates only the AI-generated fields (title, tags, emotional_description) via the LLM. Pet fields remain unchanged.
 
 ### Pet Listing
 
@@ -1474,6 +1586,7 @@ Authorization: Bearer <jwt_token>
 - `ai_breakdown`: List[Object] (15 items: section, field, points, max_points, evaluation)
 - `ai_justification`: String (AI evaluation text)
 - `created_at`: DateTime
+- `needs_manual_review`: Bool (false if AI evaluated, true if AI failed and requires manual review)
 
 ## Development Notes
 
@@ -1484,7 +1597,7 @@ Authorization: Bearer <jwt_token>
 - PostgreSQL connection is configured in `app/database/postgres/postgres_db.py`
 - Endpoints use dependency injection to obtain the database session
 - All error responses follow a consistent format with `error_code`, `message`, and `details`
-- AI models (BLIP, Llama 3 8B) are loaded eagerly at startup (no lazy loading)
+- BLIP model is loaded eagerly at startup; the LLM is called via external API
 
 ## Security
 
