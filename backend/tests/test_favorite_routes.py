@@ -23,7 +23,7 @@ from app.models.user.adopter import Adopter
 from app.database.mongo.mongo_db import get_mongo_db
 
 # App import for dependency overrides
-from app.main import app
+from app.main import fastapi_app as app
 
 # Counter for unique test emails
 _test_email_counter = 0

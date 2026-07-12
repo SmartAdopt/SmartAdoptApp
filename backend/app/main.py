@@ -13,6 +13,8 @@ from app.routes.favorite_routes import router as favorite_router
 from app.routes.foundation_routes import router as foundation_router
 from app.routes.applications_routes import router as applications_router
 from app.routes.payment_routes import router as payment_routes
+import socketio
+from app.utils.socketio_manager import sio
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -91,3 +93,8 @@ def read_root():
 async def health_check():
     logger.debug("Health check endpoint accessed")
     return {"status": "ok"}
+
+
+# Wrap with Socket.IO ASGIApp at the very end
+fastapi_app = app
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)

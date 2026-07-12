@@ -149,12 +149,21 @@ export const AdminRequestsPage = () => {
     [selectedAppId]
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const loadData = async () => {
-      await fetchData();
+    fetchData(filterStatus, filterName);
+
+    // Listen for socket events dispatched from useAppSocketIO
+    const handleUpdate = () => {
+      fetchData(filterStatus, filterName);
     };
-    loadData();
-  }, [fetchData]);
+    window.addEventListener("application_status_update", handleUpdate);
+
+    return () => {
+      window.removeEventListener("application_status_update", handleUpdate);
+    };
+  }, [fetchData, filterStatus, filterName]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSearch = () => {
     fetchData(filterStatus || undefined, filterName || undefined);

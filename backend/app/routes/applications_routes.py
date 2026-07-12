@@ -70,6 +70,22 @@ async def create_application_route(
             mongo_db, user_id, pet_profile_id, adopter_name
         )
 
+        from app.utils.socketio_manager import sio
+
+        # Broadcast that the pet status changed to 'in_process'
+        await sio.emit(
+            "pet_status_update", {"pet_id": str(pet_profile_id), "status": "in_process"}
+        )
+
+        # Broadcast that a new application was created (so admin panels can refresh)
+        await sio.emit(
+            "application_status_update",
+            {
+                "application_id": str(application["_id"]),
+                "status": application["status"],
+            },
+        )
+
         # Return minimal success response
         return ApplicationResponse(
             message="Adoption application created successfully",
