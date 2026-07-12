@@ -1,7 +1,7 @@
 # Application service
 
 # Typing imports
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from datetime import datetime
 
 # Model imports
@@ -41,7 +41,7 @@ async def get_next_sequence(db, collection_name: str, counter_name: str) -> int:
 
 
 async def create_application(
-    mongo_db, user_id: int, pet_profile_id: str
+    mongo_db, user_id: int, pet_profile_id: str, adopter_name: Optional[str] = None
 ) -> Dict[str, Any]:
     # Create a new adoption application for a pet
     logger.info(
@@ -158,6 +158,7 @@ async def create_application(
         status="pending",
         created_at=datetime.now(),
         needs_manual_review=needs_manual_review,
+        adopter_name=adopter_name,
     )
 
     # Convert model to dict for MongoDB
@@ -177,6 +178,7 @@ async def create_application(
         "status": application_model.status,
         "created_at": application_model.created_at,
         "needs_manual_review": application_model.needs_manual_review,
+        "adopter_name": application_model.adopter_name,
     }
 
     # Insert into MongoDB
