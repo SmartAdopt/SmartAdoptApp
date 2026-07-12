@@ -60,7 +60,9 @@ async def adopter_home(
         app_collection = mongo_db["applications"]
 
         available_pets = await pet_collection.count_documents({"status": "available"})
-        my_adoptions = await app_collection.count_documents({"user_id": user_id, "status": "approved"})
+        my_adoptions = await app_collection.count_documents(
+            {"user_id": user_id, "status": "approved"}
+        )
 
         logger.info(
             f"Adopter home accessed successfully by user: {token_payload.get('sub')}"

@@ -66,7 +66,9 @@ async def create_application_route(
             logger.warning(f"Failed to fetch adopter name: {name_err}")
 
         # Call service to create the application
-        application = await create_application(mongo_db, user_id, pet_profile_id, adopter_name)
+        application = await create_application(
+            mongo_db, user_id, pet_profile_id, adopter_name
+        )
 
         # Return minimal success response
         return ApplicationResponse(

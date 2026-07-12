@@ -49,9 +49,15 @@ async def admin_dashboard(
         adopted_pets = await pet_collection.count_documents({"status": "adopted"})
 
         total_applications = await app_collection.count_documents({})
-        pending_applications = await app_collection.count_documents({"status": "pending"})
-        approved_applications = await app_collection.count_documents({"status": "approved"})
-        rejected_applications = await app_collection.count_documents({"status": "rejected"})
+        pending_applications = await app_collection.count_documents(
+            {"status": "pending"}
+        )
+        approved_applications = await app_collection.count_documents(
+            {"status": "approved"}
+        )
+        rejected_applications = await app_collection.count_documents(
+            {"status": "rejected"}
+        )
 
         logger.info(
             f"Admin dashboard accessed successfully by user: {token_payload.get('sub')}"

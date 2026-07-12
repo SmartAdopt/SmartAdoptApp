@@ -1,6 +1,6 @@
 // src/pages/admin/AdminRequestsPage.tsx
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -92,7 +92,7 @@ export const AdminRequestsPage = () => {
     ? pets.find((p) => p.id === selectedApp.petProfileId)
     : undefined;
 
-  const fetchData = async (status?: string, petName?: string) => {
+  const fetchData = useCallback(async (status?: string, petName?: string) => {
     setIsLoading(true);
     try {
       const [formData, allPets] = await Promise.all([
@@ -131,8 +131,9 @@ export const AdminRequestsPage = () => {
       if (selectedAppId && !flattened.find((a) => a.applicationId === selectedAppId)) {
         setSelectedAppId(null);
       }
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error: unknown) {
+      const status = error instanceof Error ? "error" : "unknown";
+      if (status === "error") {
         setApps([]);
       } else {
         console.error("Failed to load data", error);
@@ -140,11 +141,14 @@ export const AdminRequestsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedAppId]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const loadData = async () => {
+      await fetchData();
+    };
+    loadData();
+  }, [fetchData]);
 
   const handleSearch = () => {
     fetchData(filterStatus || undefined, filterName || undefined);
