@@ -15,7 +15,20 @@ export const NotificationsPanel = () => {
   const refreshNotifications = async () => {
     try {
       const data = await notificationService.getNotifications();
-      setNotifications(data);
+      // Asegurar que no haya duplicados (por application_id/tipo o notification_id)
+      const uniqueData = data.filter((v, i, a) => {
+        if (v.application_id && v.tipo) {
+          return (
+            a.findIndex(
+              (t) => t.application_id === v.application_id && t.tipo === v.tipo
+            ) === i
+          );
+        }
+        return (
+          a.findIndex((t) => t.notification_id === v.notification_id) === i
+        );
+      });
+      setNotifications(uniqueData);
       const count = await notificationService.getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
@@ -28,15 +41,59 @@ export const NotificationsPanel = () => {
     (async () => {
       try {
         const data = await notificationService.getNotifications();
-        if (!ignore) setNotifications(data);
+        if (!ignore) {
+          const uniqueData = data.filter((v, i, a) => {
+            if (v.application_id && v.tipo) {
+              return (
+                a.findIndex(
+                  (t) =>
+                    t.application_id === v.application_id && t.tipo === v.tipo
+                ) === i
+              );
+            }
+            return (
+              a.findIndex((t) => t.notification_id === v.notification_id) === i
+            );
+          });
+          // Fix: when real-time adds them, make sure we merge deduplicated from server
+          setNotifications(uniqueData);
+        }
         const count = await notificationService.getUnreadCount();
         if (!ignore) setUnreadCount(count);
       } catch (error) {
         console.error("Failed to load notifications", error);
       }
     })();
+
+    const handleNewNotification = (event: Event) => {
+      if (ignore) return;
+      const customEvent = event as CustomEvent;
+      const newNotif = customEvent.detail as BackendNotification;
+
+      // Add strictly to the top if not duplicate
+      setNotifications((prev) => {
+        const isDuplicate = prev.some((p) => {
+          if (newNotif.application_id && newNotif.tipo) {
+            return (
+              p.application_id === newNotif.application_id &&
+              p.tipo === newNotif.tipo
+            );
+          }
+          return p.notification_id === newNotif.notification_id;
+        });
+
+        if (isDuplicate) return prev;
+        return [newNotif, ...prev];
+      });
+
+      setUnreadCount((prev) => prev + 1);
+    };
+
+    window.addEventListener("new_notification", handleNewNotification);
+
     return () => {
       ignore = true;
+      window.removeEventListener("new_notification", handleNewNotification);
     };
   }, []);
 
@@ -110,17 +167,19 @@ export const NotificationsPanel = () => {
           No tienes notificaciones por el momento.
         </Typography>
       ) : (
-        notifications.map((notification) => (
-          <NotificationItem
-            key={notification.notification_id}
-            titulo={notification.titulo}
-            descripcion={notification.descripcion}
-            fecha={notification.fecha}
-            read={notification.read}
-            tipo={notification.tipo}
-            onClick={() => handleNotificationClick(notification)}
-          />
-        ))
+        <Box sx={{ maxHeight: 400, overflowY: "auto", pr: 1 }}>
+          {notifications.map((notification) => (
+            <NotificationItem
+              key={notification.notification_id}
+              titulo={notification.titulo}
+              descripcion={notification.descripcion}
+              fecha={notification.fecha}
+              read={notification.read}
+              tipo={notification.tipo}
+              onClick={() => handleNotificationClick(notification)}
+            />
+          ))}
+        </Box>
       )}
     </Paper>
   );

@@ -25,6 +25,7 @@ from app.services.favorite_service import (
     remove_favorite,
     list_favorites,
 )
+from app.utils.socketio_manager import sio
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -64,6 +65,13 @@ async def add_favorite_route(
     try:
         favorite = await add_favorite(db, mongo_db, user_id, pet_profile_id)
         logger.info(f"Favorite added by user ID: {user_id} for pet: {pet_profile_id}")
+
+        # Broadcast the favorite update to the user's specific room
+        await sio.emit(
+            "favorites_update",
+            {"pet_id": str(pet_profile_id), "action": "add"},
+            room=f"user_{user_id}",
+        )
         return FavoriteAddResponse(
             message="Pet added to favorites",
             favorite=FavoriteResponse(
@@ -98,7 +106,7 @@ async def add_favorite_route(
     summary="Remove Favorite",
     description="Remove a pet from the authenticated adopter's favorites",
 )
-def remove_favorite_route(
+async def remove_favorite_route(
     pet_profile_id: str,
     token_payload: dict = Depends(verify_token),
     db=Depends(get_db),
@@ -122,6 +130,13 @@ def remove_favorite_route(
     try:
         remove_favorite(db, user_id, pet_profile_id)
         logger.info(f"Favorite removed by user ID: {user_id} for pet: {pet_profile_id}")
+
+        # Broadcast the favorite update to the user's specific room
+        await sio.emit(
+            "favorites_update",
+            {"pet_id": str(pet_profile_id), "action": "remove"},
+            room=f"user_{user_id}",
+        )
         return FavoriteRemoveResponse(message="Pet removed from favorites")
     except ValueError as e:
         logger.warning(

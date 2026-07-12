@@ -39,9 +39,10 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 - **Forms:** react-hook-form + Zod validation
 - **HTTP Client:** Axios (with JWT interceptor)
 - **Backend:** FastAPI + Python 3.12
-- **Databases:** PostgreSQL + MongoDB + Redis
+- **Databases & Cache:** PostgreSQL + MongoDB + Redis
 - **ORM:** SQLAlchemy (composition pattern for user models)
 - **Authentication:** Bcrypt (password hashing) + JWT
+- **Real-Time / WebSockets:** Socket.IO (Used for instantaneous state synchronization across sessions: Adoption requests, Pet Status updates, Notifications, and Favorites Syncing—eliminating manual page reloads)
 - **Validation:** Pydantic
 - **Cloud Storage:** Backblaze B2 (image upload)
 - **AI Integration:** BLIP (local Transformers) + Groq LLM via OpenAI-compatible API
@@ -111,7 +112,9 @@ SmartAdoptApp/
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + LLM provider-agnostic)
+│   │   ├── README_AI.md     # Complete AI integration documentation (BLIP + LLM provider-agnostic)
+│   │   ├── REDIS_CACHE.md   # Complete Redis Cache implementation documentation
+│   │   └── SOCKET_IO.md     # Complete Socket.IO events and integration documentation
 │   ├── tests/              # Backend tests (13 files, 120+ tests)
 │   │   ├── conftest.py              # Test configuration
 │   │   ├── test_auth.py             # Authentication tests

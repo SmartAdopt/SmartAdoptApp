@@ -78,6 +78,30 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
     loadFavorites();
   }, [isAuthenticated, role]);
 
+  // Listen to Socket.io favorite updates from other devices/sessions
+  useEffect(() => {
+    const handleFavoritesUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+
+      if (data && data.pet_id && data.action) {
+        setFavoritePetIds((prev) => {
+          if (data.action === "add" && !prev.includes(data.pet_id)) {
+            return [...prev, data.pet_id];
+          } else if (data.action === "remove" && prev.includes(data.pet_id)) {
+            return prev.filter((id) => id !== data.pet_id);
+          }
+          return prev;
+        });
+      }
+    };
+
+    window.addEventListener("favorites_update", handleFavoritesUpdate);
+    return () => {
+      window.removeEventListener("favorites_update", handleFavoritesUpdate);
+    };
+  }, []);
+
   const addPet = (newPet: Omit<Pet, "id">): Pet => {
     const createdEntity: Pet = {
       ...newPet,
