@@ -75,6 +75,16 @@ export const AdopterRequests = () => {
 
     fetchRequests();
     clearNotifications();
+
+    // Listen for real-time status updates via WebSocket
+    const handleUpdate = () => {
+      fetchRequests();
+    };
+    window.addEventListener("application_status_update", handleUpdate);
+
+    return () => {
+      window.removeEventListener("application_status_update", handleUpdate);
+    };
   }, []);
 
   const handleDownloadCertificate = async () => {

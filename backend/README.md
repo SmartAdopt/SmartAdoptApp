@@ -81,7 +81,9 @@ backend/                 # FastAPI backend application
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + LLM)
+│   │   ├── README_AI.md     # Complete AI integration documentation (BLIP + LLM)
+│   │   ├── REDIS_CACHE.md   # Complete Redis Cache implementation documentation
+│   │   └── SOCKET_IO.md     # Complete Socket.IO events and integration documentation
 │   ├── tests/              # Backend tests
 │   │   ├── conftest.py              # Test configuration
 │   │   ├── test_auth.py             # Authentication tests
@@ -112,7 +114,8 @@ backend/                 # FastAPI backend application
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
 - **Authlib** - OAuth 2.0 integration for Google login
-- **Redis** - Token storage and management
+- **Redis** - Token storage/management and high-performance API caching
+- **python-socketio** - Real-time WebSocket event broadcasting
 - **b2sdk** - Backblaze B2 cloud storage integration
 - **requests** - HTTP library for external API calls
 - **huggingface-hub** - Hugging Face Hub client for model downloads (BLIP)

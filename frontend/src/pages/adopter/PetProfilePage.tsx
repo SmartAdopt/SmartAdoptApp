@@ -73,6 +73,9 @@ export const PetProfilePage = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [isCommitted, setIsCommitted] = useState(false);
@@ -86,6 +89,7 @@ export const PetProfilePage = () => {
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
+    setSnackbarSeverity("success");
     setSnackbarMessage("¡Enlace copiado al portapapeles!");
     setSnackbarOpen(true);
   };
@@ -102,6 +106,7 @@ export const PetProfilePage = () => {
     setConfirmModalOpen(false);
     try {
       await adoptionRequestsService.createRequest(id);
+      setSnackbarSeverity("success");
       setSnackbarMessage("¡Solicitud enviada con éxito!");
       // Invalidate relevant queries so explore and dashboard update
       queryClient.invalidateQueries({ queryKey: ["adopterExplorePets"] });
@@ -116,10 +121,37 @@ export const PetProfilePage = () => {
       queryClient.invalidateQueries({ queryKey: ["petDetail", id] });
       setSnackbarOpen(true);
       refetchHasRequested();
-    } catch (error) {
-      setSnackbarMessage(
-        error instanceof Error ? error.message : "Error al enviar la solicitud."
-      );
+    } catch (error: unknown) {
+      let msg = "Error al enviar la solicitud.";
+
+      interface ApiError {
+        response?: {
+          data?: {
+            detail?: string | { message?: string };
+            message?: string;
+          };
+        };
+      }
+      const err = error as ApiError;
+
+      if (err?.response?.data?.detail) {
+        msg =
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : err.response.data.detail.message ||
+              JSON.stringify(err.response.data.detail);
+      } else if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (error instanceof Error) {
+        msg = error.message;
+      }
+
+      if (msg.includes("formulario de idoneidad")) {
+        setSnackbarSeverity("info");
+      } else {
+        setSnackbarSeverity("error");
+      }
+      setSnackbarMessage(msg);
       setSnackbarOpen(true);
     } finally {
       setIsSubmitting(false);
@@ -540,7 +572,7 @@ export const PetProfilePage = () => {
       >
         <Alert
           onClose={handleCloseSnackbar}
-          severity={snackbarMessage.includes("Error") ? "error" : "success"}
+          severity={snackbarSeverity}
           sx={{ width: "100%" }}
         >
           {snackbarMessage}

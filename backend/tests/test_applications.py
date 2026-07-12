@@ -399,7 +399,7 @@ class TestCreateApplication:
 
         _clear_mongo_override()
         assert response.status_code == 400
-        assert "suitability form" in response.json()["detail"]["message"].lower()
+        assert "formulario de idoneidad" in response.json()["detail"]["message"].lower()
 
     def test_create_application_pet_not_found(self, client, db_session):
         user = _create_adopter_user(db_session)
