@@ -56,7 +56,7 @@ async def create_application(
         if not form:
             logger.warning(f"Adoption form not found for user_id: {user_id}")
             raise ValueError(
-                "You must complete the suitability form before applying for adoption"
+                "Debe completar el formulario de idoneidad antes de solicitar una adopción."
             )
         logger.info(
             f"Adoption form found for user_id: {user_id} - form_id: {form.get('_id')}"
@@ -294,11 +294,20 @@ async def review_application(
             # Remove from favorites if rejected
             if status == "rejected" and postgres_db is not None:
                 from app.services.favorite_service import remove_favorite
+                from app.utils.socketio_manager import sio
 
                 try:
-                    remove_favorite(postgres_db, app.get("user_id"), pet_profile_id)
+                    user_id_to_notify = app.get("user_id")
+                    remove_favorite(postgres_db, user_id_to_notify, pet_profile_id)
                     logger.info(
-                        f"Removed pet {pet_profile_id} from user {app.get('user_id')} favorites due to rejection"
+                        f"Removed pet {pet_profile_id} from user {user_id_to_notify} favorites due to rejection"
+                    )
+
+                    # Notify the adopter so their UI updates immediately
+                    await sio.emit(
+                        "favorites_update",
+                        {"pet_id": str(pet_profile_id), "action": "remove"},
+                        room=f"user_{user_id_to_notify}",
                     )
                 except Exception as fav_e:
                     logger.warning(f"Could not remove favorite on rejection: {fav_e}")

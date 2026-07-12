@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from app.utils.logger.logger_config import logger
+from app.utils.socketio_manager import sio
 
 
 async def get_next_sequence(db, collection_name: str, counter_name: str) -> int:
@@ -33,7 +34,7 @@ async def create_notification(
         sequence = await get_next_sequence(db, "counters", "notification_counter")
         notification_id = f"NOTIF{sequence}"
 
-        notification_doc = {
+        notification_doc: Dict[str, Any] = {
             "_id": notification_id,
             "user_id": user_id,
             "titulo": titulo,
@@ -45,6 +46,22 @@ async def create_notification(
         }
 
         await db["notifications"].insert_one(notification_doc)
+
+        # Emit realtime notification to the specific user room
+        await sio.emit(
+            "new_notification",
+            {
+                "notification_id": notification_doc["_id"],
+                "titulo": notification_doc["titulo"],
+                "descripcion": notification_doc["descripcion"],
+                "fecha": notification_doc["fecha"].isoformat(),
+                "read": False,
+                "application_id": notification_doc.get("application_id"),
+                "tipo": notification_doc.get("tipo"),
+            },
+            room=f"user_{user_id}",
+        )
+
         return notification_doc
     except Exception as e:
         logger.error(f"Failed to create notification: {str(e)}")
