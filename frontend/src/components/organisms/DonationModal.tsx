@@ -9,7 +9,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { loadStripe, Stripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
