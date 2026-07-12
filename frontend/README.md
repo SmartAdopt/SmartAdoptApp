@@ -2,6 +2,108 @@
 
 React + TypeScript + Vite application for the SmartAdopt pet adoption platform.
 
+## Table of Contents
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Key Pages / Routes](#key-pages--routes)
+- [Services](#services)
+- [Run Locally](#run-locally)
+- [Adoption Form — Backend Integration Report](#adoption-form--backend-integration-report)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | React 18 + TypeScript |
+| Build Tool | Vite |
+| UI Library | Material UI (MUI) v5 |
+| Server State | TanStack React Query |
+| Forms | react-hook-form + Zod |
+| HTTP Client | Axios (JWT interceptor) |
+| Routing | react-router-dom v6 |
+| PDF Generation | jspdf + html2canvas |
+
+## Project Structure
+
+```
+src/
+├── assets/              # Images, icons, SVGs
+│   └── placeholders/    # Fallback images
+├── components/
+│   ├── atoms/           # Smallest reusable units (buttons, chips, cards)
+│   ├── molecules/       # Composite components (summary cards, action cards)
+│   └── organisms/       # Complex sections (AdminWelcomeBanner, SuitabilitySurvey, FeaturedPetsSection)
+├── content/             # Static/markdown page content
+├── context/             # React context providers (AuthContext)
+├── hooks/               # Custom React hooks
+├── pages/
+│   ├── admin/           # AdminDashboard, AdminRequestsPage, AdminAdoptedPetsPage, PetRegistration, PetList, etc.
+│   ├── adopter/         # AdopterDashboard, AdopterFavorites, AdopterExplore, AdopterSuitability, AdopterSuitabilitySurveyPage, PetProfilePage, MyRequests, etc.
+│   └── landing/         # LandingPage (HomePage, AboutUs, ContactUs, LegalPage)
+├── routes/              # Route definitions (PublicRoute, ProtectedRoute, admin/adopter guards)
+├── services/            # API service layer (apiClient, pets.service, adoptionForm.service, etc.)
+├── theme/               # MUI theme configuration (palette, typography, components)
+├── types/               # TypeScript type definitions (pets, suitability, adoption requests, etc.)
+└── utils/               # Utility functions (certificateGenerator, publicAssets, formatters)
+```
+
+## Key Pages / Routes
+
+### Admin Pages
+- **`/admin/dashboard`** — Dashboard with real-time stats from MongoDB (total pets, adoptions, pending requests, available pets)
+- **`/admin/requests`** — Manage adoption applications: filter by status/pet name, view AI breakdown (translated to Spanish), approve/reject
+- **`/admin/adopted-pets`** — View approved adoptions with pet + adopter info fetched from backend
+- **`/admin/pets/register`** — Register new pets with AI-generated bio (BLIP + LLM)
+- **`/admin/pets/list`** — List and manage registered pets, regenerate AI content
+
+### Adopter Pages
+- **`/adopter/home`** — Home with featured available pets, articles, events (real data from backend)
+- **`/adopter/explore`** — Browse available pets (only `status === "available"`)
+- **`/adopter/pet/:id`** — Pet detail page, submit adoption request
+- **`/adopter/suitability`** — Suitability hub, check if survey is completed
+- **`/adopter/suitability/survey`** — 5-step suitability form (react-hook-form + Zod)
+- **`/adopter/my-requests`** — View submitted applications with status and AI scores
+
+## Services
+
+| Service | File | Key Methods |
+|---|---|---|
+| `apiClient` | `services/apiClient.ts` | Axios instance with JWT interceptor |
+| `adoptionFormService` | `services/adoptionForm.service.ts` | `submitForm()`, `getMyForm()`, `updateMyForm()`, `getAdminForms()`, `reviewApplication()`, `getDashboardStats()` |
+| `adoptionRequestsService` | `services/adoptionRequests.service.ts` | `createRequest()`, `getMyRequests()`, `hasRequested()` |
+| `petsService` | `services/pets.service.ts` | `getPets()`, `getRawPetsDatabase()`, `registerPet()`, `updatePet()`, `regenerateAI()` |
+| `dashboardService` | `services/dashboard.service.ts` | `getFeaturedPets()`, `getArticles()`, `getEvents()`, `getNotifications()` |
+
+### Admin API Methods
+- **`getAdminForms(status?, petName?)`** — `GET /adoption-forms/admin` — List forms with optional filters
+- **`reviewApplication(applicationId, status)`** — `PUT /adoption-forms/{id}/review` — Approve/reject
+- **`getDashboardStats()`** — `GET /admin/dashboard` — Real MongoDB counts
+
+### Translation Utilities (AI → Spanish)
+- **`translateAnswer(answer)`** — Maps English answer values to Spanish
+- **`translateBreakdownItem(item)`** — Maps AI evaluation `field` + `answer` to Spanish labels
+
+## Run Locally
+
+```bash
+# Install dependencies
+cd frontend
+npm install
+
+# Start dev server (Vite hot reload)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+The dev server runs on `http://localhost:5173` by default. API requests are proxied to the backend via `VITE_API_URL` env var.
+
 ---
 
 ## Adoption Form — Backend Integration Report

@@ -13,6 +13,7 @@ from app.routes.favorite_routes import router as favorite_router
 from app.routes.foundation_routes import router as foundation_router
 from app.routes.applications_routes import router as applications_router
 from app.routes.payment_routes import router as payment_routes
+from app.routes.notification_routes import router as notification_router
 import socketio
 from app.utils.socketio_manager import sio
 
@@ -66,6 +67,9 @@ logger.info("Application routes registered")
 # Include payment routes
 app.include_router(payment_routes)
 logger.info("Payment routes registered")
+# Include notification routes
+app.include_router(notification_router)
+logger.info("Notification routes registered")
 
 logger.info("FastAPI application initialized successfully")
 

@@ -30,6 +30,8 @@ interface ApplicationWithPetResponse {
   status: string;
   created_at: string;
   pet?: AIProfileResponse;
+  reviewed_at?: string;
+  reviewed_by_name?: string;
 }
 
 interface ApplicationListResponse {
@@ -186,46 +188,41 @@ export const adoptionRequestsService = {
 
     const formattedData = backendApps
       .map((app) => {
-        const matchedPet = allPets.find((p) => p.id === app.pet_profile_id);
-        const formattedPet = matchedPet;
-
-        // Merge with local storage to reflect Admin's approvals/rejections
-        const localSync = localApps.find((l) => l.id === app.application_id);
+        const petData = allPets.find((p) => p.id === app.pet_profile_id);
+        const formattedPet = petData ? petData : undefined;
 
         return {
           id: app.application_id,
           petId: app.pet_profile_id,
-          // If local sync exists and is NOT under_review, it means admin modified it
           status:
-            localSync && localSync.status !== "under_review"
-              ? localSync.status
-              : app.status === "pending"
+            app.status === "pending"
               ? "under_review"
               : (app.status as AdoptionRequest["status"]),
           dateSubmitted: app.created_at,
-          lastUpdate: localSync ? localSync.lastUpdate : app.created_at,
+          lastUpdate: app.reviewed_at || app.created_at,
           progressPercentage:
-            localSync && localSync.status !== "under_review"
-              ? localSync.progressPercentage
-              : app.status === "approved"
+            app.status === "approved"
               ? 100
               : app.status === "rejected"
               ? 100
               : 60,
           updateMessage:
-            localSync && localSync.status !== "under_review"
-              ? localSync.updateMessage
+            app.status === "approved"
+              ? "¡Felicidades! Tu solicitud ha sido aprobada."
+              : app.status === "rejected"
+              ? "Tu solicitud no ha sido aprobada en esta ocasión."
               : app.ai_justification || "Solicitud en revisión.",
           nextStep:
-            localSync && localSync.status !== "under_review"
-              ? localSync.nextStep
-              : app.status === "approved"
+            app.status === "approved"
+              ? "Finalizada"
+              : app.status === "rejected"
               ? "Finalizada"
               : "Esperando revisión",
           adopterName: app.adopter_name || adopterName,
           adopterEmail,
           adopterPhone,
           pet: formattedPet as AIProfileResponse,
+          reviewedByName: app.reviewed_by_name,
         };
       })
       .filter((req) => req.pet);
