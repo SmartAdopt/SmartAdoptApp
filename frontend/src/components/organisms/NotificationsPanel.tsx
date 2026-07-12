@@ -12,7 +12,7 @@ export const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState<BackendNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadNotifications = async () => {
+  const refreshNotifications = async () => {
     try {
       const data = await notificationService.getNotifications();
       setNotifications(data);
@@ -24,14 +24,25 @@ export const NotificationsPanel = () => {
   };
 
   useEffect(() => {
-    loadNotifications();
+    let ignore = false;
+    (async () => {
+      try {
+        const data = await notificationService.getNotifications();
+        if (!ignore) setNotifications(data);
+        const count = await notificationService.getUnreadCount();
+        if (!ignore) setUnreadCount(count);
+      } catch (error) {
+        console.error("Failed to load notifications", error);
+      }
+    })();
+    return () => { ignore = true; };
   }, []);
 
   const handleNotificationClick = async (notification: BackendNotification) => {
     if (!notification.read) {
       try {
         await notificationService.markAsRead(notification.notification_id);
-        loadNotifications();
+        refreshNotifications();
       } catch (error) {
         console.error("Failed to mark notification as read", error);
       }
@@ -43,7 +54,7 @@ export const NotificationsPanel = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      loadNotifications();
+      refreshNotifications();
     } catch (error) {
       console.error("Failed to mark all as read", error);
     }

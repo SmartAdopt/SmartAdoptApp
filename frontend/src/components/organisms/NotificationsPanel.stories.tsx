@@ -53,7 +53,7 @@ const meta = {
       const notifications = context.parameters.mockData ?? mockNotifications;
       notificationService.getNotifications = async () => notifications;
       notificationService.getUnreadCount = async () =>
-        notifications.filter((n: any) => !n.read).length;
+        notifications.filter((n: { read: boolean }) => !n.read).length;
       notificationService.markAsRead = async () => {};
       notificationService.markAllAsRead = async () => {};
 

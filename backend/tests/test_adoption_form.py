@@ -521,7 +521,9 @@ def _make_mock_db(forms, applications, pet_profile):
     profiles_col.update_many = AsyncMock()
 
     counters_col = MagicMock()
-    counters_col.find_one_and_update = AsyncMock(return_value={"_id": "notification_counter", "sequence_value": 1})
+    counters_col.find_one_and_update = AsyncMock(
+        return_value={"_id": "notification_counter", "sequence_value": 1}
+    )
     notifications_col = MagicMock()
     notifications_col.insert_one = AsyncMock()
 
