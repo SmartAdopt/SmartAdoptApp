@@ -35,7 +35,9 @@ export const NotificationsPanel = () => {
         console.error("Failed to load notifications", error);
       }
     })();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleNotificationClick = async (notification: BackendNotification) => {
