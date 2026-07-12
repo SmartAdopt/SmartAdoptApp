@@ -15,7 +15,7 @@ export const dashboardService = {
     try {
       // If user is not logged in, return mocks to avoid 401 errors on public pages
       if (!localStorage.getItem("access_token")) {
-        throw new Error("No authentication token found");
+        return [];
       }
 
       const allPets = await petsService.getRawPetsDatabase();

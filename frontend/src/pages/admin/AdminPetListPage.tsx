@@ -25,6 +25,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { petsService } from "../../services/pets.service";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 import type {
   AIProfileResponse,
   PetUpdatePayload,
@@ -603,8 +604,7 @@ export const AdminPetListPage = () => {
                     bgcolor: "#F3F4F6",
                   }}
                   onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://via.placeholder.com/600x340?text=Sin+Imagen";
+                    (e.target as HTMLImageElement).src = PUBLIC_ASSETS.dog;
                   }}
                 />
                 {/* Status Badge */}
