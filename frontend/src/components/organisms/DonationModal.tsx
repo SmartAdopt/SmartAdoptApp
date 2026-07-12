@@ -23,7 +23,14 @@ let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise) {
     stripePromise = loadStripe(
-      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
+      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder",
+      {
+        developerTools: {
+          assistant: {
+            enabled: false,
+          },
+        },
+      } as any
     );
   }
   return stripePromise;
@@ -182,7 +189,10 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             )}
 
             {clientSecret && (
-              <Elements stripe={getStripe()} options={{ clientSecret }}>
+              <Elements
+                stripe={getStripe()}
+                options={{ clientSecret }}
+              >
                 <CheckoutForm
                   onSuccess={handleSuccess}
                   onCancel={handleClose}

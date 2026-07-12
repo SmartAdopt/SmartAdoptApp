@@ -58,6 +58,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend-qa:buildcache,mode=max
           build-args: |
             VITE_API_URL=/api
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.QA_VITE_STRIPE_PUBLISHABLE_KEY }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ steps.vars.outputs.build_date }}
@@ -125,6 +126,7 @@ jobs:
             DOZZLE_PORT=${{ secrets.QA_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.QA_DOZZLE_USERNAME }}
             DOZZLE_PASSWORD=${{ secrets.QA_DOZZLE_PASSWORD }}
+            STRIPE_SECRET_KEY=${{ secrets.QA_STRIPE_SECRET_KEY }}
             EOF
             
             docker compose -f docker-compose-qa.yml pull
