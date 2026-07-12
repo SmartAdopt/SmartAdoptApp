@@ -9,7 +9,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -19,7 +19,7 @@ import {
 import { apiClient as api } from "../../services/apiClient"; // Assuming api is your configured axios instance
 
 // Load stripe lazily to avoid recreating Stripe object on every render and avoid showing the Stripe widget globally
-let stripePromise: Promise<any> | null = null;
+let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise) {
     stripePromise = loadStripe(
