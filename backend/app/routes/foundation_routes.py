@@ -17,6 +17,7 @@ from app.services.foundation_service import (
 )
 from app.utils.jwt.jwt_utils import verify_token
 from app.utils.logger.logger_config import logger
+from app.utils.cache_utils import get_cached_data, set_cached_data, invalidate_cache
 
 router = APIRouter(prefix="/foundation", tags=["Foundation"])
 
@@ -62,6 +63,9 @@ async def create_foundation_endpoint(
         except Exception as notif_e:
             logger.warning(f"Could not send foundation notifications: {notif_e}")
 
+        # Invalidate foundation cache
+        invalidate_cache("cache:foundation")
+
         return FoundationCreateResponse(
             message="Foundation created successfully",
             foundation_id=int(foundation.foundation_id),
@@ -84,7 +88,17 @@ def get_foundation_endpoint(
     db: Session = Depends(get_db),
 ):
     try:
+        cache_key = "cache:foundation"
+        cached_response = get_cached_data(cache_key)
+        if cached_response:
+            return cached_response
+
         foundation = get_foundation(db)
+
+        # Serialize response using Pydantic model for cache
+        response_model = FoundationResponse.model_validate(foundation)
+        set_cached_data(cache_key, response_model, expire_seconds=3600)
+
         return foundation
     except ValueError as e:
         raise HTTPException(
@@ -137,6 +151,9 @@ async def update_foundation_endpoint(
                 )
         except Exception as notif_e:
             logger.warning(f"Could not send foundation notifications: {notif_e}")
+
+        # Invalidate foundation cache
+        invalidate_cache("cache:foundation")
 
         return FoundationUpdateResponse(
             message="Foundation updated successfully",

@@ -88,6 +88,30 @@ export const useAppSocketIO = (
       queryClient.invalidateQueries({ queryKey: ["pets"] });
     });
 
+    socket.on("favorites_update", (data: SocketIOMessage) => {
+      console.log("Socket.IO favorites_update received:", data);
+      const messageWithEvent = { ...data, type: "FAVORITES_UPDATE" };
+      setLatestMessage(messageWithEvent);
+
+      // Invalidate the cache so AdopterFavorites.tsx fetches the updated list
+      queryClient.invalidateQueries({ queryKey: ["adopterFavoritesList"] });
+
+      // Dispatch global event for components not using React Query directly
+      window.dispatchEvent(
+        new CustomEvent("favorites_update", { detail: data })
+      );
+    });
+
+    socket.on("new_notification", (data: SocketIOMessage) => {
+      console.log("Socket.IO new_notification received:", data);
+      const messageWithEvent = { ...data, type: "NEW_NOTIFICATION" };
+      setLatestMessage(messageWithEvent);
+
+      window.dispatchEvent(
+        new CustomEvent("new_notification", { detail: data })
+      );
+    });
+
     socket.on("connect_error", (error) => {
       console.error("Socket.IO connection error:", error);
     });

@@ -75,6 +75,16 @@ export const AdopterRequests = () => {
 
     fetchRequests();
     clearNotifications();
+
+    // Listen for real-time status updates via WebSocket
+    const handleUpdate = () => {
+      fetchRequests();
+    };
+    window.addEventListener("application_status_update", handleUpdate);
+
+    return () => {
+      window.removeEventListener("application_status_update", handleUpdate);
+    };
   }, []);
 
   const handleDownloadCertificate = async () => {
@@ -290,7 +300,23 @@ export const AdopterRequests = () => {
             <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
               Lista de solicitudes
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                maxHeight: { xs: "400px", md: "calc(100vh - 320px)" },
+                overflowY: "auto",
+                pr: 1,
+                "&::-webkit-scrollbar": {
+                  width: "6px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "grey.300",
+                  borderRadius: "4px",
+                },
+              }}
+            >
               {requests.map((request) => (
                 <Card
                   key={request.id}
@@ -313,21 +339,29 @@ export const AdopterRequests = () => {
                     <Avatar
                       src={request.pet.pet.pet_image_url}
                       alt={request.pet.pet.name}
-                      sx={{ width: 50, height: 50, borderRadius: 2 }}
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 2,
+                        flexShrink: 0,
+                      }}
                     />
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography fontWeight={700}>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography fontWeight={700} noWrap>
                         {request.pet.pet.name}
                       </Typography>
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         display="block"
+                        noWrap
                       >
                         {new Date(request.dateSubmitted).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    {getStatusChip(request.status)}
+                    <Box sx={{ flexShrink: 0 }}>
+                      {getStatusChip(request.status)}
+                    </Box>
                   </Box>
                 </Card>
               ))}

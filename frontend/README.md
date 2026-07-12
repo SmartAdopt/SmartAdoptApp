@@ -179,3 +179,19 @@ const queryClient = useQueryClient();
 
 // Invoked upon successful POST/PUT
 await queryClient.invalidateQueries({ queryKey: ["adoptionForm"] });
+```
+
+---
+
+## Real-Time Architecture & Caching
+
+**Date:** 2026-07-12  
+
+### Socket.IO Real-Time Updates
+The frontend uses `socket.io-client` in a dedicated hook (`useAppSocketIO`) placed at the layout level to maintain a persistent WebSocket connection. This ensures dynamic UI updates without page reloads:
+- **Notifications Panel**: Real-time toast updates and badge counters using `application_status_update`.
+- **Admin Dashboard & Adopter Views**: Immediate status syncs when adoption applications change state (`pet_status_update`, `application_status_update`).
+- **Favorites Syncing**: Synchronized heart icons across all open tabs/views instantly when a user adds/removes a favorite pet using a unified `favorites_update` internal CustomEvent bridge.
+
+### Redis Caching via Backend
+While the frontend still utilizes TanStack Query for optimal client-side caching (stale-while-revalidate), the backend now integrates robust **Redis Caching** for heavy endpoints (e.g., listing available pets, retrieving stats). The frontend benefits from significantly reduced TTFB (Time to First Byte) on these endpoints, making the user experience incredibly fast.

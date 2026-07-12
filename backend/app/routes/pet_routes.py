@@ -23,6 +23,9 @@ from app.utils.jwt.jwt_utils import verify_token
 # Logger import
 from app.utils.logger.logger_config import logger
 
+# Cache imports
+from app.utils.cache_utils import get_cached_data, set_cached_data, invalidate_cache
+
 router = APIRouter(prefix="/pets", tags=["Pets"])
 
 
@@ -62,6 +65,9 @@ async def register_pet_route(
                 "name": new_pet.get("pet", {}).get("name", "Una nueva mascota"),
             },
         )
+
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
 
         # Return response with complete profile
         return PetRegisterResponse(
@@ -131,6 +137,9 @@ async def update_pet_route(
             },
         )
 
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Profile updated successfully",
@@ -185,6 +194,10 @@ async def regenerate_profile_route(
     try:
         # Call service to regenerate the profile
         regenerated_profile = await regenerate_profile(db, profile_id)
+
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Profile regenerated successfully",
@@ -238,6 +251,11 @@ async def list_pets_route(
         )
 
     try:
+        cache_key = f"cache:pets:list:{status_filter or 'all'}"
+        cached_response = get_cached_data(cache_key)
+        if cached_response:
+            return cached_response
+
         # Call service to list pets (filtered by status only when provided)
         pets = await list_pets(db, status_filter=status_filter)
         if not pets:
@@ -245,8 +263,12 @@ async def list_pets_route(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"message": "No pets found"},
             )
+
+        response_data = {"pets": pets, "count": len(pets)}
+        set_cached_data(cache_key, response_data, expire_seconds=300)
+
         # Return response
-        return {"pets": pets, "count": len(pets)}
+        return response_data
     except HTTPException:
         raise
     except Exception as e:
