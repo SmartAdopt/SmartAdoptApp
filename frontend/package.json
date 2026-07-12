@@ -18,7 +18,8 @@
     "test": "vitest run",
     "server": "json-server --watch db.json --port 8000",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "asbuild": "asc assembly/match.ts --target release -o public/match.wasm"
   },
   "build": {
     "appId": "net.programacionwebuce.smartadopt.desktop",
@@ -77,6 +78,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "assemblyscript": "^0.28.19",
     "cross-env": "^10.1.0",
     "electron": "^43.0.0",
     "electron-builder": "^26.15.3",

@@ -17,8 +17,9 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Favorite as FavoriteIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { usePetDatabase } from "../../context/PetContext"; // <-- NEW: Import context
+import { useMatchScore } from "../../hooks/useMatchScore";
 
 interface PetCardProps {
   id: string;
@@ -40,10 +41,22 @@ export const PetCard = ({
   imagen,
 }: PetCardProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Consume favorites state and toggler from our Context
   const { favoritePetIds, toggleFavorite } = usePetDatabase();
   const isFavorite = favoritePetIds.includes(id);
+
+  const { isReady, calculateScore, hasForm } = useMatchScore();
+
+  // Deterministic mock values for pet based on name/breed
+  const petEnergy = (nombre.length % 5) + 1;
+  const petSize = (raza.length % 3) + 1;
+
+  const isSuitabilityRoute = location.pathname === "/adopter/suitability";
+  const showMatchScore = hasForm && isSuitabilityRoute;
+  const matchScore =
+    isReady && showMatchScore ? calculateScore(petEnergy, petSize) : null;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevents triggering other click events on the card
@@ -103,6 +116,14 @@ export const PetCard = ({
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Chip label={edad} size="small" />
           <Chip label={genero} size="small" />
+          {matchScore !== null && (
+            <Chip
+              label={`${matchScore}% Match`}
+              size="small"
+              color="success"
+              variant="outlined"
+            />
+          )}
         </Stack>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
