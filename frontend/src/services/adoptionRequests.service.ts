@@ -66,8 +66,8 @@ export const adoptionRequestsService = {
   },
 
   createRequest: async (petId: string): Promise<AdoptionRequest> => {
-    const localRequests = adoptionRequestsService._getLocalRequests();
-    if (localRequests.some((req) => req.petId === petId)) {
+    const alreadyRequested = await adoptionRequestsService.hasRequested(petId);
+    if (alreadyRequested) {
       throw new Error("Ya has enviado una solicitud para esta mascota.");
     }
 

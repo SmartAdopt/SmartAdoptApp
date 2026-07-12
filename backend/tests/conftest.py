@@ -197,18 +197,17 @@ def client(db_session):
             return None
 
         def find(self, query=None):
-            return self
+            cursor = MockMongoCursor(self.documents, query)
+            return cursor
 
-        def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            if not hasattr(self, "_iter"):
-                self._iter = iter(self.documents)
-            try:
-                return next(self._iter)
-            except StopIteration:
-                raise StopAsyncIteration
+        def count_documents(self, query=None):
+            if query is None:
+                return len(self.documents)
+            count = 0
+            for doc in self.documents:
+                if all(doc.get(k) == v for k, v in query.items()):
+                    count += 1
+            return count
 
         async def insert_one(self, document):
             self.documents.append(document)
@@ -233,6 +232,23 @@ def client(db_session):
                 self.documents.append(new_doc)
                 return new_doc
             return None
+
+    class MockMongoCursor:
+        def __init__(self, documents, query=None):
+            self.documents = documents
+            self.query = query
+
+        def to_list(self, length=None):
+            if self.query is None:
+                result = self.documents
+            else:
+                result = [
+                    doc for doc in self.documents
+                    if all(doc.get(k) == v for k, v in self.query.items())
+                ]
+            if length is not None:
+                result = result[:length]
+            return result
 
     mock_redis = MockRedis()
     mock_mongo = MockMongoClient()
