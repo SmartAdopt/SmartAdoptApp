@@ -124,7 +124,6 @@ export const adoptionRequestsService = {
 
     // Backend ya guarda la solicitud, no usar localStorage
 
-
     return newRequest;
   },
 

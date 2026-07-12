@@ -213,57 +213,59 @@ export const adoptionFormService = {
 
 export const translateAnswer = (answer: string): string => {
   const translations: Record<string, string> = {
-    "yes": "Sí",
-    "no": "No",
-    "house": "Casa",
-    "apartment": "Departamento",
-    "farm": "Finca/Granja",
-    "employed": "Empleado",
-    "unemployed": "Desempleado",
-    "student": "Estudiante",
-    "retired": "Jubilado",
-    "calm": "Calmada",
-    "active": "Activa",
-    "very_active": "Muy activa",
-    "positive_reinforcement": "Refuerzo positivo",
-    "professional_trainer": "Entrenador profesional",
-    "self_taught": "Autodidacta",
-    "dog": "Perro",
-    "cat": "Gato",
-    "no_preference": "Sin preferencia",
-    "male": "Macho",
-    "female": "Hembra",
-    "inside": "Adentro",
-    "outside": "Afuera",
-    "both": "Ambos"
+    yes: "Sí",
+    no: "No",
+    house: "Casa",
+    apartment: "Departamento",
+    farm: "Finca/Granja",
+    employed: "Empleado",
+    unemployed: "Desempleado",
+    student: "Estudiante",
+    retired: "Jubilado",
+    calm: "Calmada",
+    active: "Activa",
+    very_active: "Muy activa",
+    positive_reinforcement: "Refuerzo positivo",
+    professional_trainer: "Entrenador profesional",
+    self_taught: "Autodidacta",
+    dog: "Perro",
+    cat: "Gato",
+    no_preference: "Sin preferencia",
+    male: "Macho",
+    female: "Hembra",
+    inside: "Adentro",
+    outside: "Afuera",
+    both: "Ambos",
   };
   return translations[answer?.toLowerCase()] || answer;
 };
 
-export const translateBreakdownItem = (item: AdminBreakdownItem): AdminBreakdownItem => {
+export const translateBreakdownItem = (
+  item: AdminBreakdownItem
+): AdminBreakdownItem => {
   const fieldTranslations: Record<string, string> = {
-    "neighborhood": "Barrio",
-    "address": "Dirección",
-    "employment_status": "Estado laboral",
-    "housing_type": "Tipo de vivienda",
-    "has_natural_space": "Tiene espacio natural",
-    "has_pets": "Tiene mascotas",
-    "household_energy": "Energía del hogar",
-    "has_children": "Tiene niños",
-    "long_term_commitment": "Compromiso a largo plazo",
-    "preferred_species": "Especie preferida",
-    "preferred_gender": "Género preferido",
-    "preferred_energy": "Energía preferida",
-    "daily_time_dedication": "Dedicación diaria (horas)",
-    "sleeping_location": "Lugar para dormir",
-    "behavior_approach": "Enfoque de comportamiento",
-    "emergency_plan": "Plan de emergencia",
-    "motivation": "Motivación"
+    neighborhood: "Barrio",
+    address: "Dirección",
+    employment_status: "Estado laboral",
+    housing_type: "Tipo de vivienda",
+    has_natural_space: "Tiene espacio natural",
+    has_pets: "Tiene mascotas",
+    household_energy: "Energía del hogar",
+    has_children: "Tiene niños",
+    long_term_commitment: "Compromiso a largo plazo",
+    preferred_species: "Especie preferida",
+    preferred_gender: "Género preferido",
+    preferred_energy: "Energía preferida",
+    daily_time_dedication: "Dedicación diaria (horas)",
+    sleeping_location: "Lugar para dormir",
+    behavior_approach: "Enfoque de comportamiento",
+    emergency_plan: "Plan de emergencia",
+    motivation: "Motivación",
   };
 
   return {
     ...item,
     label: fieldTranslations[item.field] || item.label,
-    answer: translateAnswer(item.answer)
+    answer: translateAnswer(item.answer),
   };
 };

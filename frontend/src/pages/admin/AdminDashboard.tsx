@@ -149,7 +149,10 @@ export const AdminDashboard = () => {
           "Motor de Emparejamiento",
           "Sistema de Notificaciones",
         ].map((item) => (
-          <Box key={item} sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Box
+            key={item}
+            sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
+          >
             <Typography variant="body2" fontWeight={500}>
               ● {item}
             </Typography>

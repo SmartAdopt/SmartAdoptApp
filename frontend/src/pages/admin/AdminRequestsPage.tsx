@@ -48,9 +48,7 @@ import {
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { adoptionFormService } from "../../services/adoptionForm.service";
 import { petsService } from "../../services/pets.service";
-import type {
-  AdminBreakdownItem,
-} from "../../services/adoptionForm.service";
+import type { AdminBreakdownItem } from "../../services/adoptionForm.service";
 import { translateBreakdownItem } from "../../services/adoptionForm.service";
 import type { AIProfileResponse } from "../../types/pets.types";
 import { PUBLIC_ASSETS } from "../../utils/publicAssets";
@@ -92,56 +90,64 @@ export const AdminRequestsPage = () => {
     ? pets.find((p) => p.id === selectedApp.petProfileId)
     : undefined;
 
-  const fetchData = useCallback(async (status?: string, petName?: string) => {
-    setIsLoading(true);
-    try {
-      const [formData, allPets] = await Promise.all([
-        adoptionFormService.getAdminForms(status, petName),
-        petsService.getRawPetsDatabase(),
-      ]);
-      const flattened: FlatAppItem[] = [];
-      for (const form of formData.forms) {
-        for (const app of form.applications) {
-          flattened.push({
-            applicationId: app.application_id,
-            petProfileId: app.pet_profile_id,
-            petName: app.pet_name,
-            adopterName: app.adopter_name,
-            status: app.status,
-            totalScore: app.total_score,
-            totalMaxScore: app.total_max_score,
-            aiBreakdown: app.ai_breakdown ? app.ai_breakdown.map(translateBreakdownItem) : undefined,
-            aiJustification: app.ai_justification,
-            createdAt: app.created_at,
-            needsManualReview: app.needs_manual_review,
-            reviewedBy: app.reviewed_by,
-            reviewedAt: app.reviewed_at,
-            formId: form.form_id,
-            userId: form.user_id,
-          });
+  const fetchData = useCallback(
+    async (status?: string, petName?: string) => {
+      setIsLoading(true);
+      try {
+        const [formData, allPets] = await Promise.all([
+          adoptionFormService.getAdminForms(status, petName),
+          petsService.getRawPetsDatabase(),
+        ]);
+        const flattened: FlatAppItem[] = [];
+        for (const form of formData.forms) {
+          for (const app of form.applications) {
+            flattened.push({
+              applicationId: app.application_id,
+              petProfileId: app.pet_profile_id,
+              petName: app.pet_name,
+              adopterName: app.adopter_name,
+              status: app.status,
+              totalScore: app.total_score,
+              totalMaxScore: app.total_max_score,
+              aiBreakdown: app.ai_breakdown
+                ? app.ai_breakdown.map(translateBreakdownItem)
+                : undefined,
+              aiJustification: app.ai_justification,
+              createdAt: app.created_at,
+              needsManualReview: app.needs_manual_review,
+              reviewedBy: app.reviewed_by,
+              reviewedAt: app.reviewed_at,
+              formId: form.form_id,
+              userId: form.user_id,
+            });
+          }
         }
+        if (!status && !petName) {
+          setAllApps(flattened);
+          setApps(flattened);
+        } else {
+          setApps(flattened);
+        }
+        setPets(allPets);
+        if (
+          selectedAppId &&
+          !flattened.find((a) => a.applicationId === selectedAppId)
+        ) {
+          setSelectedAppId(null);
+        }
+      } catch (error: unknown) {
+        const status = error instanceof Error ? "error" : "unknown";
+        if (status === "error") {
+          setApps([]);
+        } else {
+          console.error("Failed to load data", error);
+        }
+      } finally {
+        setIsLoading(false);
       }
-      if (!status && !petName) {
-        setAllApps(flattened);
-        setApps(flattened);
-      } else {
-        setApps(flattened);
-      }
-      setPets(allPets);
-      if (selectedAppId && !flattened.find((a) => a.applicationId === selectedAppId)) {
-        setSelectedAppId(null);
-      }
-    } catch (error: unknown) {
-      const status = error instanceof Error ? "error" : "unknown";
-      if (status === "error") {
-        setApps([]);
-      } else {
-        console.error("Failed to load data", error);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedAppId]);
+    },
+    [selectedAppId]
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -177,7 +183,9 @@ export const AdminRequestsPage = () => {
     if (!selectedApp || !selectedPet) return;
     setIsGeneratingPdf(true);
     try {
-      const { generateCertificate } = await import("../../utils/certificateGenerator");
+      const { generateCertificate } = await import(
+        "../../utils/certificateGenerator"
+      );
       const adoptionRequest = {
         id: selectedApp.applicationId,
         petId: selectedApp.petProfileId,
@@ -203,8 +211,10 @@ export const AdminRequestsPage = () => {
   const totalCount = allApps.length;
 
   const getStatusProps = (status: string) => {
-    if (status === "approved") return { label: "Aprobada", color: "success" as const };
-    if (status === "rejected") return { label: "Rechazada", color: "error" as const };
+    if (status === "approved")
+      return { label: "Aprobada", color: "success" as const };
+    if (status === "rejected")
+      return { label: "Rechazada", color: "error" as const };
     return { label: "Pendiente", color: "primary" as const };
   };
 
@@ -262,22 +272,66 @@ export const AdminRequestsPage = () => {
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {[
-          { value: pendingCount, label: "Pendientes", icon: <AccessTimeIcon />, bg: "#FEFCE8", color: "warning.main" },
-          { value: approvedCount, label: "Aprobadas", icon: <CheckCircleOutlineIcon />, bg: "#F0FDF4", color: "success.main" },
-          { value: rejectedCount, label: "Rechazadas", icon: <CancelOutlinedIcon />, bg: "#FEF2F2", color: "error.main" },
-          { value: totalCount, label: "Total Solicitudes", icon: <GroupsOutlinedIcon />, bg: "#EFF6FF", color: "primary.main" },
+          {
+            value: pendingCount,
+            label: "Pendientes",
+            icon: <AccessTimeIcon />,
+            bg: "#FEFCE8",
+            color: "warning.main",
+          },
+          {
+            value: approvedCount,
+            label: "Aprobadas",
+            icon: <CheckCircleOutlineIcon />,
+            bg: "#F0FDF4",
+            color: "success.main",
+          },
+          {
+            value: rejectedCount,
+            label: "Rechazadas",
+            icon: <CancelOutlinedIcon />,
+            bg: "#FEF2F2",
+            color: "error.main",
+          },
+          {
+            value: totalCount,
+            label: "Total Solicitudes",
+            icon: <GroupsOutlinedIcon />,
+            bg: "#EFF6FF",
+            color: "primary.main",
+          },
         ].map((stat) => (
           <Grid item xs={6} sm={3} key={stat.label}>
             <Card
               elevation={0}
-              sx={{ p: 2, borderRadius: 3, border: "1px solid", borderColor: "grey.200", display: "flex", alignItems: "center", gap: 2 }}
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "grey.200",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
             >
-              <Box sx={{ bgcolor: stat.bg, p: 1.5, borderRadius: "50%", display: "flex", color: stat.color }}>
+              <Box
+                sx={{
+                  bgcolor: stat.bg,
+                  p: 1.5,
+                  borderRadius: "50%",
+                  display: "flex",
+                  color: stat.color,
+                }}
+              >
                 {stat.icon}
               </Box>
               <Box>
-                <Typography variant="h5" fontWeight={700}>{stat.value}</Typography>
-                <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
+                <Typography variant="h5" fontWeight={700}>
+                  {stat.value}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {stat.label}
+                </Typography>
               </Box>
             </Card>
           </Grid>
@@ -287,15 +341,33 @@ export const AdminRequestsPage = () => {
       {/* Creative Filter */}
       <Paper
         elevation={0}
-        sx={{ p: 2.5, mb: 3, borderRadius: 3, border: "1px solid", borderColor: "grey.200", bgcolor: "#FAFAFA" }}
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "grey.200",
+          bgcolor: "#FAFAFA",
+        }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
           <FilterListIcon fontSize="small" color="action" />
-          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            color="text.secondary"
+          >
             Filtrar Solicitudes
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <InputLabel>Estado</InputLabel>
             <Select
@@ -373,7 +445,10 @@ export const AdminRequestsPage = () => {
                   <Card
                     key={app.applicationId}
                     elevation={0}
-                    onClick={() => { setSelectedAppId(app.applicationId); setShowFullDetails(false); }}
+                    onClick={() => {
+                      setSelectedAppId(app.applicationId);
+                      setShowFullDetails(false);
+                    }}
                     sx={{
                       p: 2,
                       borderRadius: 3,
@@ -381,10 +456,20 @@ export const AdminRequestsPage = () => {
                       borderColor: isSelected ? "primary.main" : "grey.200",
                       cursor: "pointer",
                       transition: "all 0.2s ease-in-out",
-                      "&:hover": { borderColor: isSelected ? "primary.main" : "grey.300", transform: "translateY(-2px)" },
+                      "&:hover": {
+                        borderColor: isSelected ? "primary.main" : "grey.300",
+                        transform: "translateY(-2px)",
+                      },
                     }}
                   >
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb: 1,
+                      }}
+                    >
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>
                           {app.adopterName || `Adoptante #${app.userId}`}
@@ -393,9 +478,20 @@ export const AdminRequestsPage = () => {
                           para {app.petName || "Mascota desconocida"}
                         </Typography>
                       </Box>
-                      <Chip label={sp.label} size="small" color={sp.color} sx={{ fontWeight: 600, borderRadius: 2 }} />
+                      <Chip
+                        label={sp.label}
+                        size="small"
+                        color={sp.color}
+                        sx={{ fontWeight: 600, borderRadius: 2 }}
+                      />
                     </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mt: 2,
+                      }}
+                    >
                       <Typography variant="caption" color="text.secondary">
                         Score: {app.totalScore}/{app.totalMaxScore}
                       </Typography>
@@ -429,8 +525,13 @@ export const AdminRequestsPage = () => {
             {!selectedApp ? (
               <Box sx={{ textAlign: "center", color: "text.secondary" }}>
                 <PersonOutlineIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
-                <Typography variant="h6" fontWeight={600}>Selecciona una Solicitud</Typography>
-                <Typography variant="body2">Elige una solicitud de la lista para ver los detalles y tomar acción.</Typography>
+                <Typography variant="h6" fontWeight={600}>
+                  Selecciona una Solicitud
+                </Typography>
+                <Typography variant="body2">
+                  Elige una solicitud de la lista para ver los detalles y tomar
+                  acción.
+                </Typography>
               </Box>
             ) : (
               <Box sx={{ width: "100%" }}>
@@ -441,14 +542,34 @@ export const AdminRequestsPage = () => {
                 {/* Pet Info + Adopter */}
                 <Grid container spacing={3} sx={{ mt: 1 }}>
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Mascota Solicitada</Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Mascota Solicitada
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
                       <Box
                         component="img"
                         src={getImageUrl(selectedApp.petProfileId)}
                         alt={selectedApp.petName || "Mascota"}
-                        sx={{ width: 60, height: 60, borderRadius: 2, objectFit: "cover" }}
-                        onError={(e) => (e.currentTarget.src = PUBLIC_ASSETS.dog)}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 2,
+                          objectFit: "cover",
+                        }}
+                        onError={(e) =>
+                          (e.currentTarget.src = PUBLIC_ASSETS.dog)
+                        }
                       />
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700}>
@@ -459,18 +580,37 @@ export const AdminRequestsPage = () => {
                         </Typography>
                       </Box>
                     </Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Adoptante</Typography>
-                    <Typography variant="body1" fontWeight={500} sx={{ mb: 2 }}>
-                      {selectedApp.adopterName || `Usuario #${selectedApp.userId}`}
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Adoptante
                     </Typography>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Fecha de Envío</Typography>
+                    <Typography variant="body1" fontWeight={500} sx={{ mb: 2 }}>
+                      {selectedApp.adopterName ||
+                        `Usuario #${selectedApp.userId}`}
+                    </Typography>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Fecha de Envío
+                    </Typography>
                     <Typography variant="body1" fontWeight={500} sx={{ mb: 2 }}>
                       {formatDate(selectedApp.createdAt)}
                     </Typography>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Estado Actual</Typography>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Estado Actual
+                    </Typography>
                     <Chip
                       label={getStatusProps(selectedApp.status).label}
                       color={getStatusProps(selectedApp.status).color}
@@ -478,14 +618,29 @@ export const AdminRequestsPage = () => {
                     />
                     {selectedApp.reviewedAt && (
                       <>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Revisada el</Typography>
-                        <Typography variant="body1" fontWeight={500} sx={{ mb: 3 }}>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          Revisada el
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          fontWeight={500}
+                          sx={{ mb: 3 }}
+                        >
                           {formatDate(selectedApp.reviewedAt)}
                         </Typography>
                       </>
                     )}
                     {selectedApp.needsManualReview && (
-                      <Chip label="Requiere revisión manual" color="warning" size="small" sx={{ mb: 2 }} />
+                      <Chip
+                        label="Requiere revisión manual"
+                        color="warning"
+                        size="small"
+                        sx={{ mb: 2 }}
+                      />
                     )}
                   </Grid>
                 </Grid>
@@ -507,10 +662,21 @@ export const AdminRequestsPage = () => {
                   }}
                 >
                   <Box sx={{ textAlign: "center", minWidth: 100 }}>
-                    <Typography variant="h3" fontWeight={800} sx={{ color: getScoreColor(selectedApp.totalScore, selectedApp.totalMaxScore) }}>
+                    <Typography
+                      variant="h3"
+                      fontWeight={800}
+                      sx={{
+                        color: getScoreColor(
+                          selectedApp.totalScore,
+                          selectedApp.totalMaxScore
+                        ),
+                      }}
+                    >
                       {selectedApp.totalScore}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">de {selectedApp.totalMaxScore}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      de {selectedApp.totalMaxScore}
+                    </Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle1" fontWeight={700}>
@@ -519,35 +685,58 @@ export const AdminRequestsPage = () => {
                     <Typography variant="body2" color="text.secondary">
                       {selectedApp.totalScore >= selectedApp.totalMaxScore * 0.7
                         ? "Recomendación: Aprobado — el perfil del adoptante es compatible."
-                        : selectedApp.totalScore >= selectedApp.totalMaxScore * 0.4
+                        : selectedApp.totalScore >=
+                          selectedApp.totalMaxScore * 0.4
                         ? "Recomendación: Revisión requerida — compatibilidad media."
                         : "Recomendación: No recomendado — baja compatibilidad."}
                     </Typography>
                     {selectedApp.needsManualReview && (
-                      <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-                        Evaluación IA no disponible, requiere revisión manual completa.
+                      <Typography
+                        variant="body2"
+                        color="warning.main"
+                        sx={{ mt: 1 }}
+                      >
+                        Evaluación IA no disponible, requiere revisión manual
+                        completa.
                       </Typography>
                     )}
                   </Box>
                 </Box>
 
                 {/* Toggle button for full details */}
-                {(selectedApp.aiBreakdown?.length ?? 0) > 0 || selectedApp.aiJustification ? (
+                {(selectedApp.aiBreakdown?.length ?? 0) > 0 ||
+                selectedApp.aiJustification ? (
                   <Box sx={{ textAlign: "center", mb: 2 }}>
                     <Button
                       variant="outlined"
                       color="primary"
                       onClick={() => setShowFullDetails((prev) => !prev)}
-                      endIcon={showFullDetails ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      endIcon={
+                        showFullDetails ? (
+                          <ExpandLessIcon />
+                        ) : (
+                          <ExpandMoreIcon />
+                        )
+                      }
                       sx={{ borderRadius: 2 }}
                     >
-                      {showFullDetails ? "Ver menos detalles" : "Ver más detalles"}
+                      {showFullDetails
+                        ? "Ver menos detalles"
+                        : "Ver más detalles"}
                     </Button>
                     {!showFullDetails && selectedApp.aiJustification && (
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ display: "block", mt: 1, maxWidth: 600, mx: "auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                        sx={{
+                          display: "block",
+                          mt: 1,
+                          maxWidth: 600,
+                          mx: "auto",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
                       >
                         {selectedApp.aiJustification}
                       </Typography>
@@ -557,46 +746,78 @@ export const AdminRequestsPage = () => {
 
                 <Collapse in={showFullDetails}>
                   {/* AI Breakdown Table */}
-                  {selectedApp.aiBreakdown && selectedApp.aiBreakdown.length > 0 && (
-                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Campo</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Respuesta</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }} align="center">Pts</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Evaluación IA</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {selectedApp.aiBreakdown.map((item, i) => (
-                            <TableRow key={`${item.field}-${i}`}>
-                              <TableCell sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>{item.label}</TableCell>
-                              <TableCell>{item.answer}</TableCell>
-                              <TableCell align="center">
-                                <Chip
-                                  label={`${item.points}/${item.max_points}`}
-                                  size="small"
-                                  color={item.points > 0 ? "success" : "error"}
-                                  sx={{ fontWeight: 600, minWidth: 48 }}
-                                />
+                  {selectedApp.aiBreakdown &&
+                    selectedApp.aiBreakdown.length > 0 && (
+                      <TableContainer
+                        component={Paper}
+                        variant="outlined"
+                        sx={{ mb: 3, borderRadius: 2 }}
+                      >
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700 }}>
+                                Campo
                               </TableCell>
-                              <TableCell sx={{ maxWidth: 300 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  {item.evaluation}
-                                </Typography>
+                              <TableCell sx={{ fontWeight: 700 }}>
+                                Respuesta
+                              </TableCell>
+                              <TableCell
+                                sx={{ fontWeight: 700 }}
+                                align="center"
+                              >
+                                Pts
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700 }}>
+                                Evaluación IA
                               </TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
+                          </TableHead>
+                          <TableBody>
+                            {selectedApp.aiBreakdown.map((item, i) => (
+                              <TableRow key={`${item.field}-${i}`}>
+                                <TableCell
+                                  sx={{ fontWeight: 500, whiteSpace: "nowrap" }}
+                                >
+                                  {item.label}
+                                </TableCell>
+                                <TableCell>{item.answer}</TableCell>
+                                <TableCell align="center">
+                                  <Chip
+                                    label={`${item.points}/${item.max_points}`}
+                                    size="small"
+                                    color={
+                                      item.points > 0 ? "success" : "error"
+                                    }
+                                    sx={{ fontWeight: 600, minWidth: 48 }}
+                                  />
+                                </TableCell>
+                                <TableCell sx={{ maxWidth: 300 }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {item.evaluation}
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
 
                   {/* AI Justification */}
                   {selectedApp.aiJustification && (
                     <>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
                         <AutoAwesomeIcon color="secondary" fontSize="small" />
                         <Typography variant="subtitle2" color="text.secondary">
                           Justificación de la IA
@@ -612,7 +833,10 @@ export const AdminRequestsPage = () => {
                           mb: 3,
                         }}
                       >
-                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+                        >
                           {selectedApp.aiJustification}
                         </Typography>
                       </Box>
@@ -621,16 +845,31 @@ export const AdminRequestsPage = () => {
                 </Collapse>
 
                 {/* Actions */}
-                <Box sx={{ display: "flex", gap: 2, justifyContent: "space-between", mt: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    justifyContent: "space-between",
+                    mt: 2,
+                  }}
+                >
                   {selectedApp.status === "approved" ? (
                     <Button
                       onClick={handleDownloadCertificate}
                       variant="outlined"
                       color="primary"
                       disabled={isGeneratingPdf || !selectedPet}
-                      startIcon={isGeneratingPdf ? <CircularProgress size={20} /> : <DownloadIcon />}
+                      startIcon={
+                        isGeneratingPdf ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <DownloadIcon />
+                        )
+                      }
                     >
-                      {isGeneratingPdf ? "Generando..." : "Descargar Certificado"}
+                      {isGeneratingPdf
+                        ? "Generando..."
+                        : "Descargar Certificado"}
                     </Button>
                   ) : (
                     <Box />
@@ -651,7 +890,11 @@ export const AdminRequestsPage = () => {
                       onClick={() => handleAction("approved")}
                       disabled={isUpdating || selectedApp.status !== "pending"}
                     >
-                      {isUpdating ? <CircularProgress size={24} color="inherit" /> : "Aprobar Adopción"}
+                      {isUpdating ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        "Aprobar Adopción"
+                      )}
                     </Button>
                   </Box>
                 </Box>
@@ -663,18 +906,28 @@ export const AdminRequestsPage = () => {
 
       {/* AI Justification Modal */}
       {selectedApp?.aiJustification && (
-        <Dialog open={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} maxWidth="md" fullWidth>
+        <Dialog
+          open={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <AutoAwesomeIcon color="secondary" />
             Evaluación de Llama 3
           </DialogTitle>
           <DialogContent dividers>
-            <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+            <Typography
+              variant="body1"
+              sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+            >
               {selectedApp.aiJustification}
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsAiModalOpen(false)} color="primary">Cerrar</Button>
+            <Button onClick={() => setIsAiModalOpen(false)} color="primary">
+              Cerrar
+            </Button>
           </DialogActions>
         </Dialog>
       )}

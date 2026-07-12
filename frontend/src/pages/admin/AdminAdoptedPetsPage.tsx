@@ -57,10 +57,9 @@ export const AdminAdoptedPetsPage = () => {
             result.push({
               id: app.application_id,
               petName: app.pet_name || "Desconocida",
-              breed:
-                pet?.pet?.animal_breed?.length
-                  ? pet.pet.animal_breed.join(", ")
-                  : "Desconocida",
+              breed: pet?.pet?.animal_breed?.length
+                ? pet.pet.animal_breed.join(", ")
+                : "Desconocida",
               age: pet?.pet?.age ? `${pet.pet.age} años` : "?",
               petImage: pet?.pet?.pet_image_url || PUBLIC_ASSETS.dog,
               adopterName: app.adopter_name || `Usuario #${form.user_id}`,
@@ -142,14 +141,33 @@ export const AdminAdoptedPetsPage = () => {
                     sx={{ objectFit: "cover" }}
                   />
                   <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
+                      }}
+                    >
                       <Typography variant="h6" fontWeight={700}>
                         {pet.petName}
                       </Typography>
-                      <Chip label="Adoptado" color="success" size="small" sx={{ fontWeight: 600 }} />
+                      <Chip
+                        label="Adoptado"
+                        color="success"
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
                     </Box>
 
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1, color: "text.secondary" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: 1,
+                        color: "text.secondary",
+                      }}
+                    >
                       <PetsIcon fontSize="small" sx={{ mr: 1 }} />
                       <Typography variant="body2">
                         {pet.breed} • {pet.age}
@@ -158,13 +176,26 @@ export const AdminAdoptedPetsPage = () => {
 
                     <Divider sx={{ my: 2 }} />
 
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Detalles de Adopción
                     </Typography>
 
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, bgcolor: "primary.light", mr: 1 }}>
-                        <FamilyRestroomIcon sx={{ fontSize: 14, color: "primary.dark" }} />
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          bgcolor: "primary.light",
+                          mr: 1,
+                        }}
+                      >
+                        <FamilyRestroomIcon
+                          sx={{ fontSize: 14, color: "primary.dark" }}
+                        />
                       </Avatar>
                       <Typography variant="body2" fontWeight={500}>
                         {pet.adopterName}
@@ -172,8 +203,17 @@ export const AdminAdoptedPetsPage = () => {
                     </Box>
 
                     <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <Avatar sx={{ width: 24, height: 24, bgcolor: "success.light", mr: 1 }}>
-                        <CalendarTodayIcon sx={{ fontSize: 14, color: "success.dark" }} />
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          bgcolor: "success.light",
+                          mr: 1,
+                        }}
+                      >
+                        <CalendarTodayIcon
+                          sx={{ fontSize: 14, color: "success.dark" }}
+                        />
                       </Avatar>
                       <Typography variant="body2" color="text.secondary">
                         {pet.adoptedDate}
