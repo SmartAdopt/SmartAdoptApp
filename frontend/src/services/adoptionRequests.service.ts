@@ -168,6 +168,7 @@ export const adoptionRequestsService = {
     // FOR ADOPTERS: Backend AI + Local Overrides
     // ==========================================
     const backendApps = await adoptionRequestsService._getBackendRequests();
+    const allPets = await petsService.getRawPetsDatabase();
 
     let adopterName = "Adoptante (Tú)";
     let adopterEmail = "";
@@ -185,10 +186,8 @@ export const adoptionRequestsService = {
 
     const formattedData = backendApps
       .map((app) => {
-        const appPetAny = app.pet as unknown as Record<string, unknown>;
-        const formattedPet = app.pet
-          ? { ...app.pet, id: appPetAny.profile_id ?? appPetAny.id }
-          : undefined;
+        const matchedPet = allPets.find((p) => p.id === app.pet_profile_id);
+        const formattedPet = matchedPet;
 
         // Merge with local storage to reflect Admin's approvals/rejections
         const localSync = localApps.find((l) => l.id === app.application_id);

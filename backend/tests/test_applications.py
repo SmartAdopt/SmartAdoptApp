@@ -9,7 +9,7 @@ from app.config import settings
 from app.models.user.user import User
 from app.models.user.adopter import Adopter
 from app.database.mongo.mongo_db import get_mongo_db
-from app.main import app
+from app.main import fastapi_app as app
 
 _test_email_counter = 0
 

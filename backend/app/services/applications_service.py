@@ -272,6 +272,7 @@ async def review_application(
             "message": "Application reviewed successfully",
             "application_id": application_id,
             "status": status,
+            "user_id": app.get("user_id"),
         }
     except ValueError:
         raise

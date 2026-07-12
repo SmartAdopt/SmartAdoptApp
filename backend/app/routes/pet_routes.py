@@ -12,9 +12,10 @@ from app.schemas.pet_profile_schemas import PetProfileResponse
 from app.services.pet_service import (
     register_pet,
     update_pet,
-    list_pets,
     regenerate_profile,
+    list_pets,
 )
+from app.utils.socketio_manager import sio
 
 # JWT utils import
 from app.utils.jwt.jwt_utils import verify_token
@@ -52,6 +53,16 @@ async def register_pet_route(
         pet_data_dict = pet_data.model_dump()
         # Call service to register the pet
         new_pet = await register_pet(db, pet_data_dict)
+
+        # Broadcast the new pet registration globally
+        await sio.emit(
+            "new_pet_registered",
+            {
+                "pet_id": str(new_pet["profile_id"]),
+                "name": new_pet.get("pet", {}).get("name", "Una nueva mascota"),
+            },
+        )
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Pet registered successfully",
@@ -109,6 +120,17 @@ async def update_pet_route(
         )  # Exclude unset fields for partial updates
         # Call service to update the profile
         updated_pet = await update_pet(db, profile_id, pet_data_dict)
+
+        # Broadcast the status update globally
+        await sio.emit(
+            "pet_status_update",
+            {
+                "pet_id": updated_pet["profile_id"],
+                "name": updated_pet.get("pet", {}).get("name", "Una mascota"),
+                "status": updated_pet.get("status"),
+            },
+        )
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Profile updated successfully",
