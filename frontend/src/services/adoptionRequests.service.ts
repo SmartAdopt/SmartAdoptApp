@@ -61,7 +61,11 @@ export const adoptionRequestsService = {
         "/adoption-forms/me"
       );
       return response.data.applications;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        // It's expected to return 404 if the user hasn't submitted a form yet
+        return [];
+      }
       console.error("Failed to fetch applications from backend", error);
       return [];
     }
