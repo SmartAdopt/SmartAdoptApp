@@ -1,23 +1,53 @@
 // src/components/organisms/NotificationsPanel.tsx
 
-import { Paper, Typography } from "@mui/material";
+import { Paper, Typography, Box, Badge, Button } from "@mui/material";
 import { useEffect, useState } from "react";
-import { dashboardService } from "../../services/dashboard.service";
-import type { Notification } from "../../types/dashboard.types";
+import { notificationService } from "../../services/notification.service";
+import type { BackendNotification } from "../../types/dashboard.types";
 import { NotificationItem } from "../molecules/NotificationItem";
+import { useNavigate } from "react-router-dom";
 
 export const NotificationsPanel = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<BackendNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadNotifications = async () => {
+    try {
+      const data = await notificationService.getNotifications();
+      setNotifications(data);
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Failed to load notifications", error);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const data = await dashboardService.getNotifications();
-
-      setNotifications(data);
-    };
-
-    load();
+    loadNotifications();
   }, []);
+
+  const handleNotificationClick = async (notification: BackendNotification) => {
+    if (!notification.read) {
+      try {
+        await notificationService.markAsRead(notification.notification_id);
+        loadNotifications();
+      } catch (error) {
+        console.error("Failed to mark notification as read", error);
+      }
+    }
+    // Navigate to requests page for any adoption-related notification
+    navigate("/adopter/requests");
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      loadNotifications();
+    } catch (error) {
+      console.error("Failed to mark all as read", error);
+    }
+  };
 
   return (
     <Paper
@@ -29,9 +59,34 @@ export const NotificationsPanel = () => {
         borderColor: "grey.200",
       }}
     >
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-        Notificaciones
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h6" fontWeight={700}>
+          <Badge
+            badgeContent={unreadCount}
+            color="primary"
+            sx={{ "& .MuiBadge-badge": { right: -15, top: 5 } }}
+          >
+            Notificaciones
+          </Badge>
+        </Typography>
+        {unreadCount > 0 && (
+          <Button
+            size="small"
+            onClick={handleMarkAllAsRead}
+            variant="text"
+            sx={{ textTransform: "none" }}
+          >
+            Marcar todas como leídas
+          </Button>
+        )}
+      </Box>
 
       {notifications.length === 0 ? (
         <Typography
@@ -44,10 +99,13 @@ export const NotificationsPanel = () => {
       ) : (
         notifications.map((notification) => (
           <NotificationItem
-            key={notification.id}
+            key={notification.notification_id}
             titulo={notification.titulo}
             descripcion={notification.descripcion}
             fecha={notification.fecha}
+            read={notification.read}
+            tipo={notification.tipo}
+            onClick={() => handleNotificationClick(notification)}
           />
         ))
       )}

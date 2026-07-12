@@ -204,11 +204,36 @@ async def create_application(
             f"Application {application_id} created but pet status not updated"
         )
 
+    # Send notification to the user that their application was received
+    from app.services.notification_service import create_notification
+
+    try:
+        # Get pet name if possible to personalize notification
+        pet_name = "la mascota"
+        if pet_profile_id:
+            pet = await profiles_collection.find_one({"_id": pet_profile_id})
+            if pet:
+                pet_name = (pet.get("pet") or {}).get("name", "la mascota")
+
+        await create_notification(
+            mongo_db,
+            application_model.user_id,
+            titulo="Solicitud Recibida",
+            descripcion=f"Tu solicitud para adoptar a {pet_name} ha sido recibida con éxito y está en revisión por nuestro equipo.",
+            application_id=application_id,
+            tipo="under_review",
+        )
+        logger.info(
+            f"Notification sent to user {application_model.user_id} for new application {application_id}"
+        )
+    except Exception as notif_e:
+        logger.warning(f"Could not send application creation notification: {notif_e}")
+
     return application_document
 
 
 async def review_application(
-    db, application_id: str, status: str, admin_id: int
+    db, application_id: str, status: str, admin_id: int, postgres_db=None
 ) -> Dict[str, Any]:
     # Review (approve/reject) a single application. Syncs the linked pet
     # profile status: in_process -> adopted / available.
@@ -265,6 +290,60 @@ async def review_application(
                 {"$set": {"status": pet_status, "last_updated": datetime.now()}},
             )
             logger.info(f"Pet {pet_profile_id} status updated to '{pet_status}'")
+
+            # Remove from favorites if rejected
+            if status == "rejected" and postgres_db is not None:
+                from app.services.favorite_service import remove_favorite
+
+                try:
+                    remove_favorite(postgres_db, app.get("user_id"), pet_profile_id)
+                    logger.info(
+                        f"Removed pet {pet_profile_id} from user {app.get('user_id')} favorites due to rejection"
+                    )
+                except Exception as fav_e:
+                    logger.warning(f"Could not remove favorite on rejection: {fav_e}")
+
+        # 1. Nombre de la mascota desde MongoDB
+        pet_name = "la mascota"
+        if pet_profile_id and profiles_collection is not None:
+            if pet:
+                pet_name = (pet.get("pet") or {}).get("name", "la mascota")
+
+        # 2. First_name del admin desde PostgreSQL
+        admin_first_name = "El equipo"
+        if postgres_db:
+            from app.models.user.user import User
+
+            admin_user = (
+                postgres_db.query(User).filter(User.user_id == admin_id).first()
+            )
+            if admin_user:
+                admin_first_name = admin_user.first_name
+
+        # 3. user_id del adoptante
+        user_id = app.get("user_id")
+
+        # 4. Crear notificación
+        from app.services.notification_service import create_notification
+
+        if status == "approved":
+            await create_notification(
+                db,
+                user_id,
+                titulo="¡Solicitud Aprobada!",
+                descripcion=f"¡Felicidades! Tu solicitud para adoptar a {pet_name} ha sido aprobada por {admin_first_name}. Entra en Solicitudes para ver los detalles y la información de la fundación.",
+                application_id=application_id,
+                tipo="approved",
+            )
+        else:
+            await create_notification(
+                db,
+                user_id,
+                titulo="Solicitud Revisada",
+                descripcion=f"Tu solicitud para adoptar a {pet_name} ha sido revisada por {admin_first_name}. Entra en Solicitudes para ver el resultado.",
+                application_id=application_id,
+                tipo="rejected",
+            )
 
         logger.info(f"Application {application_id} reviewed successfully")
 

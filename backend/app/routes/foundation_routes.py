@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.postgres.postgres_db import get_db
+from app.database.mongo.mongo_db import get_mongo_db
 from app.schemas.foundation_schemas import (
     FoundationCreateRequest,
     FoundationUpdateRequest,
@@ -23,9 +24,10 @@ router = APIRouter(prefix="/foundation", tags=["Foundation"])
 @router.post(
     "/", response_model=FoundationCreateResponse, status_code=status.HTTP_201_CREATED
 )
-def create_foundation_endpoint(
+async def create_foundation_endpoint(
     data: FoundationCreateRequest,
     db: Session = Depends(get_db),
+    mongo_db=Depends(get_mongo_db),
     token_payload: dict = Depends(verify_token),
 ):
     user_role = token_payload.get("role", "").lower()
@@ -38,6 +40,28 @@ def create_foundation_endpoint(
 
     try:
         foundation = create_foundation(db, data.model_dump())
+
+        # Send notifications to users with approved applications
+        try:
+            from app.services.notification_service import create_notification
+
+            applications = (
+                await mongo_db["applications"]
+                .find({"status": "approved"})
+                .to_list(None)
+            )
+            for app in applications:
+                await create_notification(
+                    mongo_db,
+                    app["user_id"],
+                    "Datos de Fundación Disponibles",
+                    "La fundación acaba de configurar su información de contacto. Entra a tus solicitudes aprobadas para ver cómo contactarlos.",
+                    app["_id"],
+                    "info",
+                )
+        except Exception as notif_e:
+            logger.warning(f"Could not send foundation notifications: {notif_e}")
+
         return FoundationCreateResponse(
             message="Foundation created successfully",
             foundation_id=int(foundation.foundation_id),
@@ -76,9 +100,10 @@ def get_foundation_endpoint(
 
 
 @router.put("/", response_model=FoundationUpdateResponse)
-def update_foundation_endpoint(
+async def update_foundation_endpoint(
     data: FoundationUpdateRequest,
     db: Session = Depends(get_db),
+    mongo_db=Depends(get_mongo_db),
     token_payload: dict = Depends(verify_token),
 ):
     user_role = token_payload.get("role", "").lower()
@@ -91,6 +116,28 @@ def update_foundation_endpoint(
 
     try:
         foundation = update_foundation(db, data.model_dump(exclude_none=True))
+
+        # Send notifications to users with approved applications
+        try:
+            from app.services.notification_service import create_notification
+
+            applications = (
+                await mongo_db["applications"]
+                .find({"status": "approved"})
+                .to_list(None)
+            )
+            for app in applications:
+                await create_notification(
+                    mongo_db,
+                    app["user_id"],
+                    "Datos de Fundación Actualizados",
+                    "La fundación ha actualizado su información de contacto. Entra a tus solicitudes aprobadas para ver los nuevos detalles.",
+                    app["_id"],
+                    "info",
+                )
+        except Exception as notif_e:
+            logger.warning(f"Could not send foundation notifications: {notif_e}")
+
         return FoundationUpdateResponse(
             message="Foundation updated successfully",
             foundation_id=int(foundation.foundation_id),

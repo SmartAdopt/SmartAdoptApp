@@ -161,7 +161,7 @@ export const AdopterFavorites = () => {
   } = useQuery({
     queryKey: ["adopterFavoritesList"],
     queryFn: favoritesService.listFavoritesWithPets,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // Always fetch fresh data so adopted pets show instantly
     // Only fetch when the user context is ready
     enabled: isFavoritesLoaded,
   });

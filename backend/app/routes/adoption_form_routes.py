@@ -3,6 +3,7 @@ from typing import Optional
 
 # Database imports
 from app.database.mongo.mongo_db import get_mongo_db
+from app.database.postgres.postgres_db import get_db
 
 # Schema imports
 from app.schemas.adoption_form_schemas import (
@@ -82,6 +83,7 @@ async def submit_adoption_form_route(
 @router.get("/me", status_code=status.HTTP_200_OK)
 async def get_my_adoption_form_route(
     db=Depends(get_mongo_db),
+    postgres_db=Depends(get_db),
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to get the authenticated user's adoption form (requires adopter role)
@@ -102,7 +104,7 @@ async def get_my_adoption_form_route(
         # Get user_id from token
         user_id = int(token_payload["sub"])
         # Call service to get the adoption form
-        form = await get_adoption_form_by_user(db, user_id)
+        form = await get_adoption_form_by_user(db, user_id, postgres_db=postgres_db)
 
         if not form:
             raise HTTPException(
@@ -233,6 +235,7 @@ async def review_adoption_form(
     application_id: str,
     review_data: AdoptionFormReviewRequest,
     db=Depends(get_mongo_db),
+    postgres_db=Depends(get_db),
     token_payload: dict = Depends(verify_token),
 ):
     # Endpoint to review an adoption application (admin only)
@@ -256,7 +259,7 @@ async def review_adoption_form(
         admin_id = int(token_payload["sub"])
         # Call service to review the application
         result = await review_application(
-            db, application_id, review_data.status, admin_id
+            db, application_id, review_data.status, admin_id, postgres_db=postgres_db
         )
 
         return result

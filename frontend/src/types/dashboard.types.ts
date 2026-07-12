@@ -38,3 +38,13 @@ export interface Event {
   fecha: string;
   hora: string;
 }
+
+export interface BackendNotification {
+  notification_id: string;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  read: boolean;
+  application_id?: string;
+  tipo?: "approved" | "rejected";
+}

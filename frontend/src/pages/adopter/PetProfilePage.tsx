@@ -1,7 +1,7 @@
 // src/pages/adopter/PetProfilePage.tsx
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Typography,
@@ -41,6 +41,7 @@ import { DonationModal } from "../../components/organisms/DonationModal";
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { favoritePetIds, toggleFavorite } = usePetDatabase();
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
 
@@ -71,6 +72,7 @@ export const PetProfilePage = () => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [isCommitted, setIsCommitted] = useState(false);
 
+  const isAdopted = pet?.status === "adopted";
   const isFavorite = id ? favoritePetIds.includes(id) : false;
 
   const handleToggleFavorite = () => {
@@ -96,6 +98,17 @@ export const PetProfilePage = () => {
     try {
       await adoptionRequestsService.createRequest(id);
       setSnackbarMessage("¡Solicitud enviada con éxito!");
+      // Invalidate relevant queries so explore and dashboard update
+      queryClient.invalidateQueries({ queryKey: ["adopterExplorePets"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredPets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["myAdoptionRequestsFeaturedFilter"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["myAdoptionRequestsExploreFilter"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["adopterFavoritesList"] });
+      queryClient.invalidateQueries({ queryKey: ["petDetail", id] });
       setSnackbarOpen(true);
       refetchHasRequested();
     } catch (error) {
@@ -415,15 +428,19 @@ export const PetProfilePage = () => {
 
               <Button
                 variant="contained"
-                color={hasRequested ? "success" : "warning"}
+                color={
+                  isAdopted ? "success" : hasRequested ? "success" : "warning"
+                }
                 fullWidth
                 size="large"
-                disabled={hasRequested || isSubmitting}
+                disabled={isAdopted || hasRequested || isSubmitting}
                 onClick={handleOpenConfirmModal}
                 sx={{ mb: 2, borderRadius: 2 }}
               >
                 {isSubmitting
                   ? "Enviando..."
+                  : isAdopted
+                  ? "Mascota Adoptada"
                   : hasRequested
                   ? "Solicitud enviada"
                   : "Solicitar Adopción"}

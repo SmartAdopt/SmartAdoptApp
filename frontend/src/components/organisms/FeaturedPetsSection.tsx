@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { petsService } from "../../services/pets.service";
+import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import { PetCard } from "../molecules/PetCard";
 import type { AIProfileResponse } from "../../types/pets.types";
 
@@ -21,17 +22,32 @@ export const FeaturedPetsSection = () => {
   // Fetch pets from the real backend API
   const {
     data: pets = [],
-    isLoading,
-    isError,
+    isLoading: isLoadingPets,
+    isError: isErrorPets,
   } = useQuery<AIProfileResponse[]>({
     queryKey: ["featuredPets"],
     queryFn: petsService.getRawPetsDatabase,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data so adopted pets disappear instantly
   });
 
-  // Filter available pets, sort by creation_date (newest first), and take the top 3
+  // Fetch user's requests to filter out pets they've been rejected for
+  const { data: myRequests = [], isLoading: isLoadingRequests } = useQuery({
+    queryKey: ["myAdoptionRequestsFeaturedFilter"],
+    queryFn: adoptionRequestsService._getBackendRequests,
+  });
+
+  const isLoading = isLoadingPets || isLoadingRequests;
+  const isError = isErrorPets;
+
+  // Filter available pets (excluding rejected ones), sort by creation_date (newest first), and take the top 3
   const latestPets = [...pets]
-    .filter((pet) => pet.status?.toLowerCase() === "available")
+    .filter((pet) => {
+      const isAvailable = pet.status?.toLowerCase() === "available";
+      const isRejected = myRequests.some(
+        (req) => req.pet_profile_id === pet.id && req.status === "rejected"
+      );
+      return isAvailable && !isRejected;
+    })
     .sort((a, b) => {
       const dateA = new Date(a.creation_date || 0).getTime();
       const dateB = new Date(b.creation_date || 0).getTime();

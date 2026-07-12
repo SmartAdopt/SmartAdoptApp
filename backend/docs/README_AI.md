@@ -1,4 +1,4 @@
-# AI Integration: BLIP + Llama (provider-agnostic)
+# AI Integration: BLIP + Groq (provider-agnostic)
 
 This document describes the implementation of AI-powered pet profile generation using BLIP (local) and a provider-agnostic LLM (via OpenAI-compatible API) in the SmartAdopt backend.
 
@@ -22,7 +22,7 @@ The AI integration is implemented in `app/services/ai_service.py` with two main 
 - No lazy loading - model is available immediately when needed
 - Ensures predictable performance and eliminates first-request latency
 - BLIP remains loaded in memory throughout application lifecycle
-- **Llama (LLM) is NOT loaded locally** — it's called via external OpenAI-compatible API (configurable via env vars)
+- **Groq (LLM) is NOT loaded locally** — it's called via external OpenAI-compatible API (configurable via env vars)
 
 #### 1. `describe_image_with_blip(image_url: str) -> str`
 
@@ -350,7 +350,7 @@ logger.warning(f"Llama enrichment failed, using base profile: {str(e)}")
 
 AI failures are handled differently depending on context:
 
-**Pet registration (non-fatal):** If BLIP or Llama fail (e.g. network issue, invalid token), the pet is still registered with a base profile (`title=name`, `tags=[]`, `emotional_description=brief_description`). The error is logged but the registration succeeds.
+**Pet registration (non-fatal):** If BLIP or the LLM fail (e.g. network issue, invalid token), the pet is still registered with a base profile (`title=name`, `tags=[]`, `emotional_description=brief_description`). The error is logged but the registration succeeds.
 
 ```python
 try:

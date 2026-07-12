@@ -2,34 +2,41 @@
 
 import type { Meta, StoryObj } from "@storybook/react";
 import { NotificationsPanel } from "./NotificationsPanel";
-import { dashboardService } from "../../services/dashboard.service";
+import { notificationService } from "../../services/notification.service";
 import { MemoryRouter } from "react-router-dom";
 
-/**
- * MOCK DATA
- * Represents the expected structure of notification entities for UI verification.
- */
 const mockNotifications = [
   {
-    id: "n-1",
-    titulo: "Solicitud Aprobada",
+    notification_id: "n-1",
+    titulo: "¡Solicitud Aprobada!",
     descripcion:
-      "Tu solicitud para adoptar a Max ha sido aprobada por la fundación.",
-    fecha: "2026-06-27",
+      "¡Felicidades! Tu solicitud para adoptar a Max ha sido aprobada.",
+    fecha: "2026-06-27T10:00:00Z",
+    read: false,
+    tipo: "approved" as const,
   },
   {
-    id: "n-2",
-    titulo: "Nuevo Candidato",
-    descripcion:
-      "Se ha registrado un nuevo candidato interesado en tu mascota 'Luna'.",
-    fecha: "2026-06-26",
+    notification_id: "n-2",
+    titulo: "Solicitud Revisada",
+    descripcion: "Tu solicitud para adoptar a Luna ha sido revisada.",
+    fecha: "2026-06-26T14:30:00Z",
+    read: true,
+    tipo: "rejected" as const,
   },
 ];
 
-/**
- * Storybook Metadata Configuration
- * Atomic Level: Organism
- */
+const mockNotificationsAllRead = [
+  {
+    notification_id: "n-1",
+    titulo: "¡Solicitud Aprobada!",
+    descripcion:
+      "¡Felicidades! Tu solicitud para adoptar a Max ha sido aprobada.",
+    fecha: "2026-06-27T10:00:00Z",
+    read: true,
+    tipo: "approved" as const,
+  },
+];
+
 const meta = {
   title: "Organisms/NotificationsPanel",
   component: NotificationsPanel,
@@ -42,12 +49,14 @@ const meta = {
   },
   decorators: [
     (Story, context) => {
-      // INTERCEPTOR: Mock the dashboard service before the component mounts
-      dashboardService.getNotifications = async () => {
-        return context.parameters.mockData ?? mockNotifications;
-      };
+      // Mock notificationService
+      const notifications = context.parameters.mockData ?? mockNotifications;
+      notificationService.getNotifications = async () => notifications;
+      notificationService.getUnreadCount = async () =>
+        notifications.filter((n: any) => !n.read).length;
+      notificationService.markAsRead = async () => {};
+      notificationService.markAllAsRead = async () => {};
 
-      // Wrap in Router in case underlying components use routing hooks
       return (
         <MemoryRouter>
           <Story />
@@ -61,17 +70,19 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default View
- * Displays the panel populated with the mock data above.
- */
-export const Default: Story = {};
+export const ConNoLeidas: Story = {
+  parameters: {
+    mockData: mockNotifications,
+  },
+};
 
-/**
- * Empty State
- * Verifies component behavior when no notifications exist.
- */
-export const Empty: Story = {
+export const TodasLeidas: Story = {
+  parameters: {
+    mockData: mockNotificationsAllRead,
+  },
+};
+
+export const Vacio: Story = {
   parameters: {
     mockData: [],
   },

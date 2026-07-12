@@ -481,11 +481,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "message": "Welcome to Admin Dashboard",
-  "user_email": "admin@example.com",
+  "user_id": "1",
   "user_role": "admin",
   "dashboard_data": {
-    "total_adoptions": 75,
-    "pending_requests": 12
+    "total_pets": 15,
+    "available_pets": 8,
+    "in_process_pets": 3,
+    "adopted_pets": 4,
+    "total_applications": 25,
+    "pending_applications": 10,
+    "approved_applications": 5,
+    "rejected_applications": 2
   }
 }
 ```
@@ -508,12 +514,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "message": "Welcome to Adopter Home",
-  "user_email": "adopter@example.com",
+  "user_id": "2",
   "user_role": "adopter",
   "home_data": {
-    "available_pets": 45,
-    "my_adoptions": 2,
-    "favorite_pets": 8
+    "available_pets": 8,
+    "my_adoptions": 1,
+    "favorite_pets": 3
   }
 }
 ```
@@ -1576,6 +1582,8 @@ Authorization: Bearer <jwt_token>
 - `application_id`: String (Primary Key, auto-generated: APP####)
 - `user_id`: Integer
 - `pet_profile_id`: String
+- `form_id`: String (Foreign Key to AdoptionForm)
+- `adopter_name`: String (Optional, fetched from PostgreSQL on creation)
 - `status`: String ("pending", "approved", "rejected")
 - `total_score`: Integer (sum of all 15 fields, max 15)
 - `total_max_score`: Integer (always 15)
