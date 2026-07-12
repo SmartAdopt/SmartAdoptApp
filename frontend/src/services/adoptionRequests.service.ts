@@ -1,3 +1,4 @@
+import axios from "axios";
 import { apiClient } from "./apiClient";
 import type { AdoptionRequest } from "../types/adoption.types";
 import type { AIProfileResponse } from "../types/pets.types";
@@ -61,8 +62,8 @@ export const adoptionRequestsService = {
         "/adoption-forms/me"
       );
       return response.data.applications;
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
         // It's expected to return 404 if the user hasn't submitted a form yet
         return [];
       }
