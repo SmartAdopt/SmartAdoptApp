@@ -43,11 +43,17 @@ export const dashboardService = {
     return [];
   },
 
+  /**
+   * @deprecated Use notificationService.getNotifications instead.
+   */
   async getNotifications(): Promise<Notification[]> {
     const data = localStorage.getItem("smartadopt_notifications");
     return data ? JSON.parse(data) : [];
   },
 
+  /**
+   * @deprecated Use notificationService.markAsRead / Backend APIs instead.
+   */
   async addNotification(titulo: string, descripcion: string): Promise<void> {
     const notifications = await this.getNotifications();
     const newNotification: Notification = {

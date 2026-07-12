@@ -159,7 +159,9 @@ async def register_adoption_form(db, form_data: Dict[str, Any]) -> Dict[str, Any
     }
 
 
-async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]]:
+async def get_adoption_form_by_user(
+    db, user_id: int, postgres_db=None
+) -> Optional[Dict[str, Any]]:
     # Get adoption form by user ID
     logger.info(f"Retrieving adoption form for user_id: {user_id}")
 
@@ -189,29 +191,47 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
             applications = await applications_collection.find(
                 {"form_id": form_id}
             ).to_list(length=None)
-            form["applications"] = [
-                {
-                    "application_id": app.get("_id"),
-                    "pet_profile_id": app.get("pet_profile_id"),
-                    "adopter_name": app.get("adopter_name"),
-                    "total_score": app.get("total_score"),
-                    "total_max_score": app.get("total_max_score"),
-                    "main_score": app.get("main_score"),
-                    "main_max_score": app.get("main_max_score"),
-                    "logistics_education_score": app.get("logistics_education_score"),
-                    "logistics_education_max_score": app.get(
-                        "logistics_education_max_score"
-                    ),
-                    "ai_breakdown": app.get("ai_breakdown"),
-                    "ai_justification": app.get("ai_justification"),
-                    "status": app.get("status"),
-                    "created_at": app.get("created_at"),
-                    "needs_manual_review": app.get("needs_manual_review", False),
-                    "reviewed_by": app.get("reviewed_by"),
-                    "reviewed_at": app.get("reviewed_at"),
-                }
-                for app in applications
-            ]
+            embedded_applications = []
+            for app in applications:
+                reviewed_by_name = None
+                reviewed_by_id = app.get("reviewed_by")
+                if reviewed_by_id and postgres_db:
+                    from app.models.user.user import User
+
+                    admin_user = (
+                        postgres_db.query(User)
+                        .filter(User.user_id == reviewed_by_id)
+                        .first()
+                    )
+                    if admin_user:
+                        reviewed_by_name = admin_user.first_name
+
+                embedded_applications.append(
+                    {
+                        "application_id": app.get("_id"),
+                        "pet_profile_id": app.get("pet_profile_id"),
+                        "adopter_name": app.get("adopter_name"),
+                        "total_score": app.get("total_score"),
+                        "total_max_score": app.get("total_max_score"),
+                        "main_score": app.get("main_score"),
+                        "main_max_score": app.get("main_max_score"),
+                        "logistics_education_score": app.get(
+                            "logistics_education_score"
+                        ),
+                        "logistics_education_max_score": app.get(
+                            "logistics_education_max_score"
+                        ),
+                        "ai_breakdown": app.get("ai_breakdown"),
+                        "ai_justification": app.get("ai_justification"),
+                        "status": app.get("status"),
+                        "created_at": app.get("created_at"),
+                        "needs_manual_review": app.get("needs_manual_review", False),
+                        "reviewed_by": app.get("reviewed_by"),
+                        "reviewed_at": app.get("reviewed_at"),
+                        "reviewed_by_name": reviewed_by_name,
+                    }
+                )
+            form["applications"] = embedded_applications
         else:
             form["applications"] = []
 

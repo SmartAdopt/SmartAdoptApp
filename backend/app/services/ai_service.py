@@ -82,11 +82,31 @@ async def describe_image_with_blip(image_url: str) -> str:
     logger.info(f"Downloading image from URL: {image_url}")
     try:
         response = requests.get(image_url, timeout=30)
+
+        # Validate HTTP status before trying to open as image
+        if response.status_code != 200:
+            logger.error(
+                f"Failed to download image: HTTP {response.status_code} for URL {image_url}"
+            )
+            raise Exception(f"Failed to download image: HTTP {response.status_code}")
+
+        # Validate Content-Type is actually an image
+        content_type = response.headers.get("Content-Type", "")
+        if not content_type.startswith("image/"):
+            logger.error(
+                f"URL did not return an image. Content-Type: '{content_type}' for URL {image_url}"
+            )
+            raise Exception(
+                f"URL did not return an image (Content-Type: {content_type})"
+            )
+
         image = Image.open(BytesIO(response.content))
     except requests.RequestException as e:
         logger.error(f"Failed to download image: {str(e)}")
         raise Exception("Failed to download image")
-    except (IOError, OSError) as e:
+    except Exception as e:
+        if "Failed to download image" in str(e) or "URL did not return" in str(e):
+            raise
         logger.error(f"Failed to process image: {str(e)}")
         raise Exception("Failed to process image")
 

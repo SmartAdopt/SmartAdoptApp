@@ -34,13 +34,17 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 
 - **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
+- **UI Library:** Material UI (MUI) v5
+- **State / Server State:** React Query (TanStack Query)
+- **Forms:** react-hook-form + Zod validation
+- **HTTP Client:** Axios (with JWT interceptor)
 - **Backend:** FastAPI + Python 3.12
 - **Databases:** PostgreSQL + MongoDB + Redis
 - **ORM:** SQLAlchemy (composition pattern for user models)
 - **Authentication:** Bcrypt (password hashing) + JWT
 - **Validation:** Pydantic
 - **Cloud Storage:** Backblaze B2 (image upload)
-- **AI Integration:** BLIP (local Transformers) + LLM provider-agnostic via OpenAI-compatible API (Groq / HF router)
+- **AI Integration:** BLIP (local Transformers) + Groq LLM via OpenAI-compatible API
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -108,26 +112,36 @@ SmartAdoptApp/
 │   │   ├── README_LOGS.md   # Complete logging system documentation
 │   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
 │   │   └── README_AI.md     # Complete AI integration documentation (BLIP + LLM provider-agnostic)
-│   ├── tests/              # Backend tests
+│   ├── tests/              # Backend tests (13 files, 120+ tests)
 │   │   ├── conftest.py              # Test configuration
 │   │   ├── test_auth.py             # Authentication tests
 │   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_google_oauth_utils.py # Google OAuth utility tests
 │   │   ├── test_admin_routes.py     # Admin routes tests
 │   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
 │   │   ├── test_pet.py              # Pet management tests
 │   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   ├── test_applications.py     # Adoption application tests
+│   │   ├── test_ai.py               # AI service tests
 │   │   ├── test_favorite_routes.py  # Favorite tests
 │   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
+├── electron/             # Desktop Admin application (Electron wrapper)
 ├── frontend/               # React frontend application
 │   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components (HomePage, AdminDashboardPage)
-│   │   ├── services/       # API service layer
+│   │   ├── assets/         # Images, icons, SVGs
+│   │   ├── components/     # Reusable UI components (atoms, molecules, organisms)
+│   │   ├── content/        # Static/markdown content
+│   │   ├── context/        # React context providers (Auth, Theme)
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── pages/          # Page components (admin/, adopter/, landing/)
+│   │   ├── routes/         # Route definitions (public, protected, role-based)
+│   │   ├── services/       # API service layer (axios-based)
+│   │   ├── theme/          # MUI theme configuration
 │   │   ├── types/          # TypeScript type definitions
-│   │   └── utils/          # Utility functions
+│   │   └── utils/          # Utility functions (certificates, formatters, assets)
 │   ├── public/             # Static assets
 │   ├── tests/              # Frontend tests
 │   ├── package.json        # Node.js dependencies
@@ -429,7 +443,7 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
-# ─── LLM (Llama) - provider agnostic (Groq / HF router) ─
+# ─── LLM (Groq) - provider agnostic ─
 LLAMA_BASE_URL=https://api.groq.com/openai/v1
 LLAMA_MODEL=llama-3.1-8b-instant
 LLAMA_API_KEY=your_groq_api_key
@@ -494,7 +508,7 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
-# ─── LLM (Llama) - provider agnostic (Groq / HF router) ─
+# ─── LLM (Groq) - provider agnostic ─
 LLAMA_BASE_URL=https://api.groq.com/openai/v1
 LLAMA_MODEL=llama-3.1-8b-instant
 LLAMA_API_KEY=your_groq_api_key
@@ -532,11 +546,11 @@ These secrets must be configured in the GitHub repository settings (Actions secr
 | `QA_LLAMA_BASE_URL` | QA | Groq / OpenAI-compatible endpoint URL |
 | `QA_LLAMA_MODEL` | QA | LLM model name (e.g. `llama-3.1-8b-instant`) |
 | `QA_LLAMA_JSON_MODE` | QA | `true` if provider supports `response_format` |
-| `QA_GROQ_API_KEY` | QA | Groq API key (or Bearer token for the LLM provider) |
+| `QA_GROQ_API_KEY` | QA | Groq API key |
 | `PROD_LLAMA_BASE_URL` | Production | Groq / OpenAI-compatible endpoint URL |
 | `PROD_LLAMA_MODEL` | Production | LLM model name |
 | `PROD_LLAMA_JSON_MODE` | Production | `true` if provider supports `response_format` |
-| `PROD_GROQ_API_KEY` | Production | Groq API key (or Bearer token) |
+| `PROD_GROQ_API_KEY` | Production | Groq API key |
 
 ## EC2 setup (QA/Production)
 
