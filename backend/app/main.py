@@ -95,3 +95,8 @@ def read_root():
 async def health_check():
     logger.debug("Health check endpoint accessed")
     return {"status": "ok"}
+
+
+# Wrap with Socket.IO ASGIApp at the very end
+fastapi_app = app
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)

@@ -92,7 +92,7 @@ if not os.getenv("MONGO_PASSWORD"):
 
 # Import the FastAPI app and the database components AFTER loading .env
 # ruff: noqa: E402
-from app.main import app
+from app.main import fastapi_app as app
 from app.config import settings
 from app.database.postgres.postgres_db import Base, get_db
 from app.database.mongo.mongo_db import get_mongo_db

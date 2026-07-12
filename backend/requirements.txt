@@ -30,3 +30,4 @@ torch
 pillow
 requests
 huggingface-hub
+python-socketio

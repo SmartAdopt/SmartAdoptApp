@@ -40,7 +40,7 @@ services:
       - LLAMA_JSON_MODE=${LLAMA_JSON_MODE}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     volumes:
-      - ./backend:/app
+      - ./backend:/backend
     depends_on:
       postgres:
         condition: service_healthy

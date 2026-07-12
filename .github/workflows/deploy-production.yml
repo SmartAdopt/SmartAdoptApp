@@ -136,6 +136,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache,mode=max
           build-args: |
             VITE_API_URL=/api
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.PROD_VITE_STRIPE_PUBLISHABLE_KEY }}
           labels: |
             org.opencontainers.image.version=${{ steps.version.outputs.semver }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -205,6 +206,7 @@ jobs:
             DOZZLE_PORT=${{ secrets.PROD_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.PROD_DOZZLE_USERNAME }}
             DOZZLE_PASSWORD=${{ secrets.PROD_DOZZLE_PASSWORD }}
+            STRIPE_SECRET_KEY=${{ secrets.PROD_STRIPE_SECRET_KEY }}
             ENVEOF
             
             docker compose -f docker-compose-production.yml pull

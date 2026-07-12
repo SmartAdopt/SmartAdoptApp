@@ -3,7 +3,7 @@
 from jose import jwt
 from app.config import settings
 from app.database.mongo.mongo_db import get_mongo_db
-from app.main import app
+from app.main import fastapi_app as app
 from unittest.mock import MagicMock, AsyncMock
 from datetime import datetime
 

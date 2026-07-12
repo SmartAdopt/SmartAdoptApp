@@ -70,7 +70,18 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <PaymentElement />
+      {/* --- AQUÍ ESTÁ LA MODIFICACIÓN --- */}
+      <PaymentElement
+        options={{
+          wallets: {
+            link: "never", // Desactiva la ventana emergente de autocompletado de Stripe Link
+            applePay: "never", // (Opcional) Desactiva Apple Pay
+            googlePay: "never", // (Opcional) Desactiva Google Pay
+          },
+        }}
+      />
+      {/* ---------------------------------- */}
+
       {error && (
         <Typography color="error" variant="body2" sx={{ mt: 2 }}>
           {error}
