@@ -243,7 +243,8 @@ def client(db_session):
                 result = self.documents
             else:
                 result = [
-                    doc for doc in self.documents
+                    doc
+                    for doc in self.documents
                     if all(doc.get(k) == v for k, v in self.query.items())
                 ]
             if length is not None:
