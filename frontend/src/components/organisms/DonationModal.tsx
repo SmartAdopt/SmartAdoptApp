@@ -9,7 +9,11 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import {
+  loadStripe,
+  type Stripe,
+  type StripeConstructorOptions,
+} from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -23,7 +27,14 @@ let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise) {
     stripePromise = loadStripe(
-      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
+      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder",
+      {
+        developerTools: {
+          assistant: {
+            enabled: false,
+          },
+        },
+      } as StripeConstructorOptions
     );
   }
   return stripePromise;
