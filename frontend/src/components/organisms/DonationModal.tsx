@@ -22,8 +22,17 @@ import { apiClient as api } from "../../services/apiClient"; // Assuming api is 
 let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise) {
+    // Se agregan las opciones de inicialización para deshabilitar el asistente de sandbox de Stripe
     stripePromise = loadStripe(
-      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
+      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder",
+      {
+        developerTools: {
+          assistant: {
+            enabled: false,
+          },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
     );
   }
   return stripePromise;
