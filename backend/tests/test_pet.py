@@ -446,11 +446,11 @@ def test_regenerate_profile_success(client):
 
     # Mock AI services
     with patch(
-        "app.services.ai_service.describe_image_with_blip",
+        "app.services.pet_service.describe_image_with_blip",
         return_value="A friendly dog looking for a home",
     ):
         with patch(
-            "app.services.ai_service.enrich_profile_with_llama",
+            "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
                 "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
