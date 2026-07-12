@@ -36,11 +36,13 @@ import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
 import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 import { useState } from "react";
+import { DonationModal } from "../../components/organisms/DonationModal";
 
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { favoritePetIds, toggleFavorite } = usePetDatabase();
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
 
   // Fetch all pets from the real backend API and find the one matching :id
   const {
@@ -479,6 +481,7 @@ export const PetProfilePage = () => {
                 color="success"
                 fullWidth
                 sx={{ borderRadius: 2 }}
+                onClick={() => setIsDonationModalOpen(true)}
               >
                 Hacer una Donación
               </Button>
@@ -515,12 +518,18 @@ export const PetProfilePage = () => {
       >
         <Alert
           onClose={handleCloseSnackbar}
-          severity={snackbarMessage.includes("éxito") ? "success" : "error"}
+          severity={snackbarMessage.includes("Error") ? "error" : "success"}
           sx={{ width: "100%" }}
         >
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <DonationModal
+        open={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+        amount={20} // Fixed amount for simplicity
+      />
 
       {/* Confirmation Modal */}
       <Dialog
