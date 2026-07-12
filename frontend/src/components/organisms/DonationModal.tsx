@@ -9,7 +9,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -18,10 +18,16 @@ import {
 } from "@stripe/react-stripe-js";
 import { apiClient as api } from "../../services/apiClient"; // Assuming api is your configured axios instance
 
-// Load stripe outside of component render to avoid recreating Stripe object on every render
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
-);
+// Load stripe lazily to avoid recreating Stripe object on every render and avoid showing the Stripe widget globally
+let stripePromise: Promise<Stripe | null> | null = null;
+const getStripe = () => {
+  if (!stripePromise) {
+    stripePromise = loadStripe(
+      import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
+    );
+  }
+  return stripePromise;
+};
 
 interface CheckoutFormProps {
   onSuccess: () => void;
@@ -165,7 +171,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             )}
 
             {clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <Elements stripe={getStripe()} options={{ clientSecret }}>
                 <CheckoutForm
                   onSuccess={handleSuccess}
                   onCancel={handleClose}

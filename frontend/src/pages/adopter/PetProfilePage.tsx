@@ -35,8 +35,13 @@ import { adoptionRequestsService } from "../../services/adoptionRequests.service
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
 import { PUBLIC_ASSETS } from "../../utils/publicAssets";
-import { useState } from "react";
-import { DonationModal } from "../../components/organisms/DonationModal";
+import { useState, lazy, Suspense } from "react";
+
+const DonationModal = lazy(() =>
+  import("../../components/organisms/DonationModal").then((module) => ({
+    default: module.DonationModal,
+  }))
+);
 
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -525,11 +530,15 @@ export const PetProfilePage = () => {
         </Alert>
       </Snackbar>
 
-      <DonationModal
-        open={isDonationModalOpen}
-        onClose={() => setIsDonationModalOpen(false)}
-        amount={20} // Fixed amount for simplicity
-      />
+      <Suspense fallback={null}>
+        {isDonationModalOpen && (
+          <DonationModal
+            open={isDonationModalOpen}
+            onClose={() => setIsDonationModalOpen(false)}
+            amount={20} // Fixed amount for simplicity
+          />
+        )}
+      </Suspense>
 
       {/* Confirmation Modal */}
       <Dialog

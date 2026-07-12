@@ -1,8 +1,13 @@
 // src/components/organisms/DonationPanel.tsx
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Paper, Typography, Button } from "@mui/material";
-import { DonationModal } from "./DonationModal";
+
+const DonationModal = lazy(() =>
+  import("./DonationModal").then((module) => ({
+    default: module.DonationModal,
+  }))
+);
 
 export const DonationPanel = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,12 +41,15 @@ export const DonationPanel = () => {
           Donar Ahora
         </Button>
       </Paper>
-
-      <DonationModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        amount={DEFAULT_DONATION_AMOUNT}
-      />
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <DonationModal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            amount={DEFAULT_DONATION_AMOUNT}
+          />
+        )}
+      </Suspense>
     </>
   );
 };
