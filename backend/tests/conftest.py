@@ -119,6 +119,7 @@ def setup_database():
     # and drops them after all tests have finished
     # The scope is "session" meaning it runs once for the entire test suite
     # Create all tables
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     # Drop all tables after tests are done
@@ -128,11 +129,15 @@ def setup_database():
 @pytest.fixture(scope="function")
 def db_session():
     # This fixture provides a fresh database session for each test function
-    # It yields the session and then closes it after the test finishes
+    # It yields the session, rolls back any changes, and closes it
     db = TestingSessionLocal()
     try:
         yield db
     finally:
+        db.rollback()
+        for table in reversed(Base.metadata.sorted_tables):
+            db.execute(table.delete())
+        db.commit()
         db.close()
 
 

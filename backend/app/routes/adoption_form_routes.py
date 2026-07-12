@@ -108,10 +108,7 @@ async def get_my_adoption_form_route(
         form = await get_adoption_form_by_user(db, user_id, postgres_db=postgres_db)
 
         if not form:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"message": "No adoption form found for this user"},
-            )
+            return None
 
         # Remove review fields from adopter response (security: don't show admin review info)
         form.pop("status", None)
@@ -207,10 +204,7 @@ async def get_all_adoption_forms_admin(
             db, status_filter=resolved_status, pet_name_filter=pet_name
         )
         if not forms:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"message": "No adoption forms found"},
-            )
+            return {"forms": [], "applications_count": 0}
         # Count each application individually, even if they belong to the
         # same user/form (a form can group multiple pet applications)
         applications_count = sum(len(f.get("applications", [])) for f in forms)
