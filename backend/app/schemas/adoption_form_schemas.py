@@ -95,7 +95,7 @@ class AdoptionFormRequest(BaseModel):
     def validate_employment_status(cls, v: str) -> str:
         # Validate employment status against allowed values
         logger.debug(f"Validating employment status: {v}")
-        valid_statuses = ["employed", "independent"]
+        valid_statuses = ["employed", "independent", "other"]
         if v not in valid_statuses:
             logger.warning(f"Employment status validation failed for: {v}")
             raise ValueError(
@@ -109,7 +109,7 @@ class AdoptionFormRequest(BaseModel):
     def validate_housing_type(cls, v: str) -> str:
         # Validate housing type against allowed values
         logger.debug(f"Validating housing type: {v}")
-        valid_types = ["apartment", "rented_house", "own_house"]
+        valid_types = ["apartment", "rented_house", "own_house", "other"]
         if v not in valid_types:
             logger.warning(f"Housing type validation failed for: {v}")
             raise ValueError(f"Housing type must be one of: {', '.join(valid_types)}")

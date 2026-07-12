@@ -1,3 +1,4 @@
+import axios from "axios";
 import { apiClient } from "./apiClient";
 import type { AdoptionRequest } from "../types/adoption.types";
 import type { AIProfileResponse } from "../types/pets.types";
@@ -62,6 +63,10 @@ export const adoptionRequestsService = {
       );
       return response.data.applications;
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        // It's expected to return 404 if the user hasn't submitted a form yet
+        return [];
+      }
       console.error("Failed to fetch applications from backend", error);
       return [];
     }
