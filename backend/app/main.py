@@ -14,6 +14,8 @@ from app.routes.foundation_routes import router as foundation_router
 from app.routes.applications_routes import router as applications_router
 from app.routes.payment_routes import router as payment_routes
 from app.routes.notification_routes import router as notification_router
+import socketio
+from app.utils.socketio_manager import sio
 
 # Logger import
 from app.utils.logger.logger_config import logger
