@@ -298,7 +298,8 @@ def test_get_my_adoption_form_no_form(client, db_session):
         headers={"Authorization": f"Bearer {adopter_token}"},
     )
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert response.json() is None
 
 
 def test_update_my_adoption_form_no_form(client, db_session):
@@ -638,7 +639,10 @@ def test_get_all_adoption_forms_admin_pet_name_no_match(client):
     )
 
     app.dependency_overrides.pop(get_mongo_db, None)
-    assert response.status_code == 404
+    assert response.status_code == 200
+    data = response.json()
+    assert data["forms"] == []
+    assert data["applications_count"] == 0
 
 
 def test_get_all_adoption_forms_admin_requires_admin_role(client):

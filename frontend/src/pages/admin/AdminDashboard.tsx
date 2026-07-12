@@ -1,6 +1,6 @@
 // src/pages/admin/AdminDashboard.tsx
 
-import { Grid, Typography, Box, Paper, CircularProgress } from "@mui/material";
+import { Grid, Typography, Box, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "../../components/templates/AdminLayout";
 import { AdminWelcomeBanner } from "../../components/organisms/AdminWelcomeBanner";
@@ -130,38 +130,6 @@ export const AdminDashboard = () => {
           />
         </Grid>
       </Grid>
-
-      {/* SYSTEM STATUS */}
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-        Estado del Sistema
-      </Typography>
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          borderRadius: 3,
-          border: "1px solid",
-          borderColor: "grey.200",
-        }}
-      >
-        {[
-          "Generador de Biografías IA",
-          "Motor de Emparejamiento",
-          "Sistema de Notificaciones",
-        ].map((item) => (
-          <Box
-            key={item}
-            sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}
-          >
-            <Typography variant="body2" fontWeight={500}>
-              ● {item}
-            </Typography>
-            <Typography variant="body2" color="success.main">
-              Activo
-            </Typography>
-          </Box>
-        ))}
-      </Paper>
     </AdminLayout>
   );
 };

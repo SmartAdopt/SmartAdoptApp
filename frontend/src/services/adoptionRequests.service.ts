@@ -61,7 +61,7 @@ export const adoptionRequestsService = {
       const response = await apiClient.get<ApplicationListResponse>(
         "/adoption-forms/me"
       );
-      return response.data.applications;
+      return response.data?.applications || [];
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         // It's expected to return 404 if the user hasn't submitted a form yet
