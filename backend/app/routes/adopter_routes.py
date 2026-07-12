@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 # Database imports
 from app.database.postgres.postgres_db import get_db
+from app.database.mongo.mongo_db import get_mongo_db
 
 # JWT utilities
 from app.utils.jwt.jwt_utils import verify_token
@@ -31,9 +32,10 @@ router = APIRouter(prefix="/adopter", tags=["Adopter"])
     summary="Adopter Home",
     description="Get adopter home data (requires adopter role)",
 )
-def adopter_home(
+async def adopter_home(
     token_payload: dict = Depends(verify_token),
     db=Depends(get_db),
+    mongo_db=Depends(get_mongo_db),
 ):
     # Endpoint for adopter home - protected by JWT and role-based authorization
     # Only users with role="adopter" can access this endpoint
@@ -50,22 +52,29 @@ def adopter_home(
         )
 
     try:
-        logger.info(
-            f"Adopter home accessed successfully by user: {token_payload.get('sub')}"
-        )
-        # Get actual favorite count from database
+        # Get actual counts from databases
         user_id = int(token_payload.get("sub", 0))
         favorite_count = get_favorite_count(db, user_id)
 
-        # Return adopter home data
+        pet_collection = mongo_db["pet_profiles"]
+        app_collection = mongo_db["applications"]
+
+        available_pets = await pet_collection.count_documents({"status": "available"})
+        my_adoptions = await app_collection.count_documents(
+            {"user_id": user_id, "status": "approved"}
+        )
+
+        logger.info(
+            f"Adopter home accessed successfully by user: {token_payload.get('sub')}"
+        )
         return {
-            "message": "Welcome to Adopter Home",  # Welcome message
-            "user_id": token_payload.get("sub"),  # User ID from token
-            "user_role": token_payload.get("role"),  # User role from token
+            "message": "Welcome to Adopter Home",
+            "user_id": token_payload.get("sub"),
+            "user_role": token_payload.get("role"),
             "home_data": {
-                "available_pets": 45,  # Available pets count
-                "my_adoptions": 2,  # User's adoptions count
-                "favorite_pets": favorite_count,  # User's favorite pets count
+                "available_pets": available_pets,
+                "my_adoptions": my_adoptions,
+                "favorite_pets": favorite_count,
             },
         }
 

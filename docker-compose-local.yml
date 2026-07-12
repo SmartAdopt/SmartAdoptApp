@@ -38,8 +38,9 @@ services:
       - LLAMA_MODEL=${LLAMA_MODEL}
       - LLAMA_API_KEY=${LLAMA_API_KEY}
       - LLAMA_JSON_MODE=${LLAMA_JSON_MODE}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     volumes:
-      - ./backend:/app
+      - ./backend:/backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,6 +55,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
     container_name: smart-adopt-frontend-dev
     ports:
       - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_INTERNAL_PORT}"

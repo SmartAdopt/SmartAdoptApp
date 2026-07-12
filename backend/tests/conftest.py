@@ -92,8 +92,10 @@ if not os.getenv("MONGO_PASSWORD"):
 
 # Import the FastAPI app and the database components AFTER loading .env
 # ruff: noqa: E402
-from app.main import app
+from app.main import fastapi_app as app
+from app.config import settings
 from app.database.postgres.postgres_db import Base, get_db
+from app.database.mongo.mongo_db import get_mongo_db
 from unittest.mock import patch
 
 # Import models to ensure they are registered with Base before creating tables
@@ -197,18 +199,17 @@ def client(db_session):
             return None
 
         def find(self, query=None):
-            return self
+            cursor = MockMongoCursor(self.documents, query)
+            return cursor
 
-        def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            if not hasattr(self, "_iter"):
-                self._iter = iter(self.documents)
-            try:
-                return next(self._iter)
-            except StopIteration:
-                raise StopAsyncIteration
+        async def count_documents(self, query=None):
+            if query is None:
+                return len(self.documents)
+            count = 0
+            for doc in self.documents:
+                if all(doc.get(k) == v for k, v in query.items()):
+                    count += 1
+            return count
 
         async def insert_one(self, document):
             self.documents.append(document)
@@ -234,16 +235,39 @@ def client(db_session):
                 return new_doc
             return None
 
+    class MockMongoCursor:
+        def __init__(self, documents, query=None):
+            self.documents = documents
+            self.query = query
+
+        async def to_list(self, length=None):
+            if self.query is None:
+                result = self.documents
+            else:
+                result = [
+                    doc
+                    for doc in self.documents
+                    if all(doc.get(k) == v for k, v in self.query.items())
+                ]
+            if length is not None:
+                result = result[:length]
+            return result
+
     mock_redis = MockRedis()
     mock_mongo = MockMongoClient()
 
+    async def override_get_mongo_db():
+        db = mock_mongo[settings.MONGO_DB]
+        return db
+
     # Override the dependency globally in the app
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_mongo_db] = override_get_mongo_db
 
     # Mock redis client in multiple locations
     with patch(
         "app.database.redis.redis_db.get_redis_client", return_value=mock_redis
-    ), patch("app.database.mongo.mongo_db.get_client", return_value=mock_mongo), patch(
+    ), patch(
         "app.routes.admin_routes.verify_token",
         side_effect=lambda credentials: __import__(
             "app.utils.jwt.jwt_utils", fromlist=["verify_token"]

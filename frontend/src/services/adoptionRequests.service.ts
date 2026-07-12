@@ -18,6 +18,7 @@ interface ApplicationResponse {
 interface ApplicationWithPetResponse {
   application_id: string;
   pet_profile_id: string;
+  adopter_name?: string;
   total_score: number;
   total_max_score: number;
   main_score: number;
@@ -65,8 +66,8 @@ export const adoptionRequestsService = {
   },
 
   createRequest: async (petId: string): Promise<AdoptionRequest> => {
-    const localRequests = adoptionRequestsService._getLocalRequests();
-    if (localRequests.some((req) => req.petId === petId)) {
+    const alreadyRequested = await adoptionRequestsService.hasRequested(petId);
+    if (alreadyRequested) {
       throw new Error("Ya has enviado una solicitud para esta mascota.");
     }
 
@@ -121,8 +122,7 @@ export const adoptionRequestsService = {
       aiJustification,
     };
 
-    localRequests.push(newRequest);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localRequests));
+    // Backend ya guarda la solicitud, no usar localStorage
 
     return newRequest;
   },
@@ -168,6 +168,7 @@ export const adoptionRequestsService = {
     // FOR ADOPTERS: Backend AI + Local Overrides
     // ==========================================
     const backendApps = await adoptionRequestsService._getBackendRequests();
+    const allPets = await petsService.getRawPetsDatabase();
 
     let adopterName = "Adoptante (Tú)";
     let adopterEmail = "";
@@ -185,10 +186,8 @@ export const adoptionRequestsService = {
 
     const formattedData = backendApps
       .map((app) => {
-        const appPetAny = app.pet as unknown as Record<string, unknown>;
-        const formattedPet = app.pet
-          ? { ...app.pet, id: appPetAny.profile_id ?? appPetAny.id }
-          : undefined;
+        const matchedPet = allPets.find((p) => p.id === app.pet_profile_id);
+        const formattedPet = matchedPet;
 
         // Merge with local storage to reflect Admin's approvals/rejections
         const localSync = localApps.find((l) => l.id === app.application_id);
@@ -223,7 +222,7 @@ export const adoptionRequestsService = {
               : app.status === "approved"
               ? "Finalizada"
               : "Esperando revisión",
-          adopterName,
+          adopterName: app.adopter_name || adopterName,
           adopterEmail,
           adopterPhone,
           pet: formattedPet as AIProfileResponse,
@@ -252,12 +251,10 @@ export const adoptionRequestsService = {
 
     if (isAdopter) {
       const existingApps = await adoptionRequestsService._getBackendRequests();
-      if (existingApps.some((req) => req.pet_profile_id === petId)) {
-        return true;
-      }
+      return existingApps.some((req) => req.pet_profile_id === petId);
     }
 
-    // Fallback to local storage (for admins, or if backend check didn't find it)
+    // Fallback to local storage (for admins)
     const localRequests = adoptionRequestsService._getLocalRequests();
     return localRequests.some((req) => req.petId === petId);
   },

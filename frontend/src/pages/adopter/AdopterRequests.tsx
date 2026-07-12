@@ -1,6 +1,7 @@
 // src/pages/adopter/AdopterRequests.tsx
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Typography,
@@ -32,8 +33,6 @@ import { AdopterRequestCard } from "../../components/molecules/AdopterRequestCar
 export type RequestWithPet = AdoptionRequest & { pet: AIProfileResponse };
 
 export const AdopterRequests = () => {
-  const [requests, setRequests] = useState<RequestWithPet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithPet | null>(
     null
   );
@@ -54,19 +53,10 @@ export const AdopterRequests = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const data = await adoptionRequestsService.getRequestsWithPetData();
-        setRequests(data);
-      } catch (error) {
-        console.error("Failed to load requests", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRequests();
-  }, []);
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ["adopterRequests"],
+    queryFn: adoptionRequestsService.getRequestsWithPetData,
+  });
 
   const pendingCount = requests.filter(
     (r) => r.status === "under_review"

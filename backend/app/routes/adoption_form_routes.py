@@ -20,8 +20,9 @@ from app.services.adoption_form_service import (
     get_all_forms,
 )
 from app.services.applications_service import review_application
+from app.utils.socketio_manager import sio
 
-# JWT utils import
+# Model imports
 from app.utils.jwt.jwt_utils import verify_token
 
 # Logger import
@@ -258,6 +259,17 @@ async def review_adoption_form(
         result = await review_application(
             db, application_id, review_data.status, admin_id
         )
+
+        user_id = result.get("user_id")
+        if user_id:
+            await sio.emit(
+                "application_status_update",
+                {
+                    "status": review_data.status,
+                    "application_id": application_id,
+                },
+                room=f"user_{user_id}",
+            )
 
         return result
     except ValueError as e:

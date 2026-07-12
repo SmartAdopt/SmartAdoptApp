@@ -22,6 +22,7 @@ b2sdk
 loguru
 motor
 itsdangerous
+stripe
 
 #AI/ML
 transformers
@@ -29,3 +30,4 @@ torch
 pillow
 requests
 huggingface-hub
+python-socketio

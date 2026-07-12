@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     MONGO_USER: str  # MongoDB username
     MONGO_PASSWORD: str  # MongoDB password
 
+    # Stripe variables
+    STRIPE_SECRET_KEY: str = ""  # Stripe Secret Key
+
     # Use .env if it exists (local), otherwise use os.environ (CI/CD)
     model_config = SettingsConfigDict(
         env_file=env_file if env_file_exists else None,
