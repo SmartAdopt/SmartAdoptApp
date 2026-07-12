@@ -9,7 +9,11 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import {
+  loadStripe,
+  type Stripe,
+  type StripeConstructorOptions,
+} from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -30,7 +34,7 @@ const getStripe = () => {
             enabled: false,
           },
         },
-      } as any
+      } as StripeConstructorOptions
     );
   }
   return stripePromise;
@@ -189,10 +193,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             )}
 
             {clientSecret && (
-              <Elements
-                stripe={getStripe()}
-                options={{ clientSecret }}
-              >
+              <Elements stripe={getStripe()} options={{ clientSecret }}>
                 <CheckoutForm
                   onSuccess={handleSuccess}
                   onCancel={handleClose}
