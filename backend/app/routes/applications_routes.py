@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 # Database imports
 from app.database.mongo.mongo_db import get_mongo_db
+from app.database.postgres.postgres_db import get_db
 
 # JWT utilities
 from app.utils.jwt.jwt_utils import verify_token
@@ -14,6 +15,9 @@ from app.schemas.applications_schemas import ApplicationResponse
 
 # Service imports
 from app.services.applications_service import create_application
+
+# Model imports
+from app.models.user.user import User
 
 # Logger import
 from app.utils.logger.logger_config import logger
@@ -31,6 +35,7 @@ async def create_application_route(
     pet_profile_id: str,
     token_payload: dict = Depends(verify_token),
     mongo_db=Depends(get_mongo_db),
+    db=Depends(get_db),
 ):
     # Endpoint to create an adoption application for a specific pet
     logger.info(f"POST /applications/{pet_profile_id} - Create application request")
@@ -50,8 +55,18 @@ async def create_application_route(
         # Get user_id from token
         user_id = int(token_payload["sub"])
 
+        # Get adopter name from PostgreSQL
+        adopter_name = None
+        try:
+            user = db.query(User).filter(User.user_id == user_id).first()
+            if user:
+                parts = [user.first_name or "", user.last_name or ""]
+                adopter_name = " ".join(parts).strip() or None
+        except Exception as name_err:
+            logger.warning(f"Failed to fetch adopter name: {name_err}")
+
         # Call service to create the application
-        application = await create_application(mongo_db, user_id, pet_profile_id)
+        application = await create_application(mongo_db, user_id, pet_profile_id, adopter_name)
 
         # Return minimal success response
         return ApplicationResponse(

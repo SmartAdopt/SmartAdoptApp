@@ -31,7 +31,7 @@ export const FeaturedPetsSection = () => {
 
   // Filter available pets, sort by creation_date (newest first), and take the top 3
   const latestPets = [...pets]
-    .filter((pet) => pet.status?.toLowerCase() !== "adopted")
+    .filter((pet) => pet.status?.toLowerCase() === "available")
     .sort((a, b) => {
       const dateA = new Date(a.creation_date || 0).getTime();
       const dateB = new Date(b.creation_date || 0).getTime();

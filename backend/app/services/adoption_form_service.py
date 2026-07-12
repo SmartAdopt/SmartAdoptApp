@@ -173,6 +173,10 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
 
         logger.info(f"Adoption form retrieved successfully for user_id: {user_id}")
 
+        form_id = form.get("_id")
+        if form_id:
+            form["form_id"] = form_id
+
         # Remove MongoDB _id, reviewed_by, reviewed_at, status from response
         form.pop("_id", None)
         form.pop("reviewed_by", None)
@@ -181,7 +185,6 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
 
         # Embed related applications
         applications_collection = db["applications"]
-        form_id = form.get("form_id")
         if form_id:
             applications = await applications_collection.find(
                 {"form_id": form_id}
@@ -190,6 +193,7 @@ async def get_adoption_form_by_user(db, user_id: int) -> Optional[Dict[str, Any]
                 {
                     "application_id": app.get("_id"),
                     "pet_profile_id": app.get("pet_profile_id"),
+                    "adopter_name": app.get("adopter_name"),
                     "total_score": app.get("total_score"),
                     "total_max_score": app.get("total_max_score"),
                     "main_score": app.get("main_score"),
@@ -434,6 +438,7 @@ async def get_all_forms(
                         "application_id": app.get("_id"),
                         "pet_profile_id": pet_profile_id,
                         "pet_name": pet_name,
+                        "adopter_name": app.get("adopter_name"),
                         "total_score": app.get("total_score"),
                         "total_max_score": app.get("total_max_score"),
                         "main_score": app.get("main_score"),

@@ -18,6 +18,7 @@ interface ApplicationResponse {
 interface ApplicationWithPetResponse {
   application_id: string;
   pet_profile_id: string;
+  adopter_name?: string;
   total_score: number;
   total_max_score: number;
   main_score: number;
@@ -121,8 +122,8 @@ export const adoptionRequestsService = {
       aiJustification,
     };
 
-    localRequests.push(newRequest);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localRequests));
+    // Backend ya guarda la solicitud, no usar localStorage
+
 
     return newRequest;
   },
@@ -223,7 +224,7 @@ export const adoptionRequestsService = {
               : app.status === "approved"
               ? "Finalizada"
               : "Esperando revisión",
-          adopterName,
+          adopterName: app.adopter_name || adopterName,
           adopterEmail,
           adopterPhone,
           pet: formattedPet as AIProfileResponse,
@@ -252,12 +253,10 @@ export const adoptionRequestsService = {
 
     if (isAdopter) {
       const existingApps = await adoptionRequestsService._getBackendRequests();
-      if (existingApps.some((req) => req.pet_profile_id === petId)) {
-        return true;
-      }
+      return existingApps.some((req) => req.pet_profile_id === petId);
     }
 
-    // Fallback to local storage (for admins, or if backend check didn't find it)
+    // Fallback to local storage (for admins)
     const localRequests = adoptionRequestsService._getLocalRequests();
     return localRequests.some((req) => req.petId === petId);
   },

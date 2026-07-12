@@ -24,6 +24,7 @@ class Application:
         status: str = "pending",
         created_at: Optional[datetime] = None,
         needs_manual_review: bool = False,
+        adopter_name: Optional[str] = None,
     ):
         # Core identifiers
         self.application_id = application_id
@@ -49,3 +50,4 @@ class Application:
         # Status and metadata
         self.status = status
         self.created_at = created_at or datetime.now()
+        self.adopter_name = adopter_name

@@ -42,7 +42,7 @@ export const AdopterExplore = () => {
 
   // Filter only available pets for the adopter view
   const availablePets = useMemo(
-    () => pets.filter((pet) => pet.status?.toLowerCase() !== "adopted"),
+    () => pets.filter((pet) => pet.status?.toLowerCase() === "available"),
     [pets]
   );
 
