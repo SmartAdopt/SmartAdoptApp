@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { Box, Container, Typography, Grid } from "@mui/material";
 import { PUBLIC_ASSETS } from "../../utils/publicAssets";
+import { API_BASE_URL } from "../../utils/apiBaseUrl";
 
 // Static JSON import — Vite inlines this at build time (pre-rendered markup).
 import landingData from "../../content/landing.json";
@@ -47,7 +48,7 @@ export const ImpactSection = () => {
       try {
         // API_BASE_URL is resolved by Vite's proxy in dev or the deployed URL
         // in production. The endpoint is public and does not require auth.
-        const response = await fetch("/api/landing/metrics", {
+        const response = await fetch(`${API_BASE_URL}/landing/metrics`, {
           signal: controller.signal,
         });
 
