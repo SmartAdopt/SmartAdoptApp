@@ -34,8 +34,13 @@ services:
       - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
       - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
       - HF_TOKEN=${HF_TOKEN}
+      - LLAMA_BASE_URL=${LLAMA_BASE_URL}
+      - LLAMA_MODEL=${LLAMA_MODEL}
+      - LLAMA_API_KEY=${LLAMA_API_KEY}
+      - LLAMA_JSON_MODE=${LLAMA_JSON_MODE}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     volumes:
-      - ./backend:/app
+      - ./backend:/backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,13 +49,13 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
     container_name: smart-adopt-frontend-dev
     ports:
       - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_INTERNAL_PORT}"
@@ -64,7 +69,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
   postgres:
     image: postgres:16-alpine
     container_name: smart-adopt-postgres-dev
@@ -75,7 +79,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,7 +87,6 @@ services:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./backend/app/database/postgres/init_postgres.sql:/docker-entrypoint-initdb.d/01-init.sql
     restart: unless-stopped
-
   mongo:
     image: mongo:7
     container_name: smart-adopt-mongo-dev
@@ -94,7 +97,6 @@ services:
     volumes:
       - mongo_dev_data:/data/db
     restart: unless-stopped
-
   redis:
     image: redis:7-alpine
     container_name: smart-adopt-redis-dev
@@ -103,7 +105,6 @@ services:
     volumes:
       - redis_dev_data:/data
     restart: unless-stopped
-
   dozzle:
     image: amir20/dozzle:latest
     container_name: smart-adopt-dozzle
@@ -112,7 +113,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
-
 volumes:
   postgres_dev_data:
   mongo_dev_data:

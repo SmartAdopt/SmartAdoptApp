@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
 import "./SwipeablePetCard.css";
 
 // ==========================================
@@ -130,7 +131,11 @@ export const SwipeablePetCard = ({
           {!imageLoaded && <div className="tinder-card__image-skeleton" />}
           <img
             ref={imgRef}
-            className={`tinder-card__image ${imageLoaded ? "tinder-card__image--loaded" : "tinder-card__image--loading"}`}
+            className={`tinder-card__image ${
+              imageLoaded
+                ? "tinder-card__image--loaded"
+                : "tinder-card__image--loading"
+            }`}
             src={petImage}
             alt={petName}
             loading="eager"
@@ -138,7 +143,7 @@ export const SwipeablePetCard = ({
             fetchPriority="high"
             onLoad={handleImageLoad}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "/dog.svg";
+              (e.target as HTMLImageElement).src = PUBLIC_ASSETS.dog;
               setImageLoaded(true);
             }}
           />
@@ -190,7 +195,9 @@ export const SwipeablePetCard = ({
             Pass
           </button>
           <button
-            className={`tinder-card__btn tinder-card__btn--favorite ${isFavorite ? "tinder-card__btn--favorited" : ""}`}
+            className={`tinder-card__btn tinder-card__btn--favorite ${
+              isFavorite ? "tinder-card__btn--favorited" : ""
+            }`}
             onClick={handleFavorite}
             id="tinder-btn-favorite"
           >

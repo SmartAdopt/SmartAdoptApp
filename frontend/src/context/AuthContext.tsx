@@ -14,13 +14,14 @@ interface AuthContextType {
   user: AuthSession | null;
   role: "admin" | "adopter" | "user" | null;
   loginUser: (sessionData: AuthSession) => void;
+  updateUser: (partialData: Partial<AuthSession>) => void;
   logoutUser: () => void;
 }
 
 // Tell Vite's Fast Refresh to ignore the non-component export warning here
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
@@ -51,12 +52,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.setItem("user", JSON.stringify(sessionData));
   };
 
-  const logoutUser = () => {
+  // Merge partial updates into the existing session (e.g. after a profile save)
+  const updateUser = (partialData: Partial<AuthSession>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partialData };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const logoutUser = async () => {
+    try {
+      const { authService } = await import("../services/auth.service");
+      await authService.logout();
+    } catch (e) {
+      console.warn(e);
+    }
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/login"; // Force redirect to clear memory
+    window.location.hash = "/login";
+    window.location.reload(); // Force redirect to clear memory
   };
 
   const value = {
@@ -64,6 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     user,
     role: user?.role || null,
     loginUser,
+    updateUser,
     logoutUser,
   };
 

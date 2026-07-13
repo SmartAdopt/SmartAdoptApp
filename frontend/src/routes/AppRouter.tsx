@@ -19,18 +19,26 @@ import { AdopterExplore } from "../pages/adopter/AdopterExplore";
 import { AdopterRequests } from "../pages/adopter/AdopterRequests";
 import { AdopterFavorites } from "../pages/adopter/AdopterFavorites";
 import { AdopterSuitability } from "../pages/adopter/AdopterSuitability";
+import { AdopterSuitabilitySurveyPage } from "../pages/adopter/AdopterSuitabilitySurveyPage";
 import { ArticlePage } from "../pages/adopter/ArticlePage";
 
 // ==============================
 // PROTECTED PAGES (Admin)
 // ==============================
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
+import { AdminRequestsPage } from "../pages/admin/AdminRequestsPage";
 import { PetProfilePage } from "../pages/adopter/PetProfilePage";
 import { InfoPage } from "../pages/InfoPage";
 import { AdminAddPetPage } from "../pages/admin/AdminAddPetPage";
 import { AdminPetListPage } from "../pages/admin/AdminPetListPage";
+import { AdminLegalInfoPage } from "../pages/admin/AdminLegalInfoPage";
+import { AdminAdoptedPetsPage } from "../pages/admin/AdminAdoptedPetsPage";
+
+import { useGoogleOAuthDeepLink } from "../hooks/useGoogleOAuthDeepLink";
 
 export const AppRouter = () => {
+  useGoogleOAuthDeepLink();
+
   return (
     <Routes>
       {/* PUBLIC ROUTES */}
@@ -49,6 +57,10 @@ export const AppRouter = () => {
         <Route path="/adopter/requests" element={<AdopterRequests />} />
         <Route path="/adopter/favorites" element={<AdopterFavorites />} />
         <Route path="/adopter/suitability" element={<AdopterSuitability />} />
+        <Route
+          path="/adopter/suitability/survey"
+          element={<AdopterSuitabilitySurveyPage />}
+        />
         <Route path="/adopter/profile" element={<AdopterProfile />} />
       </Route>
 
@@ -56,9 +68,12 @@ export const AppRouter = () => {
       {/* Explicitly restrict to 'admin' only */}
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/requests" element={<AdminRequestsPage />} />
         {/* Future admin routes will go here */}
         <Route path="/admin/pets" element={<AdminPetListPage />} />
         <Route path="/admin/pets/new" element={<AdminAddPetPage />} />
+        <Route path="/admin/pets/adopted" element={<AdminAdoptedPetsPage />} />
+        <Route path="/admin/legal-info" element={<AdminLegalInfoPage />} />
       </Route>
 
       {/* FALLBACK */}

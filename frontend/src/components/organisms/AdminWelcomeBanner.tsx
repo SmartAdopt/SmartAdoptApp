@@ -1,7 +1,6 @@
 // src/components/organisms/AdminWelcomeBanner.tsx
 
-import { Paper, Typography, Button, Box } from "@mui/material";
-import { ArrowForward as ArrowForwardIcon } from "@mui/icons-material";
+import { Paper, Typography, Box } from "@mui/material";
 
 export const AdminWelcomeBanner = () => {
   return (
@@ -29,19 +28,6 @@ export const AdminWelcomeBanner = () => {
           solicitudes pendientes.
         </Typography>
       </Box>
-      <Button
-        variant="contained"
-        endIcon={<ArrowForwardIcon />}
-        sx={{
-          bgcolor: "white",
-          color: "text.primary",
-          "&:hover": { bgcolor: "grey.100" },
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-        }}
-      >
-        Revisar Solicitudes
-      </Button>
     </Paper>
   );
 };

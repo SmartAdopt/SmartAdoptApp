@@ -36,3 +36,4 @@ test.db
 
 .coverage
 test.db
+node_modules/

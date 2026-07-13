@@ -1,7 +1,7 @@
 // src/pages/adopter/PetProfilePage.tsx
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Typography,
@@ -12,6 +12,15 @@ import {
   CircularProgress,
   IconButton,
   Chip,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -22,13 +31,24 @@ import {
 } from "@mui/icons-material";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { petsService } from "../../services/pets.service";
+import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import { usePetDatabase } from "../../context/PetContext";
 import type { AIProfileResponse } from "../../types/pets.types";
+import { PUBLIC_ASSETS } from "../../utils/publicAssets";
+import { useState, lazy, Suspense } from "react";
+
+const DonationModal = lazy(() =>
+  import("../../components/organisms/DonationModal").then((module) => ({
+    default: module.DonationModal,
+  }))
+);
 
 export const PetProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { favoritePetIds, toggleFavorite } = usePetDatabase();
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
 
   // Fetch all pets from the real backend API and find the one matching :id
   const {
@@ -44,10 +64,102 @@ export const PetProfilePage = () => {
     enabled: !!id,
   });
 
+  // Check if the user has already requested this pet
+  const { data: hasRequested, refetch: refetchHasRequested } = useQuery({
+    queryKey: ["hasRequested", id],
+    queryFn: () => adoptionRequestsService.hasRequested(id!),
+    enabled: !!id,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [isCommitted, setIsCommitted] = useState(false);
+
+  const isAdopted = pet?.status === "adopted";
   const isFavorite = id ? favoritePetIds.includes(id) : false;
 
   const handleToggleFavorite = () => {
     if (id) toggleFavorite(id);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setSnackbarSeverity("success");
+    setSnackbarMessage("¡Enlace copiado al portapapeles!");
+    setSnackbarOpen(true);
+  };
+
+  const handleOpenConfirmModal = () => {
+    if (!id || hasRequested) return;
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmAdoption = async () => {
+    if (!id || hasRequested || !isCommitted) return;
+
+    setIsSubmitting(true);
+    setConfirmModalOpen(false);
+    try {
+      await adoptionRequestsService.createRequest(id);
+      setSnackbarSeverity("success");
+      setSnackbarMessage("¡Solicitud enviada con éxito!");
+      // Invalidate relevant queries so explore and dashboard update
+      queryClient.invalidateQueries({ queryKey: ["adopterExplorePets"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredPets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["myAdoptionRequestsFeaturedFilter"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["myAdoptionRequestsExploreFilter"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["adopterFavoritesList"] });
+      queryClient.invalidateQueries({ queryKey: ["petDetail", id] });
+      setSnackbarOpen(true);
+      refetchHasRequested();
+    } catch (error: unknown) {
+      let msg = "Error al enviar la solicitud.";
+
+      interface ApiError {
+        response?: {
+          data?: {
+            detail?: string | { message?: string };
+            message?: string;
+          };
+        };
+      }
+      const err = error as ApiError;
+
+      if (err?.response?.data?.detail) {
+        msg =
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : err.response.data.detail.message ||
+              JSON.stringify(err.response.data.detail);
+      } else if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (error instanceof Error) {
+        msg = error.message;
+      }
+
+      if (msg.includes("formulario de idoneidad")) {
+        setSnackbarSeverity("info");
+      } else {
+        setSnackbarSeverity("error");
+      }
+      setSnackbarMessage(msg);
+      setSnackbarOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   if (isLoading) {
@@ -124,7 +236,7 @@ export const PetProfilePage = () => {
           >
             {isFavorite ? <FavoriteFilledIcon /> : <FavoriteBorderIcon />}
           </IconButton>
-          <IconButton size="small">
+          <IconButton size="small" onClick={handleShare}>
             <ShareIcon />
           </IconButton>
         </Box>
@@ -136,7 +248,7 @@ export const PetProfilePage = () => {
           {/* Main Image */}
           <Box
             component="img"
-            src={petImage || "/dog.svg"}
+            src={petImage || PUBLIC_ASSETS.dog}
             alt={petName}
             sx={{
               width: "100%",
@@ -147,7 +259,7 @@ export const PetProfilePage = () => {
               bgcolor: "grey.100",
             }}
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-              e.currentTarget.src = "/dog.svg";
+              e.currentTarget.src = PUBLIC_ASSETS.dog;
             }}
           />
 
@@ -353,17 +465,28 @@ export const PetProfilePage = () => {
 
               <Button
                 variant="contained"
-                color="warning"
+                color={
+                  isAdopted ? "success" : hasRequested ? "success" : "warning"
+                }
                 fullWidth
                 size="large"
+                disabled={isAdopted || hasRequested || isSubmitting}
+                onClick={handleOpenConfirmModal}
                 sx={{ mb: 2, borderRadius: 2 }}
               >
-                Solicitar Adopción
+                {isSubmitting
+                  ? "Enviando..."
+                  : isAdopted
+                  ? "Mascota Adoptada"
+                  : hasRequested
+                  ? "Solicitud enviada"
+                  : "Solicitar Adopción"}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 sx={{ mb: 2, borderRadius: 2 }}
+                onClick={() => navigate("/adopter/suitability")}
               >
                 Ver Tu Compatibilidad
               </Button>
@@ -412,6 +535,7 @@ export const PetProfilePage = () => {
                 color="success"
                 fullWidth
                 sx={{ borderRadius: 2 }}
+                onClick={() => setIsDonationModalOpen(true)}
               >
                 Hacer una Donación
               </Button>
@@ -438,6 +562,70 @@ export const PetProfilePage = () => {
           </Box>
         </Grid>
       </Grid>
+
+      {/* Temporary Notification */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Suspense fallback={null}>
+        {isDonationModalOpen && (
+          <DonationModal
+            open={isDonationModalOpen}
+            onClose={() => setIsDonationModalOpen(false)}
+            amount={20} // Fixed amount for simplicity
+          />
+        )}
+      </Suspense>
+
+      {/* Confirmation Modal */}
+      <Dialog
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+      >
+        <DialogTitle>Confirmar Solicitud de Adopción</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            ¿Estás seguro que deseas enviar una solicitud de adopción para{" "}
+            {petName}? Este animalito necesita un hogar amoroso y responsable.
+            Al continuar, aceptas iniciar el proceso de evaluación.
+          </DialogContentText>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isCommitted}
+                onChange={(e) => setIsCommitted(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Me comprometo a brindar un hogar seguro y amoroso"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmModalOpen(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmAdoption}
+            color="primary"
+            variant="contained"
+            disabled={!isCommitted || isSubmitting}
+          >
+            Confirmar Solicitud
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AdopterLayout>
   );
 };

@@ -217,7 +217,7 @@ export const Footer = () => {
               ✉ info@smartadopt.ec
             </Typography>
             <Typography variant="body2" gutterBottom>
-              📞 +593 99 123 4567
+              📞 0998662547
             </Typography>
             <Typography variant="body2" gutterBottom>
               📍 Quito, Ecuador
@@ -228,7 +228,7 @@ export const Footer = () => {
               <IconButton
                 size="small"
                 aria-label="Facebook"
-                href="https://facebook.com"
+                href="https://www.facebook.com/profile.php?id=61591409082363"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
@@ -247,7 +247,7 @@ export const Footer = () => {
               <IconButton
                 size="small"
                 aria-label="WhatsApp"
-                href="https://wa.me/593991234567"
+                href="https://wa.me/593987370253"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
@@ -266,7 +266,7 @@ export const Footer = () => {
               <IconButton
                 size="small"
                 aria-label="Instagram"
-                href="https://instagram.com"
+                href="https://www.instagram.com/fundacion.feliz.1437007/?utm_source=ig_web_button_share_sheet"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{

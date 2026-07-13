@@ -136,6 +136,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/frontend:buildcache,mode=max
           build-args: |
             VITE_API_URL=/api
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.PROD_VITE_STRIPE_PUBLISHABLE_KEY }}
           labels: |
             org.opencontainers.image.version=${{ steps.version.outputs.semver }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -197,10 +198,15 @@ jobs:
             BACKBLAZE_APPLICATION_KEY=${{ secrets.PROD_BACKBLAZE_APPLICATION_KEY }}
             BACKBLAZE_BUCKET_NAME=${{ secrets.PROD_BACKBLAZE_BUCKET_NAME }}
             HF_TOKEN=${{ secrets.PROD_HF_TOKEN }}
+            LLAMA_BASE_URL=${{ secrets.PROD_LLAMA_BASE_URL }}
+            LLAMA_MODEL=${{ secrets.PROD_LLAMA_MODEL }}
+            LLAMA_API_KEY=${{ secrets.PROD_GROQ_API_KEY }}
+            LLAMA_JSON_MODE=${{ secrets.PROD_LLAMA_JSON_MODE }}
             DOZZLE_EXTERNAL_PORT=${{ secrets.PROD_DOZZLE_EXTERNAL_PORT }}
             DOZZLE_PORT=${{ secrets.PROD_DOZZLE_PORT }}
             DOZZLE_USERNAME=${{ secrets.PROD_DOZZLE_USERNAME }}
             DOZZLE_PASSWORD=${{ secrets.PROD_DOZZLE_PASSWORD }}
+            STRIPE_SECRET_KEY=${{ secrets.PROD_STRIPE_SECRET_KEY }}
             ENVEOF
             
             docker compose -f docker-compose-production.yml pull

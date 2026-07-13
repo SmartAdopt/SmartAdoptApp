@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { AdopterLayout } from "../../components/templates/AdopterLayout";
 import { SwipeablePetCard } from "../../components/molecules/SwipeablePetCard";
 import { petsService } from "../../services/pets.service";
+import { adoptionRequestsService } from "../../services/adoptionRequests.service";
 import { usePetDatabase } from "../../context/PetContext";
 import { useImagePreloader } from "../../hooks/useImagePreloader";
 import type { AIProfileResponse } from "../../types/pets.types";
@@ -37,26 +38,39 @@ export const AdopterExplore = () => {
   } = useQuery<AIProfileResponse[]>({
     queryKey: ["adopterExplorePets"],
     queryFn: petsService.getRawPetsDatabase,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data to ensure adopted pets disappear
   });
 
-  // Filter only available pets for the adopter view
-  const availablePets = useMemo(
-    () => pets.filter((pet) => pet.status?.toLowerCase() !== "adopted"),
-    [pets],
-  );
+  // Fetch the user's past requests to filter out pets they've been rejected for
+  const { data: myRequests = [] } = useQuery({
+    queryKey: ["myAdoptionRequestsExploreFilter"],
+    queryFn: adoptionRequestsService._getBackendRequests,
+  });
+
+  // Filter only available pets for the adopter view, excluding ones they were rejected for
+  const availablePets = useMemo(() => {
+    const rejectedPetIds = myRequests
+      .filter((req) => req.status === "rejected")
+      .map((req) => req.pet_profile_id);
+
+    return pets.filter(
+      (pet) =>
+        pet.status?.toLowerCase() === "available" &&
+        !rejectedPetIds.includes(pet.id)
+    );
+  }, [pets, myRequests]);
 
   // Extract all image URLs for the batch preloader
   const allImageUrls = useMemo(
     () => availablePets.map((pet) => pet.pet.pet_image_url).filter(Boolean),
-    [availablePets],
+    [availablePets]
   );
 
   // Batch preload images: current + next N cards
   const { isImageReady } = useImagePreloader(
     allImageUrls,
     currentIndex,
-    IMAGE_LOOKAHEAD,
+    IMAGE_LOOKAHEAD
   );
 
   // Handler for "Pass" — advance to the next card

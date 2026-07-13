@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#CC7832</color> <!-- Naranja IntelliJ/SmartAdopt -->
+    <color name="colorPrimaryDark">#2B2B2B</color> <!-- Fondo Oscuro IDE -->
+    <color name="colorAccent">#A9B7C6</color> <!-- Gris Texto IDE -->
+</resources>

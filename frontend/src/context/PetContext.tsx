@@ -4,17 +4,22 @@ import React, {
   createContext,
   useContext,
   useState,
+  useEffect,
   type ReactNode,
 } from "react";
 import type { Pet } from "../types/dashboard.types";
 import { dashboardService } from "../services/dashboard.service";
+import { favoritesService } from "../services/favorites.service";
+import { useAuth } from "./AuthContext";
 import { logger } from "../utils/logger";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PetContextType {
   pets: Pet[];
   addPet: (newPet: Omit<Pet, "id">) => Pet;
-  // --- NEW: Favorites Management ---
+  // --- Favorites Management ---
   favoritePetIds: string[];
+  isFavoritesLoaded: boolean;
   toggleFavorite: (petId: string) => void;
 }
 
@@ -28,8 +33,11 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
 
   // Array of string IDs representing favorited pets
   const [favoritePetIds, setFavoritePetIds] = useState<string[]>([]);
+  const [isFavoritesLoaded, setIsFavoritesLoaded] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  const { isAuthenticated, role } = useAuth();
+
+  useEffect(() => {
     const loadInitialPets = async () => {
       try {
         const initialData = await dashboardService.getFeaturedPets();
@@ -45,6 +53,55 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [isInitialized]);
 
+  const queryClient = useQueryClient();
+
+  // Load favorites from the backend on mount or login
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!isAuthenticated || role !== "adopter") {
+        setFavoritePetIds([]);
+        setIsFavoritesLoaded(true);
+        return;
+      }
+
+      try {
+        const response = await favoritesService.listFavoritesWithPets();
+        const ids = response.favorites.map((fav) => fav.pet_profile_id);
+        setFavoritePetIds(ids);
+      } catch (error) {
+        logger.error("Failed to load favorites", error);
+      } finally {
+        setIsFavoritesLoaded(true);
+      }
+    };
+
+    loadFavorites();
+  }, [isAuthenticated, role]);
+
+  // Listen to Socket.io favorite updates from other devices/sessions
+  useEffect(() => {
+    const handleFavoritesUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+
+      if (data && data.pet_id && data.action) {
+        setFavoritePetIds((prev) => {
+          if (data.action === "add" && !prev.includes(data.pet_id)) {
+            return [...prev, data.pet_id];
+          } else if (data.action === "remove" && prev.includes(data.pet_id)) {
+            return prev.filter((id) => id !== data.pet_id);
+          }
+          return prev;
+        });
+      }
+    };
+
+    window.addEventListener("favorites_update", handleFavoritesUpdate);
+    return () => {
+      window.removeEventListener("favorites_update", handleFavoritesUpdate);
+    };
+  }, []);
+
   const addPet = (newPet: Omit<Pet, "id">): Pet => {
     const createdEntity: Pet = {
       ...newPet,
@@ -54,19 +111,54 @@ export const PetProvider: React.FC<{ children: ReactNode }> = ({
     return createdEntity;
   };
 
-  // Toggles a pet ID inside the favorites array
-  const toggleFavorite = (petId: string) => {
+  // Optimistic toggle with backend sync
+  const toggleFavorite = async (petId: string) => {
+    if (!isAuthenticated || role !== "adopter") {
+      logger.warn("Must be logged in as an adopter to favorite pets");
+      return;
+    }
+
+    const isCurrentlyFavorited = favoritePetIds.includes(petId);
+
+    // 1. Optimistic UI update
     setFavoritePetIds(
       (prev) =>
-        prev.includes(petId)
-          ? prev.filter((id) => id !== petId) // Remove if it exists
-          : [...prev, petId], // Add if it doesn't exist
+        isCurrentlyFavorited
+          ? prev.filter((id) => id !== petId) // Remove
+          : [...prev, petId] // Add
     );
+
+    // 2. Backend synchronization
+    try {
+      if (isCurrentlyFavorited) {
+        await favoritesService.removeFavorite(petId);
+      } else {
+        await favoritesService.addFavorite(petId);
+      }
+
+      // Invalidate the cache so AdopterFavorites.tsx fetches the updated list
+      queryClient.invalidateQueries({ queryKey: ["adopterFavoritesList"] });
+    } catch (error) {
+      logger.error("Failed to sync favorite with backend, rolling back", error);
+      // 3. Rollback on failure
+      setFavoritePetIds(
+        (prev) =>
+          isCurrentlyFavorited
+            ? [...prev, petId] // Add back
+            : prev.filter((id) => id !== petId) // Remove again
+      );
+    }
   };
 
   return (
     <PetContext.Provider
-      value={{ pets, addPet, favoritePetIds, toggleFavorite }}
+      value={{
+        pets,
+        addPet,
+        favoritePetIds,
+        isFavoritesLoaded,
+        toggleFavorite,
+      }}
     >
       {children}
     </PetContext.Provider>

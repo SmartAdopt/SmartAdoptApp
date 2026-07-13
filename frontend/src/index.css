@@ -1,0 +1,18 @@
+/* Global Mobile First Image Reset */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ocultar el badge flotante de Stripe en la esquina inferior derecha */
+body > div > iframe[src*="stripe"],
+iframe[src*="stripe"][title*="Link"],
+.stripe-badge,
+#stripe-developer-widget-container,
+stripe-dev-widget,
+[id^="stripe-developer-widget"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

@@ -1,0 +1,103 @@
+name: Deploy Production Mobile
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "APK Distribution track"
+        required: true
+        default: "internal"
+        type: choice
+        options:
+          - internal
+          - production
+
+concurrency:
+  group: deploy-production-mobile
+  cancel-in-progress: false
+
+jobs:
+  build-android-prod:
+    name: Build & Publish Android AAB (Production)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies (Capacitor CLI + Android platform)
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build web bundle for Production mobile
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://smartadoptprod.programacionwebuce.net/api
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        run: npm run android:sync
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Decode and validate production keystore
+        working-directory: android/app
+        env:
+          PROD_BASE64: ${{ secrets.ANDROID_KEYSTORE_PROD_BASE64 }}
+          PROD_PASS: ${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}
+        run: |
+          echo "$PROD_BASE64" | base64 -d > prod-release.keystore
+          keytool -list -v -keystore prod-release.keystore -storepass "$PROD_PASS" -storetype JKS
+
+      - name: Grant execute permission to gradlew
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build Prod release APK
+        working-directory: android
+        env:
+          PROD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PROD_PASSWORD }}
+          PROD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS_PROD }}
+          PROD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD_PROD }}
+        run: ./gradlew assembleProdRelease --stacktrace
+        
+      - name: Upload to Firebase App Distribution (Prod)
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID_PROD }} 
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: prod-testers
+          file: android/app/build/outputs/apk/prod/release/app-prod-release.apk
+          releaseNotes: |
+            Build Producción
+            Commit: ${{ github.sha }}
+            
+      - name: Attach APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-${{ github.sha }}
+          name: "Production Mobile Build ${{ github.sha }}"
+          files: android/app/build/outputs/apk/prod/release/app-prod-release.apk
+          token: ${{ secrets.GH_PAT }}

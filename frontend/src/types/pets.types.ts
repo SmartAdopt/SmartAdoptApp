@@ -52,3 +52,26 @@ export interface PetFormData {
   condicionesEspeciales?: string;
   biografia: string;
 }
+
+// ==========================================
+// UPDATE PAYLOAD (Partial update via PUT /pets/{profile_id})
+// Matches backend PetRequest schema — all fields optional
+// ==========================================
+export interface PetUpdatePayload {
+  name?: string;
+  pet_image_url?: string;
+  animal_breed?: string[];
+  age?: number;
+  gender?: string;
+  is_sterilized?: boolean;
+  vaccines_up_to_date?: string[];
+  dewormed?: boolean;
+  weight_kg?: number;
+  special_conditions?: string[];
+  brief_description?: string;
+  // AI-generated fields (optional for updates)
+  title?: string;
+  tags?: string[];
+  emotional_description?: string;
+  status?: string;
+}

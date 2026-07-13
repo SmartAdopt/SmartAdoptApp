@@ -1,0 +1,78 @@
+name: Deploy Production Desktop
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - "electron/**"
+      - ".github/workflows/deploy-prod-desktop.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-prod-desktop
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Windows Desktop (Production)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Electron installer (Windows)
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://smartadoptprod.programacionwebuce.net/api
+          CI: true
+        run: npm run build:electron
+
+      - name: Verify installer artifact
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          $installers = Get-ChildItem -Path release -Filter *.exe -Recurse
+          if (-not $installers) {
+            throw "No .exe installer found in frontend/release"
+          }
+          $installers | ForEach-Object {
+            Write-Host "Found: $($_.FullName) ($([math]::Round($_.Length / 1MB, 2)) MB)"
+          }
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Upload installer to S3 (Production)
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          aws s3 cp release/ s3://smartadopt-prod-application-exe-bucket/ `
+            --recursive `
+            --exclude "*" `
+            --include "*.exe"
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: smartadopt-prod-desktop-${{ github.sha }}
+          path: frontend/release/**/*.exe
+          retention-days: 30

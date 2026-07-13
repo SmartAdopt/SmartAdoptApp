@@ -33,25 +33,41 @@ backend/                 # FastAPI backend application
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
-│   │   │   ├── user/       # User models (User, Admin, Adopter)
-│   │   │   └── pet/        # Pet models
+│   │   ├── models/          # SQLAlchemy ORM and MongoDB models
+│   │   │   ├── user/            # User models (User, Admin, Adopter)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── applications/   # Adoption application models (Python models for MongoDB)
+│   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
-│   │   │   ├── auth_routes.py     # Authentication endpoints
-│   │   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
-│   │   │   └── pet_routes.py      # Pet management endpoints
+│   │   │   ├── auth_routes.py         # Authentication endpoints
+│   │   │   ├── admin_routes.py        # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
+│   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
+│   │   │   ├── pet_routes.py          # Pet management endpoints
+│   │   │   ├── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── applications_routes.py # Adoption application endpoints
+│   │   │   ├── favorite_routes.py     # Favorite endpoints
+│   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py         # Authentication schemas
-│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
-│   │   │   ├── pet_schemas.py          # Pet management schemas
-│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
+│   │   │   ├── auth_schemas.py            # Authentication schemas
+│   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py             # Pet management schemas
+│   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
+│   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── applications_schemas.py   # Adoption application schemas
+│   │   │   ├── favorite_schemas.py       # Favorite schemas
+│   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   ├── auth_service.py    # Authentication services
-│   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   ├── pet_service.py      # Pet management service
-│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── auth_service.py        # Authentication services
+│   │   │   ├── backblaze_service.py   # Backblaze B2 service
+│   │   │   ├── pet_service.py          # Pet management service
+│   │   │   ├── ai_service.py           # AI service (BLIP + LLM)
+│   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── applications_service.py # Adoption application service (MongoDB)
+│   │   │   ├── favorite_service.py    # Favorite service
+│   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -64,16 +80,24 @@ backend/                 # FastAPI backend application
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
+│   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
+│   │   ├── README_AI.md     # Complete AI integration documentation (BLIP + LLM)
+│   │   ├── REDIS_CACHE.md   # Complete Redis Cache implementation documentation
+│   │   └── SOCKET_IO.md     # Complete Socket.IO events and integration documentation
 │   ├── tests/              # Backend tests
-│   │   ├── conftest.py      # Test configuration
-│   │   ├── test_auth.py     # Authentication tests
-│   │   ├── test_google_oauth.py  # Google OAuth tests
-│   │   ├── test_admin_routes.py   # Admin routes tests
-│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── conftest.py              # Test configuration
+│   │   ├── test_auth.py             # Authentication tests
+│   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_admin_routes.py     # Admin routes tests
+│   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
-│   │   ├── test_pet.py      # Pet management tests
-│   │   └── test_main.py     # Main endpoint tests
+│   │   ├── test_pet.py              # Pet management tests
+│   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   ├── test_ai.py               # AI service tests (BLIP + LLM)
+│   │   ├── test_applications.py     # Adoption application tests
+│   │   ├── test_favorite_routes.py  # Favorite tests
+│   │   ├── test_google_oauth_utils.py # Google OAuth utility tests
+│   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
 ```
@@ -83,15 +107,22 @@ backend/                 # FastAPI backend application
 - **FastAPI** - Modern, fast web framework for building APIs
 - **SQLAlchemy** - ORM for database interaction
 - **PostgreSQL** - Relational database
-- **MongoDB** - NoSQL database for pet profiles
+- **MongoDB** - NoSQL database for pet profiles and adoption forms
 - **Motor** - Async MongoDB driver
 - **Pydantic** - Data validation using Python types
 - **Uvicorn** - ASGI server to run FastAPI
 - **python-jose** - JWT token creation and verification
 - **Bcrypt** - Password hashing and verification
 - **Authlib** - OAuth 2.0 integration for Google login
-- **Redis** - Token storage and management
+- **Redis** - Token storage/management and high-performance API caching
+- **python-socketio** - Real-time WebSocket event broadcasting
 - **b2sdk** - Backblaze B2 cloud storage integration
+- **requests** - HTTP library for external API calls
+- **huggingface-hub** - Hugging Face Hub client for model downloads (BLIP)
+- **transformers** - NLP library for BLIP image captioning
+- **PIL (pillow)** - Image processing library
+- **itsdangerous** - Secure data signing for cookies
+- **loguru** - Structured logging library
 
 
 ### Run Locally
@@ -153,6 +184,12 @@ The backend requires the following environment variables (defined in `.env.examp
 - `DOZZLE_PORT`: Dozzle log viewer port (internal)
 - `DOZZLE_EXTERNAL_PORT`: Dozzle port exposed to host (default: 8080)
 
+**Hugging Face**
+- `HF_TOKEN`: your_hugging_face_token
+
+**API URLs**
+- `VITE_API_URL`:api_url
+
 #### Start the Server
 ```bash
 # Go to the backend folder
@@ -182,6 +219,40 @@ python -m black --check backend/
 ### Static Types (mypy)
 ```bash
 python -m mypy backend/ --ignore-missing-imports
+```
+
+## Running Tests
+
+The project includes **12 test files** covering authentication, routes, services, and AI integration:
+
+| File | Coverage |
+|---|---|
+| `test_auth.py` | Authentication & registration |
+| `test_google_oauth.py` | Google OAuth login flow |
+| `test_google_oauth_utils.py` | Token decoding & verification utilities |
+| `test_admin_routes.py` | Admin CRUD endpoints |
+| `test_adopter_routes.py` | Adopter user management |
+| `test_adoption_form.py` | Adoption form submission & review |
+| `test_applications.py` | Adoption application lifecycle |
+| `test_pet.py` | Pet CRUD + AI enrichment |
+| `test_favorite_routes.py` | Favorite pets management |
+| `test_backblaze_routes.py` | Backblaze B2 media upload |
+| `test_ai.py` | AI service unit tests (BLIP caption, LLM call) |
+| `test_main.py` | Root health-check endpoint |
+
+### Run All Tests
+```bash
+# Run all backend tests
+python -m pytest backend/tests/ -v
+
+# Run with coverage report
+python -m pytest backend/ --cov=backend --cov-report=term-missing
+
+# Run a specific test file
+python -m pytest backend/tests/test_applications.py -v
+
+# Run tests matching a keyword
+python -m pytest backend/tests/ -k "pet" -v
 ```
 
 
@@ -258,6 +329,7 @@ Content-Type: application/json
   "first_name": "John",
   "last_name": "Doe",
   "email": "user@example.com",
+  "phone_number": "+1234567890",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
@@ -305,6 +377,7 @@ GET /auth/google/callback?code=...&role=adopter
   "first_name": "John",
   "last_name": "Doe",
   "email": "john.doe@gmail.com",
+  "phone_number": "+1234567890",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
@@ -320,6 +393,7 @@ GET /auth/google/callback?code=...&role=adopter
   "first_name": "John",
   "last_name": "Doe",
   "email": "john.doe@gmail.com",
+  "phone_number": "",
   "role": "adopter",
   "created_at": "2026-06-05T12:00:00Z"
 }
@@ -331,7 +405,70 @@ GET /auth/google/callback?code=...&role=adopter
 - `302 Found`: Redirect failed - Google OAuth not available
 - `401 Unauthorized`: Google authentication failed
 
-### Protected Endpoints
+### Token Management
+
+#### Refresh Token
+
+**POST** `/auth/refresh`
+
+Refreshes expired access tokens using the refresh token stored in an HTTP-Only cookie.
+
+**Request**
+```http
+POST /auth/refresh
+Authorization: Bearer <expired_access_token>
+Cookie: refresh_token=<refresh_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Note:**
+- The refresh token must be sent as an HTTP-Only cookie
+- The access token in the Authorization header must be expired (not valid)
+- The refresh token is rotated on each refresh for security
+
+**Error Responses**
+- `401 Unauthorized`: No credentials provided, token revoked, or no active session
+- `400 Bad Request`: Access token is still valid, refresh not needed
+
+#### Logout
+
+**POST** `/auth/logout`
+
+Logs out the user and revokes both access and refresh tokens.
+
+**Request**
+```http
+POST /auth/logout
+Authorization: Bearer <access_token>
+Cookie: refresh_token=<refresh_token>
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Note:**
+- The access token is added to a blacklist in Redis
+- The refresh token is revoked in Redis
+- The refresh token cookie is deleted
+- Both tokens are immediately invalidated
+
+**Error Responses**
+- `401 Unauthorized`: No active session found
+
+---
+
+## Protected Endpoints
 
 #### GET /admin/dashboard
 
@@ -347,11 +484,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "message": "Welcome to Admin Dashboard",
-  "user_email": "admin@example.com",
+  "user_id": "1",
   "user_role": "admin",
   "dashboard_data": {
-    "total_adoptions": 75,
-    "pending_requests": 12
+    "total_pets": 15,
+    "available_pets": 8,
+    "in_process_pets": 3,
+    "adopted_pets": 4,
+    "total_applications": 25,
+    "pending_applications": 10,
+    "approved_applications": 5,
+    "rejected_applications": 2
   }
 }
 ```
@@ -374,12 +517,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "message": "Welcome to Adopter Home",
-  "user_email": "adopter@example.com",
+  "user_id": "2",
   "user_role": "adopter",
   "home_data": {
-    "available_pets": 45,
-    "my_adoptions": 2,
-    "favorite_pets": 8
+    "available_pets": 8,
+    "my_adoptions": 1,
+    "favorite_pets": 3
   }
 }
 ```
@@ -388,9 +531,767 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `401 Unauthorized`: Missing or invalid token
 - `403 Forbidden`: User role is not "adopter"
 
+#### PUT /adopter/profile
+
+Updates the authenticated adopter's profile. Only the adopter themselves can update their own profile. All fields are optional.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+PUT /adopter/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone_number": "0987654321",
+  "email": "newemail@example.com",
+  "current_password": "OldPass123",
+  "new_password": "NewPass456"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Profile updated successfully",
+  "user_id": 1,
+  "updated_at": "2026-07-03T12:00:00.000000"
+}
+```
+
+**Validation Rules:**
+- `first_name`, `last_name`: Only letters allowed, 2-50 characters
+- `phone_number`: Exactly 10 digits, must start with "09" (Ecuador mobile)
+- `email`: Valid email format
+- `current_password` and `new_password`: Both required together for password change, must be different
+- `new_password`: Minimum 8 characters, must contain uppercase, lowercase, and number
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `409 Conflict`: Email already in use
+- `400 Bad Request`: Validation error
+
+---
+
+## Adoption Form API Endpoints
+
+The adoption form system allows users with the **adopter** role to submit, view, and update their adoption applications. All endpoints require a valid JWT token with the `adopter` role.
+
+**Base URL:** `/adoption-forms`
+
+### Submit Adoption Form
+
+**POST** `/adoption-forms/submit`
+
+Creates a new adoption form for the authenticated user.
+
+**Authorization:** `Adopter` role required
+
+**Request Body**
+```json
+{
+  "neighborhood": "La Floresta",
+  "address": "Calle Principal 123",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "apartment",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": false,
+  "current_pets_details": null,
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [5, 8],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "male",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "2-6",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to provide a loving home to a pet in need."
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Adoption form registered successfully",
+  "form_id": "AF1",
+  "submission_date": "2026-06-28T10:30:00.000Z"
+}
+```
+
+**Validation Rules:**
+- `neighborhood`: must be at least 2 characters
+- `address`: must be at least 5 characters
+- `employment_status`: must be one of `employed`, `independent`
+- `housing_type`: must be one of `apartment`, `rented_house`, `own_house`
+- `household_energy`: must be one of `very_active`, `moderate`, `quiet`
+- `preferred_species`: must be one of `dog`, `cat`, `no_preference`
+- `preferred_gender`: must be one of `male`, `female`, `no_preference`
+- `preferred_energy`: must be one of `low`, `medium`, `high`
+- `daily_time_dedication`: must be `>2` (low), `2-6` (medium), or `6+` (high)
+- `sleeping_location`: must be one of `inside`, `patio`, `other`
+- `behavior_approach`: must be one of `positive_education`, `trainer`, `other`
+- `emergency_plan`: must be one of `family_friend`, `kennel`, `take_with_me`, `other`
+- `motivation`: must be at least 10 characters
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Validation error (invalid field value or too short fields)
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+
+---
+
+### Get My Adoption Form
+
+**GET** `/adoption-forms/me`
+
+Retrieves the adoption form for the authenticated user.
+
+**Authorization:** `Adopter` role required
+
+**Response (200 OK)**
+```json
+{
+  "user_id": "user@example.com",
+  "neighborhood": "Quito - Center",
+  "address": "Av. Amazonas N12-45 y República",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "own_house",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": true,
+  "current_pets_details": "3-year-old Golden Retriever, very sociable with other animals",
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [
+    8,
+    12
+  ],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "female",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "6+",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to adopt",
+  "submission_date": "2026-06-28T17:19:18.549000",
+  "last_updated": "2026-06-28T17:20:10.849000"
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `404 Not Found`: No adoption form found for this user
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Update My Adoption Form
+
+**PUT** `/adoption-forms/me`
+
+Updates the adoption form for the authenticated user. All fields are optional in the update request.
+
+**Authorization:** `Adopter` role required
+
+**Request Body** *(all fields are optional)*
+```json
+{
+  "neighborhood": "La Floresta",
+  "address": "Calle Principal 123",
+  "employment_status": "employed",
+  "employment_status_other": null,
+  "housing_type": "apartment",
+  "housing_type_other": null,
+  "has_natural_space": true,
+  "has_pets": false,
+  "current_pets_details": null,
+  "household_energy": "moderate",
+  "has_children": true,
+  "children_ages": [5, 8],
+  "long_term_commitment": true,
+  "preferred_species": "dog",
+  "preferred_gender": "male",
+  "preferred_energy": "medium",
+  "daily_time_dedication": "2-6",
+  "sleeping_location": "inside",
+  "sleeping_location_other": null,
+  "behavior_approach": "positive_education",
+  "behavior_approach_other": null,
+  "emergency_plan": "family_friend",
+  "emergency_plan_other": null,
+  "motivation": "I want to provide a loving home to a pet in need."
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Adoption form updated successfully",
+  "form": {
+    "user_id": "user@example.com",
+    "neighborhood": "La Floresta",
+    "address": "Calle Principal 123",
+    "employment_status": "employed",
+    "employment_status_other": null,
+    "housing_type": "apartment",
+    "housing_type_other": null,
+    "has_natural_space": true,
+    "has_pets": false,
+    "current_pets_details": "3-year-old Golden Retriever, very sociable with other animals",
+    "household_energy": "moderate",
+    "has_children": true,
+    "children_ages": [
+      5,
+      8
+    ],
+    "long_term_commitment": true,
+    "preferred_species": "dog",
+    "preferred_gender": "male",
+    "preferred_energy": "medium",
+    "daily_time_dedication": "2-6",
+    "sleeping_location": "inside",
+    "sleeping_location_other": null,
+    "behavior_approach": "positive_education",
+    "behavior_approach_other": null,
+    "emergency_plan": "family_friend",
+    "emergency_plan_other": null,
+    "motivation": "I want to provide a loving home to a pet in need.",
+    "submission_date": "2026-06-28T17:19:18.549000",
+    "last_updated": "2026-06-28T17:33:29.981000"
+  }
+}
+```
+
+**Validation Rules:** Same as the submit endpoint, but only for fields that are provided in the request.
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Validation error (invalid field value)
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+## Admin Adoption Form Endpoints
+
+### List All Forms (Admin)
+
+**GET** `/adoption-forms/admin`
+
+Lists all adoption forms with their embedded applications. Supports filtering by pet name and application status.
+
+**Authorization:** `Admin` role required
+
+**Query Parameters**
+- `pet_name` (optional): Filter forms containing applications for a pet whose name matches (case-insensitive partial match)
+- `status` (optional): Filter applications within forms by status (`approved`, `rejected`, `pending`). Forms with no matching applications after filtering are excluded. Multiple statuses can be combined (e.g., `?status=approved&status=pending`).
+
+**Response (200 OK)**
+```json
+{
+  "forms": [
+    {
+      "_id": "AF1",
+      "user_id": 3,
+      "neighborhood": "Centro",
+      "address": "Calle 123",
+      "status": "approved",
+      "reviewed_by": 1,
+      "reviewed_at": "2026-07-10T12:00:00",
+      "applications": [
+        {
+          "application_id": "AP1",
+          "pet_profile_id": "PR3",
+          "pet_name": "Pepe",
+          "total_score": 12,
+          "main_score": 9,
+          "logistics_education_score": 3,
+          "ai_justification": "El adoptante demuestra...",
+          "needs_manual_review": false,
+          "status": "approved",
+          "created_at": "2026-07-10T10:00:00"
+        }
+      ]
+    }
+  ],
+  "applications_count": 1
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not `admin`
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Review Application (Admin)
+
+**PUT** `/adoption-forms/{application_id}/review`
+
+Reviews an adoption application, approving or rejecting it. An application can only be reviewed once (subsequent attempts return 400). Approving an application will also update the associated pet profile's status to `adopted`, while rejecting it will revert the pet's status to `available` if necessary.
+
+**Authorization:** `Admin` role required
+
+**Request Body**
+```json
+{
+  "status": "approved"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Application reviewed successfully",
+  "review_result": {
+    "application_id": "AP1",
+    "status": "approved"
+  }
+}
+```
+
+**Error Responses**
+- `400 Bad Request`: Application is not pending (already reviewed) or invalid state transition
+- `404 Not Found`: Application not found
+- `403 Forbidden`: User role is not `admin`
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+## Adoption Applications API Endpoints
+
+The adoption applications system allows adopters to apply for a specific pet and view their submitted applications. All endpoints require a valid JWT token with the `adopter` role.
+
+**Base URL:** `/applications`
+
+### Submit Adoption Application
+
+**POST** `/applications/{pet_profile_id}`
+
+Creates a new adoption application for a specific pet. The pet's form must be submitted before applying. The application is cross-evaluated by AI using the adopter's form and the pet's profile.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+POST /applications/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Application submitted successfully",
+  "application_id": "APP1",
+  "pet_profile_id": "PR1",
+  "status": "pending",
+  "created_at": "2026-07-05T12:00:00.000Z"
+}
+```
+
+**Validation Rules:**
+- Adopter must have an existing adoption form (submit via `POST /adoption-forms/submit` first)
+- Pet must exist in MongoDB and have status `available`
+- Duplicate applications for the same pet are not allowed
+- Pet status is updated to `in_process` on successful application
+
+**AI Cross-Evaluation:**
+- Uses the LLM to evaluate 15 fields across main criteria and logistics
+- Each field scored 0 or 1 (max 15 total)
+- Main score: sum of 11 main fields (compatibility, housing, lifestyle, etc.)
+- Logistics score: sum of 4 logistics fields (transport, costs, time, paperwork)
+- AI justification text explaining the evaluation
+- Scores are recalculated server-side from the breakdown to ensure accuracy
+- If AI returns fewer than 15 fields, padded with "Unavailable" placeholders (points=0)
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `400 Bad Request`: Missing adoption form, pet not available, or duplicate application
+- `404 Not Found`: Pet not found
+- `503 Service Unavailable`: AI service error
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+### Get My Applications
+
+**GET** `/applications/me`
+
+Retrieves all adoption applications for the authenticated adopter, including full pet profile data.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+GET /applications/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "applications": [
+    {
+      "application_id": "APP1",
+      "user_id": 2,
+      "pet_profile_id": "PR1",
+      "status": "pending",
+      "total_score": 10,
+      "total_max_score": 15,
+      "main_score": 8,
+      "main_max_score": 11,
+      "logistics_education_score": 2,
+      "logistics_education_max_score": 4,
+      "ai_breakdown": [
+        {"section": "Main Criteria", "field": "Pet Compatibility", "points": 1, "max_points": 1, "evaluation": "Good match with current pets"},
+        {"section": "Main Criteria", "field": "Housing Suitability", "points": 1, "max_points": 1, "evaluation": "Apartment with natural space"},
+        {"section": "Main Criteria", "field": "Lifestyle Match", "points": 1, "max_points": 1, "evaluation": "Energy level matches"},
+        {"section": "Main Criteria", "field": "Family Dynamics", "points": 1, "max_points": 1, "evaluation": "Good with children"},
+        {"section": "Main Criteria", "field": "Commitment Level", "points": 1, "max_points": 1, "evaluation": "Long-term commitment confirmed"},
+        {"section": "Main Criteria", "field": "Pet Care Knowledge", "points": 1, "max_points": 1, "evaluation": "Previous pet experience"},
+        {"section": "Main Criteria", "field": "Responsibility Indicators", "points": 1, "max_points": 1, "evaluation": "Employed and stable"},
+        {"section": "Main Criteria", "field": "Sleeping Arrangements", "points": 0, "max_points": 1, "evaluation": "Indoor sleeping"},
+        {"section": "Main Criteria", "field": "Behavior & Training", "points": 0, "max_points": 1, "evaluation": "Will use positive education"},
+        {"section": "Main Criteria", "field": "Emergency Preparedness", "points": 0, "max_points": 1, "evaluation": "Has emergency plan"},
+        {"section": "Main Criteria", "field": "Motivation & Intent", "points": 1, "max_points": 1, "evaluation": "Strong motivation to adopt"},
+        {"section": "Logistics & Education", "field": "Daily Time Dedication", "points": 1, "max_points": 1, "evaluation": "2-6 hours daily"},
+        {"section": "Logistics & Education", "field": "Financial Capacity", "points": 0, "max_points": 1, "evaluation": "Employed"},
+        {"section": "Logistics & Education", "field": "Adoption Process Knowledge", "points": 0, "max_points": 1, "evaluation": "Familiar with process"},
+        {"section": "Logistics & Education", "field": "Transport & Accessibility", "points": 1, "max_points": 1, "evaluation": "Accessible location"}
+      ],
+      "ai_justification": "The applicant demonstrates strong compatibility with the pet...",
+      "created_at": "2026-07-05T12:00:00.000Z",
+      "pet": {
+        "profile_id": "PR1",
+        "title": "Buddy: Your new best friend",
+        "tags": ["#Peludo", "#Juguetón"],
+        "emotional_description": "Buddy is a special being looking for a loving home...",
+        "status": "in_process",
+        "creation_date": "2026-06-18T05:53:30.061000",
+        "pet": {
+          "name": "Buddy",
+          "pet_image_url": "https://example.com/dog.jpg",
+          "animal_breed": ["dog", "Golden Retriever"],
+          "age": 3,
+          "gender": "male",
+          "is_sterilized": true,
+          "vaccines_up_to_date": ["rabies"],
+          "dewormed": true,
+          "weight_kg": 8.5,
+          "special_conditions": [],
+          "brief_description": "Friendly dog looking for a home"
+        }
+      }
+    }
+  ],
+  "count": 1
+}
+```
+
+**Scoring Breakdown:**
+- **Main Criteria** (11 fields, max 11 points): Pet Compatibility, Housing Suitability, Lifestyle Match, Family Dynamics, Commitment Level, Pet Care Knowledge, Responsibility Indicators, Sleeping Arrangements, Behavior & Training, Emergency Preparedness, Motivation & Intent
+- **Logistics & Education** (4 fields, max 4 points): Daily Time Dedication, Financial Capacity, Adoption Process Knowledge, Transport & Accessibility
+- **Total**: Sum of all 15 fields (max 15 points)
+
+**Error Responses**
+- `403 Forbidden`: User role is not `adopter`
+- `500 Internal Server Error`: Unexpected server error
+- `401 Unauthorized`: Missing or invalid token
+
+---
+
+## Favorite Pets
+
+The favorites system allows adopters to save and manage their favorite pets. Favorites are stored in PostgreSQL (relational) while pet profile data is fetched from MongoDB.
+
+**Base URL:** `/adopter/favorites`
+
+### Add Favorite
+
+**POST** `/adopter/favorites/{pet_profile_id}`
+
+Adds a pet to the authenticated adopter's favorites. Validates that the pet profile exists in MongoDB before creating the favorite.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+POST /adopter/favorites/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Pet added to favorites",
+  "favorite": {
+    "favorite_id": 1,
+    "user_id": 2,
+    "pet_profile_id": "PR1"
+  }
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `404 Not Found`: Pet profile not found in MongoDB
+- `409 Conflict`: Pet already in favorites
+
+### Remove Favorite
+
+**DELETE** `/adopter/favorites/{pet_profile_id}`
+
+Removes a pet from the authenticated adopter's favorites.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+DELETE /adopter/favorites/PR1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Pet removed from favorites"
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+- `404 Not Found`: Favorite not found
+
+### List Favorites
+
+**GET** `/adopter/favorites/`
+
+Returns all favorites for the authenticated adopter, including full pet profile data from MongoDB.
+
+**Authorization:** `Adopter` role required
+
+**Request**
+```http
+GET /adopter/favorites/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK)**
+```json
+{
+  "favorites": [
+    {
+      "favorite_id": 1,
+      "user_id": 2,
+      "pet_profile_id": "PR1",
+      "pet": {
+        "profile_id": "PR1",
+        "title": "Buddy: Your new best friend",
+        "tags": ["#Peludo", "#Juguetón"],
+        "emotional_description": "Buddy is a special being...",
+        "status": "available",
+        "creation_date": "2026-06-18T05:53:30.061000",
+        "pet": {
+          "name": "Buddy",
+          "pet_image_url": "https://example.com/dog.jpg",
+          "animal_breed": ["dog", "Golden Retriever"],
+          "age": 3,
+          "gender": "male",
+          "is_sterilized": true,
+          "vaccines_up_to_date": ["rabies"],
+          "dewormed": true,
+          "weight_kg": 8.5,
+          "special_conditions": [],
+          "brief_description": "Friendly dog looking for a home"
+        }
+      }
+    }
+  ],
+  "count": 1
+}
+```
+
+**Error Responses**
+- `401 Unauthorized`: Missing or invalid token
+- `403 Forbidden`: User role is not "adopter"
+
+---
+
+## Backblaze B2 Image Upload
+
+The application uses Backblaze B2 cloud storage for image upload:
+
+- **Admin-only access**: Only users with admin role can upload images
+- **UUID filenames**: Unique filenames prevent conflicts
+- **Automatic URL generation**: Public URLs are generated automatically
+- **Bucket validation**: Checks bucket existence before upload
+- **Image type validation**: Only image files are accepted
+
+**Endpoint:**
+```http
+POST /backblaze/upload
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+file: <image_file>
+```
+
+**Request**
+```http
+POST /backblaze/upload
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: multipart/form-data
+
+file: dog.jpg
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Image uploaded successfully",
+  "image_url": "https://f000.backblazeb2.com/file/bucket-name/dog-12345.jpg"
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `400 Bad Request`: Invalid file type (not an image)
+- `503 Service Unavailable`: Backblaze bucket not found or not accessible
+- `500 Internal Server Error`: Failed to upload image
+
+**Configuration:**
+- `BACKBLAZE_KEY_ID`: Backblaze application key ID
+- `BACKBLAZE_APPLICATION_KEY`: Backblaze application key
+- `BACKBLAZE_BUCKET_NAME`: Backblaze bucket name
+
+For complete documentation, refer to `docs/README_BACKBLAZE.md`.
+
+## Foundation Info
+
+The foundation info system stores the organization's legal and contact information as a singleton record in PostgreSQL.
+
+**Base URL:** `/foundation`
+
+### Create Foundation Info
+
+**POST** `/foundation/`
+
+Creates the foundation record. Only one record is allowed (singleton pattern).
+
+**Authorization:** `Admin` role required
+
+**Request Body**
+```json
+{
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Response (201 Created)**
+```json
+{
+  "message": "Foundation created successfully",
+  "foundation_id": 1
+}
+```
+
+**Validation Rules:**
+- `name`, `legal_representative`: Only letters allowed (including accented characters and ñ)
+- `phone`: Exactly 10 digits, must start with "09" (Ecuador mobile)
+- `address`: Letters, numbers, dots, commas, dashes, slashes, and hash
+- `email`: Valid email format
+- `business_hours`: Letters, numbers, dots, commas, colons, and dashes
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `409 Conflict`: Foundation already exists
+- `422 Unprocessable Entity`: Validation error
+
+### Get Foundation Info
+
+**GET** `/foundation/`
+
+Retrieves the foundation's information. Public endpoint (no authentication required).
+
+**Response (200 OK)**
+```json
+{
+  "foundation_id": 1,
+  "name": "Fundación Patitas Felices",
+  "phone": "0993456789",
+  "address": "Av. República E7-123 y Av. Amazonas, Quito",
+  "email": "info@patitasfelices.ec",
+  "legal_representative": "Carlos Andrés Mejía",
+  "business_hours": "Lun-Vie 9:00-18:00, Sáb 9:00-13:00"
+}
+```
+
+**Error Responses**
+- `404 Not Found`: Foundation not created yet
+
+### Update Foundation Info
+
+**PUT** `/foundation/`
+
+Updates the foundation's information. All fields are optional in the update request.
+
+**Authorization:** `Admin` role required
+
+**Request Body** *(all fields optional)*
+```json
+{
+  "phone": "0998887777",
+  "business_hours": "Lun-Vie 8:00-17:00"
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "message": "Foundation updated successfully",
+  "foundation_id": 1
+}
+```
+
+**Error Responses**
+- `403 Forbidden`: User role is not "admin"
+- `404 Not Found`: Foundation not created yet
+- `422 Unprocessable Entity`: Validation error
+
+---
+
 ## Pet Management System
 
-The application includes a comprehensive pet management system with AI-powered profile generation using BLIP and Llama 3 8B models.
+The application includes a comprehensive pet management system with AI-powered profile generation using BLIP (image captioning) and the LLM (text enrichment).
 
 ### Pet Registration with AI
 
@@ -422,7 +1323,7 @@ Content-Type: application/json
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your new best friend",
-    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
     "emotional_description": "Buddy is a special being looking for a loving home...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -445,12 +1346,12 @@ Content-Type: application/json
 
 **AI Integration:**
 - BLIP model generates image description from pet photo
-- Llama 3 8B model enriches profile with engaging title, hashtags, and emotional description
+- The LLM enriches profile with engaging title, hashtags, and emotional description
 - All AI-generated content is stored in MongoDB `pet_profiles` collection
 
 **Validation Rules:**
-- Age: 0-15 years (realistic range for pets)
-- Weight: 0-10 kg (realistic range for pets)
+- Age: 0-20 years (realistic range for pets)
+- Weight: 0-45 kg (realistic range for pets)
 - Image URL: Must be valid HTTP/HTTPS URL and is mandatory
 - Animal Breed: First element must be "dog" or "cat"
 - Gender: Must be "male" or "female"
@@ -465,13 +1366,14 @@ Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
+  "name": "Buddy",
   "age": 4,
   "is_sterilized": false,
   "weight_kg": 9.0,
   "special_conditions": ["Needs daily exercise"],
   "brief_description": "Active dog looking for an active family",
   "title": "Buddy: Your active companion",
-  "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+  "tags": ["#Peludo", "#Juguetón", "#Explorador"],
   "emotional_description": "Buddy is an energetic dog looking for an active family..."
 }
 ```
@@ -483,7 +1385,7 @@ Content-Type: application/json
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your active companion",
-    "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+    "tags": ["#Peludo", "#Juguetón", "#Explorador"],
     "emotional_description": "Buddy is an energetic dog looking for an active family...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -505,8 +1407,10 @@ Content-Type: application/json
 ```
 
 **Allowed Fields for Update:**
-- Pet fields: age, is_sterilized, vaccines_up_to_date, dewormed, weight_kg, special_conditions, brief_description
+- Pet fields: name, age, is_sterilized, vaccines_up_to_date, dewormed, weight_kg, special_conditions, brief_description
 - AI fields: title, tags, emotional_description (optional, for manual editing)
+
+**Note:** Empty strings or whitespace-only values are ignored and the original value is preserved.
 
 ### Pet Regenerate AI Content
 
@@ -523,7 +1427,7 @@ Authorization: Bearer <jwt_token>
   "profile": {
     "id": "PR1",
     "title": "Buddy: Your new best friend",
-    "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+    "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
     "emotional_description": "Buddy is a special being looking for a loving home...",
     "status": "available",
     "creation_date": "2026-06-18T05:53:30.061000",
@@ -544,7 +1448,7 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Note:** This endpoint regenerates only the AI-generated fields (title, tags, emotional_description) using BLIP and Llama 3 8B. Pet fields remain unchanged.
+**Note:** This endpoint regenerates only the AI-generated fields (title, tags, emotional_description) via the LLM. Pet fields remain unchanged.
 
 ### Pet Listing
 
@@ -561,7 +1465,7 @@ Authorization: Bearer <jwt_token>
     {
       "profile_id": "PR1",
       "title": "Buddy: Your new best friend",
-      "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+      "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
       "emotional_description": "Buddy is a special being looking for a loving home...",
       "status": "available",
       "creation_date": "2026-06-18T05:53:30.061000",
@@ -611,6 +1515,12 @@ Authorization: Bearer <jwt_token>
 - `created_at`: DateTime
 - Uses composition pattern with User table
 
+### Favorite
+- `favorite_id`: Integer (Primary Key, auto-increment)
+- `user_id`: Integer (Foreign Key to User, NOT NULL)
+- `pet_profile_id`: String (VARCHAR, NOT NULL)
+- Unique constraint on (`user_id`, `pet_profile_id`)
+
 ### Pet
 - `name`: String
 - `pet_image_url`: String (HTTP/HTTPS URL, mandatory)
@@ -633,6 +1543,61 @@ Authorization: Bearer <jwt_token>
 - `creation_date`: DateTime
 - `pet`: Object (Pet basic information)
 
+### Foundation
+- `foundation_id`: Integer (Primary Key, auto-increment)
+- `name`: String — Foundation legal name
+- `phone`: String — Contact phone number (10 digits, starts with 09)
+- `address`: String — Physical address
+- `email`: String — Official email
+- `legal_representative`: String — Legal representative name
+- `business_hours`: String — Business hours
+
+### AdoptionForm
+- `form_id`: String (Primary Key, auto-generated: AF####)
+- `user_id`: Integer (Foreign Key to User)
+- `submission_date`: DateTime
+- `neighborhood`: String
+- `address`: String
+- `employment_status`: String
+- `employment_status_other`: String (Optional)
+- `housing_type`: String
+- `housing_type_other`: String (Optional)
+- `has_natural_space`: Boolean
+- `has_pets`: Boolean
+- `current_pets_details`: String (Optional)
+- `household_energy`: String
+- `has_children`: Boolean
+- `children_ages`: List[int] (Optional)
+- `long_term_commitment`: Boolean
+- `preferred_species`: String
+- `preferred_gender`: String
+- `preferred_energy`: String
+- `daily_time_dedication`: String (>2, 2-6, 6+)
+- `sleeping_location`: String
+- `sleeping_location_other`: String (Optional)
+- `behavior_approach`: String
+- `behavior_approach_other`: String (Optional)
+- `emergency_plan`: String
+- `emergency_plan_other`: String (Optional)
+- `motivation`: String
+
+### Application (MongoDB)
+- `application_id`: String (Primary Key, auto-generated: APP####)
+- `user_id`: Integer
+- `pet_profile_id`: String
+- `form_id`: String (Foreign Key to AdoptionForm)
+- `adopter_name`: String (Optional, fetched from PostgreSQL on creation)
+- `status`: String ("pending", "approved", "rejected")
+- `total_score`: Integer (sum of all 15 fields, max 15)
+- `total_max_score`: Integer (always 15)
+- `main_score`: Integer (sum of 11 main fields, max 11)
+- `main_max_score`: Integer (always 11)
+- `logistics_education_score`: Integer (sum of 4 logistics fields, max 4)
+- `logistics_education_max_score`: Integer (always 4)
+- `ai_breakdown`: List[Object] (15 items: section, field, points, max_points, evaluation)
+- `ai_justification`: String (AI evaluation text)
+- `created_at`: DateTime
+- `needs_manual_review`: Bool (false if AI evaluated, true if AI failed and requires manual review)
 
 ## Development Notes
 
@@ -643,7 +1608,7 @@ Authorization: Bearer <jwt_token>
 - PostgreSQL connection is configured in `app/database/postgres/postgres_db.py`
 - Endpoints use dependency injection to obtain the database session
 - All error responses follow a consistent format with `error_code`, `message`, and `details`
-- AI models (BLIP, Llama 3 8B) are loaded eagerly at startup (no lazy loading)
+- BLIP model is loaded eagerly at startup; the LLM is called via external API
 
 ## Security
 
@@ -841,16 +1806,3 @@ logger.info("User registered successfully")
 logger.warning("Registration failed - Email already registered")
 logger.error("Failed to insert profile into MongoDB")
 ```
-
-### Documentation Access Logging
-
-The application includes a middleware that logs when users access the FastAPI documentation at `/docs`:
-```
-User accessing FastAPI documentation
-```
-
-For complete documentation on the logging system, refer to `docs/README_LOGS.md`.
-
-## License
-
-This project is part of SmartAdopt.

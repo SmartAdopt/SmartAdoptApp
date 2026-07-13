@@ -5,12 +5,12 @@ import type {
   PetRegistrationRequest,
   PetRegistrationResponse,
   AIProfileResponse,
+  PetUpdatePayload,
 } from "../types/pets.types";
 import type { Pet } from "../types/dashboard.types";
+import { API_BASE_URL } from "../utils/apiBaseUrl";
 
 import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const petsService = {
   /**
@@ -32,7 +32,7 @@ export const petsService = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      },
+      }
     );
 
     // Returns the public URL from the Backblaze bucket
@@ -44,11 +44,11 @@ export const petsService = {
    * Endpoint: POST /pets/register
    */
   registerPet: async (
-    payload: PetRegistrationRequest,
+    payload: PetRegistrationRequest
   ): Promise<PetRegistrationResponse> => {
     const response = await apiClient.post<PetRegistrationResponse>(
       "/pets/register",
-      payload,
+      payload
     );
     return response.data;
   },
@@ -65,6 +65,34 @@ export const petsService = {
       ...pet,
       id: pet.profile_id ?? pet.id,
     }));
+  },
+
+  /**
+   * Update a pet profile (partial update)
+   * Endpoint: PUT /pets/{profile_id}
+   */
+  updatePet: async (
+    profileId: string,
+    data: Partial<PetUpdatePayload>
+  ): Promise<PetRegistrationResponse> => {
+    const response = await apiClient.put<PetRegistrationResponse>(
+      `/pets/${profileId}`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Regenerate AI fields for a profile based on factual data
+   * Endpoint: POST /pets/{profile_id}/regenerate
+   */
+  regenerateProfile: async (
+    profileId: string
+  ): Promise<PetRegistrationResponse> => {
+    const response = await apiClient.post<PetRegistrationResponse>(
+      `/pets/${profileId}/regenerate`
+    );
+    return response.data;
   },
 
   /**

@@ -1,14 +1,43 @@
 import pytest
 import os
+import sys
 from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
+from unittest.mock import MagicMock
 
 # Load environment variables from .env file FIRST
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+
+# Mock AI service BEFORE importing the app to avoid loading heavy ML models
+# This prevents SSL certificate errors when downloading models from HuggingFace
+async def mock_describe_image_with_blip(image_url: str) -> str:
+    if not image_url:
+        raise ValueError("Image URL cannot be empty")
+    if not image_url.startswith("https://"):
+        raise ValueError("Image URL must start with https://")
+    return "A friendly dog looking for a home"
+
+
+async def mock_enrich_profile_with_llama(pet_data: dict, blip_description: str) -> dict:
+    return {
+        "title": "Test Pet",
+        "tags": ["#Juguetón", "#Test"],
+        "emotional_description": "Test description",
+    }
+
+
+# Create mock module
+ai_service_mock = MagicMock()
+ai_service_mock.describe_image_with_blip = mock_describe_image_with_blip
+ai_service_mock.enrich_profile_with_llama = mock_enrich_profile_with_llama
+
+# Insert mock into sys.modules BEFORE importing anything else
+sys.modules["app.services.ai_service"] = ai_service_mock
 
 # Set environment variables for CI/CD if not already set
 # This ensures tests work in CI/CD without .env file
@@ -63,8 +92,10 @@ if not os.getenv("MONGO_PASSWORD"):
 
 # Import the FastAPI app and the database components AFTER loading .env
 # ruff: noqa: E402
-from app.main import app
+from app.main import fastapi_app as app
+from app.config import settings
 from app.database.postgres.postgres_db import Base, get_db
+from app.database.mongo.mongo_db import get_mongo_db
 from unittest.mock import patch
 
 # Import models to ensure they are registered with Base before creating tables
@@ -88,6 +119,7 @@ def setup_database():
     # and drops them after all tests have finished
     # The scope is "session" meaning it runs once for the entire test suite
     # Create all tables
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     # Drop all tables after tests are done
@@ -97,11 +129,15 @@ def setup_database():
 @pytest.fixture(scope="function")
 def db_session():
     # This fixture provides a fresh database session for each test function
-    # It yields the session and then closes it after the test finishes
+    # It yields the session, rolls back any changes, and closes it
     db = TestingSessionLocal()
     try:
         yield db
     finally:
+        db.rollback()
+        for table in reversed(Base.metadata.sorted_tables):
+            db.execute(table.delete())
+        db.commit()
         db.close()
 
 
@@ -168,18 +204,17 @@ def client(db_session):
             return None
 
         def find(self, query=None):
-            return self
+            cursor = MockMongoCursor(self.documents, query)
+            return cursor
 
-        def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            if not hasattr(self, "_iter"):
-                self._iter = iter(self.documents)
-            try:
-                return next(self._iter)
-            except StopIteration:
-                raise StopAsyncIteration
+        async def count_documents(self, query=None):
+            if query is None:
+                return len(self.documents)
+            count = 0
+            for doc in self.documents:
+                if all(doc.get(k) == v for k, v in query.items()):
+                    count += 1
+            return count
 
         async def insert_one(self, document):
             self.documents.append(document)
@@ -205,22 +240,50 @@ def client(db_session):
                 return new_doc
             return None
 
+    class MockMongoCursor:
+        def __init__(self, documents, query=None):
+            self.documents = documents
+            self.query = query
+
+        async def to_list(self, length=None):
+            if self.query is None:
+                result = self.documents
+            else:
+                result = [
+                    doc
+                    for doc in self.documents
+                    if all(doc.get(k) == v for k, v in self.query.items())
+                ]
+            if length is not None:
+                result = result[:length]
+            return result
+
     mock_redis = MockRedis()
     mock_mongo = MockMongoClient()
 
+    async def override_get_mongo_db():
+        db = mock_mongo[settings.MONGO_DB]
+        return db
+
     # Override the dependency globally in the app
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_mongo_db] = override_get_mongo_db
 
     # Mock redis client in multiple locations
     with patch(
         "app.database.redis.redis_db.get_redis_client", return_value=mock_redis
-    ), patch("app.database.mongo.mongo_db.get_client", return_value=mock_mongo), patch(
+    ), patch(
         "app.routes.admin_routes.verify_token",
         side_effect=lambda credentials: __import__(
             "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
         ).verify_token(credentials, mock_redis),
     ), patch(
         "app.routes.adopter_routes.verify_token",
+        side_effect=lambda credentials: __import__(
+            "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
+        ).verify_token(credentials, mock_redis),
+    ), patch(
+        "app.routes.favorite_routes.verify_token",
         side_effect=lambda credentials: __import__(
             "app.utils.jwt.jwt_utils", fromlist=["verify_token"]
         ).verify_token(credentials, mock_redis),

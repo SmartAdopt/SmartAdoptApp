@@ -34,13 +34,18 @@ SmartAdopt is a responsive web application designed to revolutionize the operati
 
 - **Frontend:** React 18 + TypeScript + Vite (built and served as static assets)
 - **Web server (frontend container):** Nginx
+- **UI Library:** Material UI (MUI) v5
+- **State / Server State:** React Query (TanStack Query)
+- **Forms:** react-hook-form + Zod validation
+- **HTTP Client:** Axios (with JWT interceptor)
 - **Backend:** FastAPI + Python 3.12
-- **Databases:** PostgreSQL + MongoDB + Redis
+- **Databases & Cache:** PostgreSQL + MongoDB + Redis
 - **ORM:** SQLAlchemy (composition pattern for user models)
 - **Authentication:** Bcrypt (password hashing) + JWT
+- **Real-Time / WebSockets:** Socket.IO (Used for instantaneous state synchronization across sessions: Adoption requests, Pet Status updates, Notifications, and Favorites Syncing—eliminating manual page reloads)
 - **Validation:** Pydantic
 - **Cloud Storage:** Backblaze B2 (image upload)
-- **AI Integration:** BLIP + Llama 3 8B (eager loading at startup)
+- **AI Integration:** BLIP (local Transformers) + Groq LLM via OpenAI-compatible API
 - **Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions → Docker Hub → EC2 (SSH deploy)
 
@@ -59,25 +64,41 @@ SmartAdoptApp/
 │   │   │   │   └── mongo_db.py     # Motor async MongoDB client
 │   │   │   └── redis/       # Redis configuration for token management
 │   │   │       └── redis_db.py    # Redis client configuration
-│   │   ├── models/          # SQLAlchemy ORM models (User, Admin, Adopter, Pet)
-│   │   │   ├── user/       # User models (composition pattern: User base, Admin/Adopter references)
-│   │   │   └── pet/        # Pet models (Python models for MongoDB)
+│   │   ├── models/          # SQLAlchemy ORM and MongoDB models
+│   │   │   ├── user/            # User models (User, Admin, Adopter)
+│   │   │   ├── pet/             # Pet models (Python models for MongoDB)
+│   │   │   ├── adoption_form/  # Adoption form models (Python models for MongoDB)
+│   │   │   ├── applications/   # Adoption application models (Python models for MongoDB)
+│   │   │   ├── favorites/      # Favorite model (SQLAlchemy, PostgreSQL)
+│   │   │   └── foundation/     # Foundation model (SQLAlchemy, PostgreSQL)
 │   │   ├── routes/          # API endpoints
-│   │   │   ├── auth_routes.py     # Authentication endpoints
-│   │   │   ├── admin_routes.py    # Admin-protected endpoints
-│   │   │   ├── adopter_routes.py  # Adopter-protected endpoints
-│   │   │   ├── backblaze_routes.py # Backblaze B2 image upload endpoints
-│   │   │   └── pet_routes.py      # Pet management endpoints
+│   │   │   ├── auth_routes.py         # Authentication endpoints
+│   │   │   ├── admin_routes.py        # Admin-protected endpoints
+│   │   │   ├── adopter_routes.py      # Adopter-protected endpoints
+│   │   │   ├── backblaze_routes.py   # Backblaze B2 image upload endpoints
+│   │   │   ├── pet_routes.py          # Pet management endpoints
+│   │   │   ├── adoption_form_routes.py # Adoption form endpoints
+│   │   │   ├── applications_routes.py # Adoption application endpoints
+│   │   │   ├── favorite_routes.py     # Favorite endpoints
+│   │   │   └── foundation_routes.py  # Foundation info endpoints
 │   │   ├── schemas/         # Pydantic schemas for validation
-│   │   │   ├── auth_schemas.py         # Authentication schemas
-│   │   │   ├── backblaze_schemas.py    # Backblaze B2 schemas
-│   │   │   ├── pet_schemas.py          # Pet management schemas
-│   │   │   └── pet_profile_schemas.py  # Pet profile schemas
+│   │   │   ├── auth_schemas.py            # Authentication schemas
+│   │   │   ├── backblaze_schemas.py       # Backblaze B2 schemas
+│   │   │   ├── pet_schemas.py             # Pet management schemas
+│   │   │   ├── pet_profile_schemas.py     # Pet profile schemas
+│   │   │   ├── adoption_form_schemas.py   # Adoption form schemas
+│   │   │   ├── applications_schemas.py   # Adoption application schemas
+│   │   │   ├── favorite_schemas.py       # Favorite schemas
+│   │   │   └── foundation_schemas.py     # Foundation schemas
 │   │   ├── services/        # Business logic layer
-│   │   │   ├── auth_service.py    # Authentication services
-│   │   │   ├── backblaze_service.py # Backblaze B2 service
-│   │   │   ├── pet_service.py      # Pet management service
-│   │   │   └── ai_service.py       # AI service (BLIP + Llama 3 8B)
+│   │   │   ├── auth_service.py        # Authentication services
+│   │   │   ├── backblaze_service.py   # Backblaze B2 service
+│   │   │   ├── pet_service.py          # Pet management service
+│   │   │   ├── ai_service.py           # AI service (BLIP + provider-agnostic LLM)
+│   │   │   ├── adoption_form_service.py # Adoption form service (MongoDB)
+│   │   │   ├── applications_service.py # Adoption application service (MongoDB)
+│   │   │   ├── favorite_service.py    # Favorite service
+│   │   │   └── foundation_service.py  # Foundation service
 │   │   └── utils/           # Utility functions
 │   │       ├── jwt/         # JWT authentication utilities
 │   │       │   └── jwt_utils.py   # JWT token creation, verification, and blacklist management
@@ -90,25 +111,40 @@ SmartAdoptApp/
 │   │   ├── README_OAUTH.md  # Complete OAuth documentation
 │   │   ├── README_BACKBLAZE.md # Complete Backblaze B2 documentation
 │   │   ├── README_LOGS.md   # Complete logging system documentation
-│   │   └── README_AI.md     # Complete AI integration documentation (BLIP + Llama 3 8B)
-│   ├── tests/              # Backend tests
-│   │   ├── conftest.py      # Test configuration
-│   │   ├── test_auth.py     # Authentication tests
-│   │   ├── test_google_oauth.py  # Google OAuth tests
-│   │   ├── test_admin_routes.py   # Admin routes tests
-│   │   ├── test_adopter_routes.py # Adopter routes tests
+│   │   ├── README_APPLICATIONS.md # Complete adoption applications documentation
+│   │   ├── README_AI.md     # Complete AI integration documentation (BLIP + LLM provider-agnostic)
+│   │   ├── REDIS_CACHE.md   # Complete Redis Cache implementation documentation
+│   │   └── SOCKET_IO.md     # Complete Socket.IO events and integration documentation
+│   ├── tests/              # Backend tests (13 files, 120+ tests)
+│   │   ├── conftest.py              # Test configuration
+│   │   ├── test_auth.py             # Authentication tests
+│   │   ├── test_google_oauth.py      # Google OAuth tests
+│   │   ├── test_google_oauth_utils.py # Google OAuth utility tests
+│   │   ├── test_admin_routes.py     # Admin routes tests
+│   │   ├── test_adopter_routes.py   # Adopter routes tests
 │   │   ├── test_backblaze_routes.py # Backblaze B2 tests
-│   │   ├── test_pet.py      # Pet management tests
-│   │   └── test_main.py     # Main endpoint tests
+│   │   ├── test_pet.py              # Pet management tests
+│   │   ├── test_adoption_form.py    # Adoption form tests
+│   │   ├── test_applications.py     # Adoption application tests
+│   │   ├── test_ai.py               # AI service tests
+│   │   ├── test_favorite_routes.py  # Favorite tests
+│   │   └── test_main.py             # Main endpoint tests
 │   ├── requirements.txt    # Python dependencies
 │   └── Dockerfile          # Backend container configuration
+├── electron/             # Desktop Admin application (Electron wrapper)
 ├── frontend/               # React frontend application
 │   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components (HomePage, AdminDashboardPage)
-│   │   ├── services/       # API service layer
+│   │   ├── assets/         # Images, icons, SVGs
+│   │   ├── components/     # Reusable UI components (atoms, molecules, organisms)
+│   │   ├── content/        # Static/markdown content
+│   │   ├── context/        # React context providers (Auth, Theme)
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── pages/          # Page components (admin/, adopter/, landing/)
+│   │   ├── routes/         # Route definitions (public, protected, role-based)
+│   │   ├── services/       # API service layer (axios-based)
+│   │   ├── theme/          # MUI theme configuration
 │   │   ├── types/          # TypeScript type definitions
-│   │   └── utils/          # Utility functions
+│   │   └── utils/          # Utility functions (certificates, formatters, assets)
 │   ├── public/             # Static assets
 │   ├── tests/              # Frontend tests
 │   ├── package.json        # Node.js dependencies
@@ -410,6 +446,12 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
+# ─── LLM (Groq) - provider agnostic ─
+LLAMA_BASE_URL=https://api.groq.com/openai/v1
+LLAMA_MODEL=llama-3.1-8b-instant
+LLAMA_API_KEY=your_groq_api_key
+LLAMA_JSON_MODE=true
+
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
@@ -469,6 +511,12 @@ BACKBLAZE_BUCKET_NAME=your_backblaze_bucket_name
 # ─── Hugging Face ──────────────────────────────────────
 HF_TOKEN=your_hugging_face_token
 
+# ─── LLM (Groq) - provider agnostic ─
+LLAMA_BASE_URL=https://api.groq.com/openai/v1
+LLAMA_MODEL=llama-3.1-8b-instant
+LLAMA_API_KEY=your_groq_api_key
+LLAMA_JSON_MODE=true
+
 # ─── Docker & Ports ───────────────────────────────────
 BACKEND_INTERNAL_PORT=9090
 BACKEND_EXTERNAL_PORT=8000
@@ -486,7 +534,7 @@ VITE_API_URL=http://localhost:8000
 
 ## GitHub Secrets (required)
 
-These secrets must be configured in the GitHub repository settings (Actions secrets). **8 secrets total**:
+These secrets must be configured in the GitHub repository settings (Actions secrets). **16 secrets total**:
 
 | Secret name | Used by | Purpose |
 |---|---|---|
@@ -498,6 +546,14 @@ These secrets must be configured in the GitHub repository settings (Actions secr
 | `PROD_EC2_HOST` | Production | Production EC2 public IP / hostname |
 | `PROD_EC2_USER` | Production | SSH user for production instance |
 | `PROD_EC2_SSH_KEY` | Production | Private SSH key for production instance |
+| `QA_LLAMA_BASE_URL` | QA | Groq / OpenAI-compatible endpoint URL |
+| `QA_LLAMA_MODEL` | QA | LLM model name (e.g. `llama-3.1-8b-instant`) |
+| `QA_LLAMA_JSON_MODE` | QA | `true` if provider supports `response_format` |
+| `QA_GROQ_API_KEY` | QA | Groq API key |
+| `PROD_LLAMA_BASE_URL` | Production | Groq / OpenAI-compatible endpoint URL |
+| `PROD_LLAMA_MODEL` | Production | LLM model name |
+| `PROD_LLAMA_JSON_MODE` | Production | `true` if provider supports `response_format` |
+| `PROD_GROQ_API_KEY` | Production | Groq API key |
 
 ## EC2 setup (QA/Production)
 

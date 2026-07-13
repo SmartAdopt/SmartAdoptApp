@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter as Router } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // <-- NEW: TanStack Core Imports
 
@@ -30,9 +30,9 @@ export default function App() {
           <PetProvider>
             {" "}
             {/* <-- NEW: Integrated custom client database provider */}
-            <BrowserRouter>
+            <Router>
               <AppRouter />
-            </BrowserRouter>
+            </Router>
           </PetProvider>
         </AuthProvider>
       </ThemeProvider>

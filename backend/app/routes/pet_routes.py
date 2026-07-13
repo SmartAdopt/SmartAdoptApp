@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
 
 # Database imports
 from app.database.mongo.mongo_db import get_mongo_db
@@ -11,15 +12,19 @@ from app.schemas.pet_profile_schemas import PetProfileResponse
 from app.services.pet_service import (
     register_pet,
     update_pet,
-    list_pets,
     regenerate_profile,
+    list_pets,
 )
+from app.utils.socketio_manager import sio
 
 # JWT utils import
 from app.utils.jwt.jwt_utils import verify_token
 
 # Logger import
 from app.utils.logger.logger_config import logger
+
+# Cache imports
+from app.utils.cache_utils import get_cached_data, set_cached_data, invalidate_cache
 
 router = APIRouter(prefix="/pets", tags=["Pets"])
 
@@ -51,6 +56,19 @@ async def register_pet_route(
         pet_data_dict = pet_data.model_dump()
         # Call service to register the pet
         new_pet = await register_pet(db, pet_data_dict)
+
+        # Broadcast the new pet registration globally
+        await sio.emit(
+            "new_pet_registered",
+            {
+                "pet_id": str(new_pet["profile_id"]),
+                "name": new_pet.get("pet", {}).get("name", "Una nueva mascota"),
+            },
+        )
+
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Pet registered successfully",
@@ -103,9 +121,25 @@ async def update_pet_route(
 
     try:
         # Convert Pydantic schema to dict before calling service
-        pet_data_dict = pet_data.model_dump()
+        pet_data_dict = pet_data.model_dump(
+            exclude_unset=True
+        )  # Exclude unset fields for partial updates
         # Call service to update the profile
         updated_pet = await update_pet(db, profile_id, pet_data_dict)
+
+        # Broadcast the status update globally
+        await sio.emit(
+            "pet_status_update",
+            {
+                "pet_id": updated_pet["profile_id"],
+                "name": updated_pet.get("pet", {}).get("name", "Una mascota"),
+                "status": updated_pet.get("status"),
+            },
+        )
+
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Profile updated successfully",
@@ -160,6 +194,10 @@ async def regenerate_profile_route(
     try:
         # Call service to regenerate the profile
         regenerated_profile = await regenerate_profile(db, profile_id)
+
+        # Invalidate pet list caches
+        invalidate_cache("cache:pets:*")
+
         # Return response with complete profile
         return PetRegisterResponse(
             message="Profile regenerated successfully",
@@ -193,10 +231,12 @@ async def regenerate_profile_route(
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_pets_route(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
     db=Depends(get_mongo_db),
     token_payload: dict = Depends(verify_token),
 ):
-    # Endpoint to list all pets (requires admin or adopter role)
+    # Endpoint to list pets (requires admin or adopter role)
+    # No status -> general listing (all pets); status provided -> filtered
     logger.info("GET /pets/ - List pets request")
 
     # Verify user role is admin or adopter
@@ -211,10 +251,26 @@ async def list_pets_route(
         )
 
     try:
-        # Call service to list pets
-        pets = await list_pets(db)
+        cache_key = f"cache:pets:list:{status_filter or 'all'}"
+        cached_response = get_cached_data(cache_key)
+        if cached_response:
+            return cached_response
+
+        # Call service to list pets (filtered by status only when provided)
+        pets = await list_pets(db, status_filter=status_filter)
+        if not pets:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "No pets found"},
+            )
+
+        response_data = {"pets": pets, "count": len(pets)}
+        set_cached_data(cache_key, response_data, expire_seconds=300)
+
         # Return response
-        return {"pets": pets, "count": len(pets)}
+        return response_data
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Unexpected error during pet listing: {str(e)}")
         raise HTTPException(

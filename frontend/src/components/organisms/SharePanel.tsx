@@ -17,7 +17,7 @@ export const SharePanel = () => {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(
-          `${shareData.text} ${shareData.url}`,
+          `${shareData.text} ${shareData.url}`
         );
         alert("¡Enlace copiado al portapapeles! Gracias por compartir.");
       }

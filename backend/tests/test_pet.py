@@ -45,7 +45,7 @@ TEST_PET_CAT = {
 def get_admin_token():
     """Helper function to create an admin token for testing"""
     payload = {
-        "sub": "admin@test.com",
+        "sub": "1",
         "role": "admin",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),
@@ -67,7 +67,7 @@ def test_register_pet_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -203,7 +203,7 @@ def test_register_cat_pet_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Whiskers: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Whiskers is a special being looking for a loving home.",
             },
         ):
@@ -228,7 +228,7 @@ def test_register_pet_without_admin_role(client):
     """Test pet registration without admin role (Negative path)"""
     # Create a token with adopter role instead of admin
     payload = {
-        "sub": "adopter@test.com",
+        "sub": "2",
         "role": "adopter",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),
@@ -308,15 +308,15 @@ def test_list_pets_success(client):
     token = get_admin_token()
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
-    # The list might fail due to MongoDB mock issues, so we accept 200 or 500
-    assert response.status_code in [200, 500]
+    # The list might be empty (404) or fail due to MongoDB mock issues
+    assert response.status_code in [200, 404, 500]
 
 
 def test_list_pets_without_admin_role(client):
     """Test pet listing without admin role (Negative path)"""
     # Create a token with regular user role instead of admin or adopter
     payload = {
-        "sub": "user@test.com",
+        "sub": "3",
         "role": "user",
         "exp": datetime.utcnow() + timedelta(minutes=30),
         "iat": datetime.utcnow(),
@@ -326,6 +326,36 @@ def test_list_pets_without_admin_role(client):
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
     # Should return 403 Forbidden for non-admin/non-adopter user
+    assert response.status_code == 403
+    data = response.json()
+    assert "Access denied. Admin or Adopter role required" in str(data)
+
+
+def test_list_pets_filtered_by_status(client):
+    """Test pet listing filtered by status=adopted (Happy path)"""
+    token = get_admin_token()
+    response = client.get(
+        "/pets/?status=adopted", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    # The list might be empty (404) or fail due to MongoDB mock issues
+    assert response.status_code in [200, 404, 500]
+
+
+def test_list_pets_filtered_without_role(client):
+    """Test status-filtered pet listing without admin/adopter role (Negative path)"""
+    payload = {
+        "sub": "3",
+        "role": "user",
+        "exp": datetime.utcnow() + timedelta(minutes=30),
+        "iat": datetime.utcnow(),
+    }
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    response = client.get(
+        "/pets/?status=adopted", headers={"Authorization": f"Bearer {token}"}
+    )
+
     assert response.status_code == 403
     data = response.json()
     assert "Access denied. Admin or Adopter role required" in str(data)
@@ -381,7 +411,7 @@ def test_register_pet_with_ai_success(client):
             "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -401,7 +431,7 @@ def test_register_pet_with_ai_success(client):
     assert "profile" in data
     assert data["profile"]["id"].startswith("PR")  # Profile ID should start with PR
     assert data["profile"]["title"] == "Buddy: Your new best friend"
-    assert data["profile"]["tags"] == ["#Adoptable", "#LoyalFriend", "#ReadyForLove"]
+    assert data["profile"]["tags"] == ["#Peludo", "#Juguetón", "#AmigoPeludo"]
     # Check that emotional_description contains the expected text (not exact match)
     assert "Buddy" in data["profile"]["emotional_description"]
     assert "loving home" in data["profile"]["emotional_description"]
@@ -416,14 +446,14 @@ def test_regenerate_profile_success(client):
 
     # Mock AI services
     with patch(
-        "app.services.ai_service.describe_image_with_blip",
+        "app.services.pet_service.describe_image_with_blip",
         return_value="A friendly dog looking for a home",
     ):
         with patch(
-            "app.services.ai_service.enrich_profile_with_llama",
+            "app.services.pet_service.enrich_profile_with_llama",
             return_value={
                 "title": "Buddy: Your new best friend",
-                "tags": ["#Adoptable", "#LoyalFriend", "#ReadyForLove"],
+                "tags": ["#Peludo", "#Juguetón", "#AmigoPeludo"],
                 "emotional_description": "Buddy is a special being looking for a loving home.",
             },
         ):
@@ -446,7 +476,7 @@ def test_update_pet_with_ai_fields_success(client):
         "special_conditions": ["Needs daily exercise"],
         "brief_description": "Active dog looking for an active family",
         "title": "Buddy: Your active companion",
-        "tags": ["#Adoptable", "#Active", "#NeedsExercise"],
+        "tags": ["#Peludo", "#Juguetón", "#Explorador"],
         "emotional_description": "Buddy is an energetic dog looking for an active family.",
     }
 
@@ -466,7 +496,7 @@ def test_update_pet_partial_ai_fields(client):
 
     update_data = {
         "title": "Buddy: Your new title",
-        "tags": ["#Adoptable", "#NewTag"],
+        "tags": ["#Peludo", "#Juguetón"],
         "emotional_description": "New emotional description.",
     }
 
@@ -485,8 +515,8 @@ def test_list_pets_with_ai_structure(client):
     token = get_admin_token()
     response = client.get("/pets/", headers={"Authorization": f"Bearer {token}"})
 
-    # Accept 200 or 500 (MongoDB mock issues)
-    assert response.status_code in [200, 500]
+    # Accept 200, 404 (empty) or 500 (MongoDB mock issues)
+    assert response.status_code in [200, 404, 500]
 
     if response.status_code == 200:
         data = response.json()

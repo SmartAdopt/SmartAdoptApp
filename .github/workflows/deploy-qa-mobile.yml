@@ -1,0 +1,94 @@
+name: Deploy QA Mobile
+
+on:
+  push:
+    branches:
+      - qa
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-qa-mobile
+  cancel-in-progress: true
+
+jobs:
+  build-android-qa:
+    name: Build & Distribute Android APK (QA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies (Capacitor CLI + Android platform)
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build web bundle for QA mobile
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://smartadoptqa.programacionwebuce.net/api
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        run: npm run android:sync
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Decode and validate QA keystore
+        working-directory: android/app
+        env:
+          QA_BASE64: ${{ secrets.ANDROID_KEYSTORE_QA_BASE64 }}
+          QA_PASS: ${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}
+        run: |
+          echo "$QA_BASE64" | base64 -d > qa-release.keystore
+          keytool -list -v -keystore qa-release.keystore -storepass "$QA_PASS" -storetype JKS
+
+      - name: Grant execute permission to gradlew
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build QA release APK
+        working-directory: android
+        env:
+          QA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_QA_PASSWORD }}
+          QA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS_QA }}
+          QA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD_QA }}
+        run: ./gradlew assembleQaRelease --stacktrace
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID_QA }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: qa-testers
+          file: android/app/build/outputs/apk/qa/release/app-qa-release.apk
+          releaseNotes: |
+            Build QA automatic
+            Commit: ${{ github.sha }}
+            Rama: qa
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartadopt-qa-mobile-${{ github.sha }}
+          path: android/app/build/outputs/apk/qa/release/app-qa-release.apk
+          retention-days: 14

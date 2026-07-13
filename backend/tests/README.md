@@ -35,19 +35,27 @@ python -m pytest backend/tests/test_google_oauth_utils.py -v
 
 # Run pet tests
 python -m pytest backend/tests/test_pet.py -v
+
+# Run adoption form tests
+python -m pytest backend/tests/test_adoption_form.py -v
+
+# Run adoption application tests
+python -m pytest backend/tests/test_applications.py -v
 ```
 
 
 ### Test Coverage
-The backend currently has 90% code coverage with 59 tests passing:
+The backend currently has 90% code coverage with 92 tests passing:
 - 13 authentication tests (registration, login, refresh tokens, blacklist)
 - 4 admin routes tests
-- 4 adopter routes tests
+- 14 adopter routes tests (home access + profile update)
 - 6 Google OAuth tests
 - 1 Google OAuth utils test
 - 1 main test
 - 6 Backblaze B2 tests (image upload, authorization, validation)
-- 24 pet management tests (registration, update, listing, validation, role restrictions)
+- 17 pet management tests (registration, update, listing, validation, role restrictions, AI enrichment)
+- 7 adoption form tests (submission, retrieval, update, authorization, workflow)
+- 11 adoption application tests (create, listing, authorization, validation, workflow)
 
 ---
 
@@ -410,7 +418,7 @@ Validates that blacklisted tokens are rejected for admin access.
 
 ## 5. Adopter Routes Tests: `test_adopter_routes.py`
 
-This file contains validation logic for adopter-specific endpoints, including home access, role verification, and token validation.
+This file contains validation logic for adopter-specific endpoints, including home access, profile update, role verification, and token validation.
 
 ### a) Functional Test: Adopter Home Success
 ```python
@@ -448,6 +456,139 @@ def test_adopter_home_with_blacklisted_token(client, db_session):
 ```
 **Purpose:** 
 Validates that blacklisted tokens are rejected for adopter access.
+
+### d) Functional Test: Successful Profile Update
+```python
+def test_update_profile_success(client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "first_name": "NewName",
+        "last_name": "NewLastName",
+        "phone_number": "0988888888",
+        "email": "newemail@test.com",
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Profile updated successfully"
+    assert data["user_id"] == user.user_id
+    assert "updated_at" in data
+```
+**Purpose:** 
+Validates successful adopter profile update. Returns an `UpdateResponse` with confirmation message, user ID, and timestamp.
+* **HTTP 200 (OK):** Indicates successful update.
+* **Response format:** `{message, user_id, updated_at}` using `UpdateResponse` schema.
+
+### e) Functional Test: Partial Profile Update
+```python
+def test_update_profile_partial_first_name(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={"first_name": "OnlyName"})
+    
+    assert response.status_code == 200
+    assert data["message"] == "Profile updated successfully"
+```
+**Purpose:** 
+Validates partial update — only provided fields are updated, others remain unchanged.
+
+### f) Functional Test: Password Change
+```python
+def test_update_profile_password_success(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "TestPass123",
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 200
+```
+**Purpose:** 
+Validates password change with correct current password. Verifies that login works with the new password afterwards.
+
+### g) Negative Test: Password Validation (Wrong Current)
+```python
+def test_update_profile_password_wrong_current(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "WrongPass123",
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 400
+    assert "Current password is incorrect" in response.text
+```
+**Purpose:** 
+Ensures password change requires the correct current password.
+* **HTTP 400 (Bad Request):** Indicates incorrect current password.
+
+### h) Negative Test: Password Validation (Missing Current)
+```python
+def test_update_profile_password_missing_current(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "new_password": "NewPass456",
+    })
+    
+    assert response.status_code == 422
+```
+**Purpose:** 
+Validates that `current_password` is required when `new_password` is provided (cross-field validation).
+* **HTTP 422 (Unprocessable Entity):** Indicates validation error.
+
+### i) Negative Test: Password Validation (Same Password)
+```python
+def test_update_profile_password_same_password(client, db_session):
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={
+        "current_password": "TestPass123",
+        "new_password": "TestPass123",
+    })
+    
+    assert response.status_code == 422
+```
+**Purpose:** 
+Validates that new password must be different from current password.
+
+### j) Negative Test: Email Duplicate
+```python
+def test_update_profile_email_duplicate(client, db_session):
+    # Create two users, try to update user1's email to user2's email
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {token}"}, json={"email": "other@test.com"})
+    
+    assert response.status_code == 409
+```
+**Purpose:** 
+Ensures email uniqueness is enforced during profile update.
+* **HTTP 409 (Conflict):** Indicates email already in use by another user.
+
+### k) Negative Test: Unauthorized Role Update
+```python
+def test_update_profile_unauthorized_role(client, db_session):
+    # Create admin user and token
+    response = client.put("/adopter/profile", headers={"Authorization": f"Bearer {admin_token}"}, json={"first_name": "Hacker"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can update their profile.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+
+### l) Negative Test: No Token
+```python
+def test_update_profile_no_token(client):
+    response = client.put("/adopter/profile", json={"first_name": "NoToken"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that profile update requires authentication.
+
+### m) Negative Test: Invalid Token
+```python
+def test_update_profile_invalid_token(client):
+    response = client.put("/adopter/profile", headers={"Authorization": "Bearer invalid_token"}, json={"first_name": "Invalid"})
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that invalid tokens are rejected.
 
 ---
 
@@ -859,7 +1000,807 @@ Validates error handling when Backblaze connection fails.
 
 ---
 
-## 10. MongoDB Mock Implementation
+## 10. Adoption Form Routes Tests: `test_adoption_form.py`
+
+This file contains validation logic for adoption form endpoints, including submission, retrieval, update, role-based authorization, and workflow validation.
+
+### a) Test Data Constant
+```python
+FORM_DATA = {
+    "neighborhood": "La Floresta",
+    "address": "Calle Principal 123",
+    "employment_status": "employed",
+    "housing_type": "own_house",
+    "has_natural_space": True,
+    "has_pets": False,
+    "household_energy": "moderate",
+    "has_children": True,
+    "children_ages": [5, 8],
+    "long_term_commitment": True,
+    "preferred_species": "dog",
+    "preferred_gender": "female",
+    "preferred_energy": "medium",
+    "daily_time_dedication": "2-6",
+    "sleeping_location": "inside",
+    "behavior_approach": "positive_education",
+    "emergency_plan": "family_friend",
+    "motivation": "I want to provide a loving home to a pet in need.",
+}
+```
+**Purpose:** 
+Standardizes the input data for adoption form tests. Providing a reusable dictionary prevents code duplication and ensures consistency in tests that require form submission.
+
+### b) Functional Test: Successful Adoption Form Submission
+```python
+def test_submit_adoption_form_success(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="testadopter_unique@test.com",
+        phone_number="0934567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["message"] == "Adoption form registered successfully"
+    assert "form_id" in data
+```
+**Purpose:** 
+Validates the Happy Path of adoption form submission. It confirms that adopter users can successfully submit forms with valid tokens.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **Role Verification:** Only users with the `adopter` role can submit forms.
+* **Token Verification:** A valid JWT token is required.
+
+### c) Negative Test: Unauthorized Role Submission
+```python
+def test_submit_adoption_form_unauthorized_role(client, db_session):
+    user = User(
+        first_name="Admin",
+        last_name="User",
+        email="admin_unique@test.com",
+        phone_number="0934567891",
+        password_hash="hashed_password",
+        type="admin",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    admin_user = Admin(user_id=user.user_id)
+    db_session.add(admin_user)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "admin", "exp": 9999999999}
+    admin_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 403
+    assert "Access denied" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures that non-adopter users (e.g., admins) cannot submit adoption forms.
+* **HTTP 403 (Forbidden):** Indicates insufficient permissions.
+* **Role-based Authorization:** The system enforces that only `adopter` role can submit forms.
+
+### d) Negative Test: Missing Token
+```python
+def test_submit_adoption_form_missing_token(client):
+    response = client.post("/adoption-forms/submit", json=FORM_DATA)
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that form submission requires authentication.
+* **HTTP 401 (Unauthorized):** Indicates missing or invalid token.
+
+### e) Functional Test: Get Form After Submission
+```python
+def test_get_my_adoption_form_after_submit(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="get_after_submit@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    
+    response = client.get(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["neighborhood"] == "La Floresta"
+    assert data["daily_time_dedication"] == "2-6"
+```
+**Purpose:** 
+Validates the complete workflow: after submitting a form, the user can retrieve it.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **HTTP 200 (OK):** Indicates successful form retrieval.
+* **Workflow Validation:** Tests the integration between POST and GET endpoints.
+
+### f) Functional Test: Update Form After Submission
+```python
+def test_update_my_adoption_form_after_submit(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="update_after_submit@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(
+        "/adoption-forms/submit",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=FORM_DATA,
+    )
+    
+    assert response.status_code == 201
+    
+    update_data = {
+        "neighborhood": "La Floresta",
+        "address": "Calle Principal 456",
+        "daily_time_dedication": "6+",
+    }
+    
+    response = client.put(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=update_data,
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "Adoption form updated successfully"
+    assert data["form"]["neighborhood"] == "La Floresta"
+    assert data["form"]["address"] == "Calle Principal 456"
+    assert data["form"]["daily_time_dedication"] == "6+"
+```
+**Purpose:** 
+Validates the complete workflow: after submitting a form, the user can update it.
+* **HTTP 201 (Created):** Indicates successful form submission.
+* **HTTP 200 (OK):** Indicates successful form update.
+* **Partial Update:** Only provided fields are updated.
+
+### g) Negative Test: Get Form When None Exists
+```python
+def test_get_my_adoption_form_no_form(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="no_form@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.get(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+    )
+    
+    assert response.status_code == 404
+```
+**Purpose:** 
+Validates that users without a form receive an appropriate error response.
+* **HTTP 404 (Not Found):** Indicates no adoption form exists for the user.
+
+### h) Negative Test: Update Form When None Exists
+```python
+def test_update_my_adoption_form_no_form(client, db_session):
+    user = User(
+        first_name="Test",
+        last_name="Adopter",
+        email="no_form_update@test.com",
+        phone_number="1234567890",
+        password_hash="hashed_password",
+        type="adopter",
+    )
+    db_session.add(user)
+    db_session.commit()
+    
+    adopter = Adopter(user_id=user.user_id)
+    db_session.add(adopter)
+    db_session.commit()
+    
+    token_payload = {"sub": str(user.user_id), "role": "adopter", "exp": 9999999999}
+    adopter_token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    update_data = {"neighborhood": "La Floresta"}
+    
+    response = client.put(
+        "/adoption-forms/me",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json=update_data,
+    )
+    
+    assert response.status_code == 400
+```
+**Purpose:** 
+Validates that users without a form receive an appropriate error response when trying to update.
+* **HTTP 400 (Bad Request):** Indicates no form exists for the user to update.
+
+### i) Functional Test: Review Application Success (Admin)
+```python
+def test_review_adoption_form_success(client, db_session):
+    # Setup admin user and token
+    # Override mock to return pending application
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 200
+    assert data["message"] == "Application reviewed successfully"
+    assert data["review_result"]["status"] == "approved"
+    assert data["review_result"]["application_id"] == "AP1"
+```
+**Purpose:** 
+Validates the Happy Path of reviewing an application by an admin.
+* **HTTP 200 (OK):** Indicates successful review.
+* **State Change:** Verifies the application's status is updated and linked pet is properly handled.
+
+### j) Negative Test: Review Already Reviewed Application
+```python
+def test_review_adoption_form_already_reviewed(client, db_session):
+    # Override mock to return an already reviewed application
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "rejected"}
+    )
+    
+    assert response.status_code == 400
+```
+**Purpose:** 
+Prevents re-reviewing applications that have already been approved or rejected.
+* **HTTP 400 (Bad Request):** Indicates invalid state transition.
+
+### k) Negative Test: Review Application Not Found
+```python
+def test_review_adoption_form_not_found(client, db_session):
+    # Override mock to return None
+    response = client.put(
+        "/adoption-forms/AP999/review",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 404
+```
+**Purpose:** 
+Validates that reviewing a non-existent application returns an appropriate error.
+
+### l) Negative Test: Review Application Unauthorized Role
+```python
+def test_review_adoption_form_unauthorized_role(client, db_session):
+    # Setup adopter user and token
+    response = client.put(
+        "/adoption-forms/AP1/review",
+        headers={"Authorization": f"Bearer {adopter_token}"},
+        json={"status": "approved"}
+    )
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only users with the `admin` role can review applications.
+
+### m) Functional Test: Get All Adoption Forms Admin (Matches)
+```python
+def test_get_all_adoption_forms_admin_pet_name_match(client, db_session):
+    # Setup admin user and token
+    response = client.get(
+        "/adoption-forms/admin?pet_name=Firulais",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+```
+**Purpose:** 
+Validates that admins can list and filter all adoption forms in the system.
+
+### n) Functional Test: Get All Adoption Forms Admin (No Matches)
+```python
+def test_get_all_adoption_forms_admin_pet_name_no_match(client, db_session):
+    # Setup admin user and token
+    response = client.get(
+        "/adoption-forms/admin?pet_name=UnknownPet",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    assert data["count"] == 0
+```
+**Purpose:** 
+Validates that the admin list endpoint returns correctly when no forms match the filters.
+
+### o) Negative Test: Get All Adoption Forms Unauthorized Role
+```python
+def test_get_all_adoption_forms_admin_requires_admin_role(client, db_session):
+    # Setup adopter user and token
+    response = client.get(
+        "/adoption-forms/admin",
+        headers={"Authorization": f"Bearer {adopter_token}"}
+    )
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only users with the `admin` role can list all adoption forms in the system.
+
+### Running Specific Tests
+To run only the adoption form tests:
+```bash
+python -m pytest backend/tests/test_adoption_form.py -v
+```
+
+To run only the favorite tests:
+```bash
+python -m pytest backend/tests/test_favorite_routes.py -v
+```
+
+---
+
+## 11. Favorite Routes Tests: `test_favorite_routes.py`
+
+This file contains 14 tests organized into 3 test classes, covering the complete favorites CRUD workflow with MongoDB validation.
+
+### Test Data Constant
+```python
+TEST_PET_PROFILE = {
+    "_id": "PR1",
+    "title": "Friendly Dog",
+    "tags": ["#Peludo", "#Juguetón"],
+    "emotional_description": "A very friendly dog looking for a home.",
+    "status": "available",
+    "creation_date": datetime.now(),
+    "pet": {
+        "name": "Buddy",
+        "pet_image_url": "https://example.com/dog.jpg",
+        "animal_breed": ["dog", "Golden Retriever"],
+        "age": 3,
+        "gender": "male",
+        "is_sterilized": True,
+        "vaccines_up_to_date": ["rabies"],
+        "dewormed": True,
+        "weight_kg": 8.5,
+        "special_conditions": [],
+        "brief_description": "Friendly dog looking for a home",
+    },
+}
+```
+**Purpose:** 
+Standardizes the mock pet profile data used in MongoDB validation for favorites tests.
+
+### TestAddFavorite Class (6 tests)
+
+#### a) Functional Test: Add Favorite Success
+```python
+def test_add_favorite_success(self, client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    _override_mongo_db_with_pet(TEST_PET_PROFILE)
+    response = client.post(
+        "/adopter/favorites/PR1",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201
+    assert data["message"] == "Pet added to favorites"
+    assert data["favorite"]["pet_profile_id"] == "PR1"
+```
+**Purpose:** 
+Validates the Happy Path of adding a favorite. Confirms that an adopter can favorite an existing pet profile.
+* **HTTP 201 (Created):** Indicates successful favorite creation.
+* **MongoDB Validation:** The pet profile must exist in MongoDB before adding.
+
+#### b) Negative Test: Duplicate Favorite
+```python
+def test_add_favorite_duplicate(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 409
+    assert "Pet already in favorites" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures the unique constraint (user_id + pet_profile_id) prevents duplicate favorites.
+* **HTTP 409 (Conflict):** Indicates the pet is already in the user's favorites.
+
+#### c) Negative Test: Pet Not Found in MongoDB
+```python
+def test_add_favorite_pet_not_found(self, client, db_session):
+    _override_mongo_db_with_pet(None)
+    response = client.post(
+        "/adopter/favorites/PR999",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404
+    assert "Pet profile not found" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Validates that non-existent pet profile IDs are rejected before creating the favorite.
+* **HTTP 404 (Not Found):** Indicates the pet profile does not exist in MongoDB.
+
+#### d) Negative Test: Unauthorized Role
+```python
+def test_add_favorite_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can add favorites.
+
+#### e) Negative Test: No Token
+```python
+def test_add_favorite_no_token(self, client):
+    response = client.post("/adopter/favorites/PR1")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that adding favorites requires authentication.
+
+#### f) Negative Test: Invalid Token
+```python
+def test_add_favorite_invalid_token(self, client):
+    response = client.post("/adopter/favorites/PR1", headers={"Authorization": "Bearer invalid_token"})
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that invalid tokens are rejected.
+
+### TestRemoveFavorite Class (4 tests)
+
+#### a) Functional Test: Remove Favorite Success
+```python
+def test_remove_favorite_success(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.delete("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["message"] == "Pet removed from favorites"
+```
+**Purpose:** 
+Validates the complete add-remove workflow.
+* **HTTP 200 (OK):** Indicates successful favorite removal.
+
+#### b) Negative Test: Remove Non-existent Favorite
+```python
+def test_remove_favorite_not_found(self, client, db_session):
+    response = client.delete("/adopter/favorites/PR999", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 404
+    assert "Favorite not found" in response.json()["detail"]["message"]
+```
+**Purpose:** 
+Ensures removing a non-existent favorite returns the appropriate error.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_remove_favorite_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.delete("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can remove favorites.
+
+#### d) Negative Test: No Token
+```python
+def test_remove_favorite_no_token(self, client):
+    response = client.delete("/adopter/favorites/PR1")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that removing favorites requires authentication.
+
+### TestListFavorites Class (4 tests)
+
+#### a) Functional Test: List Favorites with Pet Data
+```python
+def test_list_favorites_success(self, client, db_session):
+    client.post("/adopter/favorites/PR1", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert data["count"] == 1
+    assert data["favorites"][0]["pet_profile_id"] == "PR1"
+    assert data["favorites"][0]["pet"] is not None
+    assert data["favorites"][0]["pet"]["title"] == "Friendly Dog"
+```
+**Purpose:** 
+Validates that the list endpoint returns favorites with full pet profile data from MongoDB.
+* **HTTP 200 (OK):** Indicates successful listing.
+* **Pet Data:** Each favorite includes the complete pet profile (title, tags, emotional_description, pet info).
+
+#### b) Functional Test: Empty Favorites List
+```python
+def test_list_favorites_empty(self, client, db_session):
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert data["count"] == 0
+    assert data["favorites"] == []
+```
+**Purpose:** 
+Validates that users with no favorites receive an empty list.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_list_favorites_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.get("/adopter/favorites/", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can list favorites.
+
+#### d) Negative Test: No Token
+```python
+def test_list_favorites_no_token(self, client):
+    response = client.get("/adopter/favorites/")
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that listing favorites requires authentication.
+
+---
+
+## 12. Adoption Application Routes Tests: `test_applications.py`
+
+This file contains 11 tests organized into 2 test classes, covering the complete adoption application workflow with AI cross-evaluation and MongoDB validation.
+
+### Test Data Constants
+
+```python
+MOCK_AI_RESULT = {
+    "total_score": 10,
+    "total_max_score": 15,
+    "main_score": 8,
+    "main_max_score": 11,
+    "logistics_education_score": 2,
+    "logistics_education_max_score": 4,
+    "breakdown": [
+        {"section": "I. Candidate Information", "field": "employment_status", ...},
+        # ... 15 items total
+    ],
+    "justification": "The applicant demonstrates good compatibility...",
+}
+```
+**Purpose:** 
+Standardizes the mock AI evaluation result used across all application tests. Contains all 15 breakdown items with varying scores (0 or 1) to test realistic scenarios.
+
+### TestCreateApplication Class (7 tests)
+
+#### a) Functional Test: Create Application Success
+```python
+def test_create_application_success(self, client, db_session):
+    user = _create_adopter_user(db_session)
+    token = _create_adopter_token(user.user_id)
+    _override_mongo_db()
+    
+    with patch("app.services.applications_service.evaluate_adoption_application",
+               new_callable=AsyncMock) as mock_ai:
+        mock_ai.return_value = MOCK_AI_RESULT
+        response = client.post(
+            "/applications/PR1",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    
+    assert response.status_code == 201
+    assert data["message"] == "Adoption application created successfully"
+    assert data["application_id"] == "APP1"
+    assert data["status"] == "pending"
+```
+**Purpose:** 
+Validates the Happy Path of creating an adoption application. Confirms that an adopter with a valid form can apply for an available pet.
+* **HTTP 201 (Created):** Indicates successful application creation.
+* **Minimal Response:** Returns only application_id, pet_profile_id, status, and created_at.
+* **AI Evaluation:** Mocked to return a controlled result with known scores.
+
+#### b) Negative Test: Missing Adoption Form
+```python
+def test_create_application_no_form(self, client, db_session):
+    _override_mongo_db(form_exists=False)
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 400
+    assert "suitability form" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Ensures that adopters must complete the suitability form before applying.
+* **HTTP 400 (Bad Request):** Indicates missing prerequisite.
+
+#### c) Negative Test: Pet Not Found
+```python
+def test_create_application_pet_not_found(self, client, db_session):
+    _override_mongo_db(pet_exists=False)
+    response = client.post("/applications/PR999", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Validates that non-existent pet profiles are rejected.
+* **HTTP 404 (Not Found):** Indicates pet profile does not exist in MongoDB.
+
+#### d) Negative Test: Pet Not Available
+```python
+def test_create_application_pet_not_available(self, client, db_session):
+    _override_mongo_db(pet_status="adopted")
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 409
+    assert "not available" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Ensures that only pets with `available` status can be applied for.
+* **HTTP 409 (Conflict):** Indicates the pet is not available for adoption.
+
+#### e) Negative Test: Duplicate Application
+```python
+def test_create_application_duplicate(self, client, db_session):
+    _override_mongo_db(duplicate=True)
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 409
+    assert "already applied" in response.json()["detail"]["message"].lower()
+```
+**Purpose:** 
+Prevents duplicate applications for the same pet by the same adopter.
+* **HTTP 409 (Conflict):** Indicates the user already applied for this pet.
+
+#### f) Negative Test: Unauthorized Role
+```python
+def test_create_application_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.post("/applications/PR1", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can create applications.
+
+#### g) Negative Test: No Token
+```python
+def test_create_application_no_token(self, client):
+    response = client.post("/applications/PR1")
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that creating applications requires authentication.
+
+### TestListApplications Class (4 tests)
+
+#### a) Functional Test: List Applications with Pet Data
+```python
+def test_list_applications_success(self, client, db_session):
+    app_doc = _build_app_document(user_id=user.user_id)
+    _override_mongo_db(existing_apps=[app_doc])
+    
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 200
+    assert data["count"] == 1
+    assert data["applications"][0]["application_id"] == "APP1"
+    assert data["applications"][0]["total_score"] == MOCK_AI_RESULT["total_score"]
+    assert data["applications"][0]["ai_justification"] == MOCK_AI_RESULT["justification"]
+    assert data["applications"][0]["pet"]["profile_id"] == "PR1"
+```
+**Purpose:** 
+Validates that the list endpoint returns applications with full pet profile data and AI evaluation results.
+* **HTTP 200 (OK):** Indicates successful listing.
+* **Full Response:** Returns total_score, main_score, logistics scores, 15-item ai_breakdown, ai_justification, and pet data.
+
+#### b) Functional Test: Empty Applications List
+```python
+def test_list_applications_empty(self, client, db_session):
+    _override_mongo_db(existing_apps=[])
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 200
+    assert data["count"] == 0
+    assert data["applications"] == []
+```
+**Purpose:** 
+Validates that users with no applications receive an empty list.
+
+#### c) Negative Test: Unauthorized Role
+```python
+def test_list_applications_unauthorized_role(self, client, db_session):
+    token = _create_admin_token()
+    response = client.get("/applications/me", headers={"Authorization": f"Bearer {token}"})
+    
+    assert response.status_code == 403
+```
+**Purpose:** 
+Ensures only adopter users can list applications.
+
+#### d) Negative Test: No Token
+```python
+def test_list_applications_no_token(self, client):
+    response = client.get("/applications/me")
+    
+    assert response.status_code == 401
+```
+**Purpose:** 
+Validates that listing applications requires authentication.
+
+### Mock Override Strategy
+
+The `_override_mongo_db()` helper function provides fine-grained control over MongoDB mock behavior:
+
+```python
+def _override_mongo_db(
+    form_exists=True,     # Whether the adopter has a form
+    pet_exists=True,      # Whether the pet exists in MongoDB
+    pet_status="available", # Pet status (available, in_process, adopted)
+    duplicate=False,      # Whether a duplicate application exists
+    existing_apps=None,   # List of existing apps for GET endpoint
+):
+```
+
+**Purpose:** 
+Provides isolated testing with full control over each test scenario, using `app.dependency_overrides[get_mongo_db]` to inject mock collections with `AsyncMock` methods for find_one, insert_one, update_one, and to_list operations.
+
+---
+
+## 13. MongoDB Mock Implementation
 
 The test suite uses an in-memory mock MongoDB implementation to simulate MongoDB behavior without requiring a real MongoDB instance. This is configured in `conftest.py`:
 
@@ -919,7 +1860,7 @@ class MockMongoCollection:
 **Purpose:** 
 Provides isolated testing environment for MongoDB operations without external dependencies, ensuring tests are fast, reliable, and can run in CI/CD pipelines.
 
-## 11. Redis Mock Implementation
+## 14. Redis Mock Implementation
 
 The test suite uses an in-memory mock Redis implementation to simulate Redis behavior without requiring a real Redis instance. This is configured in `conftest.py`:
 

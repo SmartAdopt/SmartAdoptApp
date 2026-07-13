@@ -1,0 +1,283 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
+
+# Database imports
+from app.database.mongo.mongo_db import get_mongo_db
+from app.database.postgres.postgres_db import get_db
+
+# Schema imports
+from app.schemas.adoption_form_schemas import (
+    AdoptionFormRequest,
+    AdoptionFormResponse,
+    AdoptionFormUpdateRequest,
+    AdoptionFormReviewRequest,
+)
+
+# Service imports
+from app.services.adoption_form_service import (
+    register_adoption_form,
+    get_adoption_form_by_user,
+    update_adoption_form,
+    get_all_forms,
+)
+from app.services.applications_service import review_application
+from app.utils.socketio_manager import sio
+
+# Model imports
+from app.utils.jwt.jwt_utils import verify_token
+
+# Logger import
+from app.utils.logger.logger_config import logger
+
+router = APIRouter(prefix="/adoption-forms", tags=["Adoption Forms"])
+
+
+@router.post("/submit", status_code=status.HTTP_201_CREATED)
+async def submit_adoption_form_route(
+    form_data: AdoptionFormRequest,
+    db=Depends(get_mongo_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to submit an adoption form (requires adopter role)
+    logger.info("POST /adoption-forms/submit - Adoption form submission request")
+
+    # Verify user role is adopter
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "adopter":
+        logger.warning(
+            f"Adoption form submission denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Adopter role required"},
+        )
+
+    try:
+        # Get user_id from token
+        user_id = int(token_payload["sub"])
+        # Convert Pydantic schema to dict before calling service
+        form_data_dict = form_data.model_dump()
+        # Add user_id from token to form data
+        form_data_dict["user_id"] = user_id
+        # Call service to register the adoption form
+        registered_form = await register_adoption_form(db, form_data_dict)
+        # Return response
+        return AdoptionFormResponse(
+            message="Adoption form registered successfully",
+            form_id=registered_form["form_id"],
+            submission_date=registered_form["submission_date"],
+        )
+    except ValueError as e:
+        logger.warning(f"Adoption form submission failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during adoption form submission: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.get("/me", status_code=status.HTTP_200_OK)
+async def get_my_adoption_form_route(
+    db=Depends(get_mongo_db),
+    postgres_db=Depends(get_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to get the authenticated user's adoption form (requires adopter role)
+    logger.info("GET /adoption-forms/me - Get adoption form request")
+
+    # Verify user role is adopter
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "adopter":
+        logger.warning(
+            f"Adoption form retrieval denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Adopter role required"},
+        )
+
+    try:
+        # Get user_id from token
+        user_id = int(token_payload["sub"])
+        # Call service to get the adoption form
+        form = await get_adoption_form_by_user(db, user_id, postgres_db=postgres_db)
+
+        if not form:
+            return None
+
+        # Remove review fields from adopter response (security: don't show admin review info)
+        form.pop("status", None)
+        form.pop("reviewed_by", None)
+        form.pop("reviewed_at", None)
+
+        return form
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during adoption form retrieval: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.put("/me", status_code=status.HTTP_200_OK)
+async def update_my_adoption_form_route(
+    update_data: AdoptionFormUpdateRequest,
+    db=Depends(get_mongo_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to update the authenticated user's adoption form (requires adopter role)
+    logger.info("PUT /adoption-forms/me - Update adoption form request")
+
+    # Verify user role is adopter
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "adopter":
+        logger.warning(
+            f"Adoption form update denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Adopter role required"},
+        )
+
+    try:
+        # Get user_id from token
+        user_id = int(token_payload["sub"])
+        # Convert Pydantic schema to dict before calling service
+        update_data_dict = update_data.model_dump()
+        # Call service to update the adoption form
+        updated_form = await update_adoption_form(db, user_id, update_data_dict)
+
+        return {
+            "message": "Adoption form updated successfully",
+            "form": updated_form,
+        }
+    except ValueError as e:
+        logger.warning(f"Adoption form update failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during adoption form update: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.get("/admin", status_code=status.HTTP_200_OK)
+async def get_all_adoption_forms_admin(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    form_status: Optional[str] = None,
+    pet_name: Optional[str] = Query(default=None, alias="pet_name"),
+    db=Depends(get_mongo_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to get all adoption forms with optional status filter (admin only)
+    # Accept both `?status=` (via alias) and the legacy `?form_status=` params
+    logger.info("GET /adoption-forms/admin - Get all adoption forms request")
+
+    # Verify user role is admin
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "admin":
+        logger.warning(
+            f"Adoption forms list denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Admin role required"},
+        )
+
+    try:
+        # Call service to get all forms with optional status filter
+        resolved_status = status_filter or form_status
+        forms = await get_all_forms(
+            db, status_filter=resolved_status, pet_name_filter=pet_name
+        )
+        if not forms:
+            return {"forms": [], "applications_count": 0}
+        # Count each application individually, even if they belong to the
+        # same user/form (a form can group multiple pet applications)
+        applications_count = sum(len(f.get("applications", [])) for f in forms)
+        return {"forms": forms, "applications_count": applications_count}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.warning(f"Adoption forms retrieval failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during adoption forms retrieval: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )
+
+
+@router.put("/{application_id}/review", status_code=status.HTTP_200_OK)
+async def review_adoption_form(
+    application_id: str,
+    review_data: AdoptionFormReviewRequest,
+    db=Depends(get_mongo_db),
+    postgres_db=Depends(get_db),
+    token_payload: dict = Depends(verify_token),
+):
+    # Endpoint to review an adoption application (admin only)
+    logger.info(
+        f"PUT /adoption-forms/{application_id}/review - Review application request"
+    )
+
+    # Verify user role is admin
+    user_role = token_payload.get("role", "").lower()
+    if user_role != "admin":
+        logger.warning(
+            f"Application review denied for user: {token_payload.get('sub')} - role: {user_role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "Access denied. Admin role required"},
+        )
+
+    try:
+        # Get admin_id from token
+        admin_id = int(token_payload["sub"])
+        # Call service to review the application
+        result = await review_application(
+            db, application_id, review_data.status, admin_id, postgres_db=postgres_db
+        )
+
+        user_id = result.get("user_id")
+        if user_id:
+            await sio.emit(
+                "application_status_update",
+                {
+                    "status": review_data.status,
+                    "application_id": application_id,
+                },
+                room=f"user_{user_id}",
+            )
+
+        return result
+    except ValueError as e:
+        logger.warning(f"Application review failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during application review: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Internal server error"},
+        )

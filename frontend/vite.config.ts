@@ -1,10 +1,69 @@
-// vite.config.ts
+// frontend/vite.config.ts
+
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import electron from 'vite-plugin-electron';
 
 export default defineConfig({
-  plugins: [react()],
-  
+  base: process.env.VITE_WEB_ONLY === 'true' ? '/' : './',
+  plugins: [
+    react(),
+    ...(process.env.VITE_WEB_ONLY === 'true'
+      ? []
+      : [
+        electron([
+          {
+            entry: '../electron/main.ts',
+          },
+          {
+            // Flat API treats this as a main-process target (ESM when package.json is type:module).
+            // Build preload from `input` (not `lib.entry`) to force true CJS output.
+            vite: {
+              build: {
+                rolldownOptions: {
+                  input: '../electron/preload.ts',
+                  output: {
+                    format: 'cjs',
+                    entryFileNames: 'preload.cjs',
+                    chunkFileNames: '[name].cjs',
+                  },
+                },
+              },
+            },
+            onstart(options) {
+              try {
+                options.reload();
+              } catch {
+                console.warn('Could not reload Electron: channel closed');
+              }
+            },
+          },
+          {
+            // Same CJS enforcement as preload above.
+            vite: {
+              build: {
+                rolldownOptions: {
+                  input: '../electron/popup-preload.ts',
+                  output: {
+                    format: 'cjs',
+                    entryFileNames: 'popup-preload.cjs',
+                    chunkFileNames: '[name].cjs',
+                  },
+                },
+              },
+            },
+            onstart(options) {
+              try {
+                options.reload();
+              } catch {
+                console.warn('Could not reload Electron: channel closed');
+              }
+            },
+          },
+        ]),
+      ]),
+  ],
+
   // 1. Vite Server Configuration (Proxy for Dockerized Backend)
   server: {
     port: 5173,
@@ -20,6 +79,7 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Proxy for WebSockets (Real-time notifications RF-05)
       '/ws': {
