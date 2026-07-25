@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM "user" WHERE email LIKE 'test_k6_%';

@@ -1,0 +1,1 @@
+SELECT user_id, email FROM "user" WHERE email LIKE 'test_k6_1@%' OR email LIKE 'test_k6_2@%' OR email LIKE 'test_k6_3@%';

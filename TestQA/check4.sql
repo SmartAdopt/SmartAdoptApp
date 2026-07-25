@@ -1,0 +1,1 @@
+SELECT user_id, email FROM "user" WHERE user_id BETWEEN 1001 AND 1120 ORDER BY user_id;

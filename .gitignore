@@ -21,6 +21,7 @@ Thumbs.db
 tempCodeRunnerFile.py
 
 .venv/
+venv/
 
 # Logs
 logs/

@@ -1,0 +1,21 @@
+# Variables de entorno locales
+.env
+
+# Archivos temporales
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Entornos virtuales
+venv/
+.venv/
+
+# Reportes generados
+reportes/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

@@ -1,0 +1,1 @@
+SELECT user_id, email FROM "user" WHERE email LIKE 'test_k6_%' ORDER BY user_id LIMIT 10;
