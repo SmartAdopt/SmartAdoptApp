@@ -37,3 +37,6 @@ test.db
 .coverage
 test.db
 node_modules/
+
+# Pruebas E2E Capturas
+e2e_tests/screenshots/
